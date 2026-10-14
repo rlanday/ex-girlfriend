@@ -1,0 +1,18 @@
+[project]
+name = "hutter-prize-transformer"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "flash-linear-attention>=0.5.1",
+    "jaxtyping>=0.3.11",
+    "numpy>=2.4.6",
+    "torch>=2.12.0,<2.13",
+    "tqdm>=4.68.4",
+    "wandb>=0.28.0",
+    "flash-attn; sys_platform != 'darwin'",
+    "python-dotenv>=1.2.2",
+    "pytorch-optimizer>=3.10.1",
+]
+
+[tool.uv.sources]
+flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.9.17/flash_attn-2.8.3+cu130torch2.12-cp311-cp311-linux_x86_64.whl" }

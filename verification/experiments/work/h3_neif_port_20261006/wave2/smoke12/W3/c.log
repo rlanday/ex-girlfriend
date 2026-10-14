@@ -1,0 +1,23 @@
+      0.00 1791353598 arm W3 cpu 12 prefix 12000000 B  comp9 a28b93dbf4b1282d  2026-10-07T06:13:18Z
+     15.65 1791353614 dictionary: Loaded 54857 words
+     52.79 1791353651 pretraining the model on the dictionary ... 37.14 s.
+     52.80 1791353651 progress 0.00 %
+     53.48 1791353652 entering metadata block at 0.00 %
+    108.78 1791353707 progress 6.73 %
+    169.49 1791353768 progress 13.47 %
+    230.69 1791353829 progress 20.20 %
+    292.79 1791353891 progress 26.94 %
+    379.00 1791353977 progress 33.67 %
+    464.57 1791354063 progress 40.41 %
+    544.48 1791354143 progress 47.14 %
+    619.18 1791354217 progress 53.88 %
+    694.62 1791354293 progress 60.61 %
+    771.92 1791354370 progress 67.35 %
+    797.27 1791354395 entering redirect block at 69.46 %
+    994.82 1791354593 progress 74.08 %
+   1285.82 1791354884 progress 80.82 %
+   1570.14 1791355168 progress 87.55 %
+   1864.41 1791355462 progress 94.29 %
+   2111.33 1791355709 encoding preprocessed enwik9: 12000000 bytes -> 1652903 bytes in 2098.40 s.
+   2111.41 1791355709 TIMEIT rc=0 wall=2111.39s user=2085.51s sys=25.32s maxrss=9735.1MiB
+   2111.42 1791355709 PAYLOAD 1652903 B  sha256 ded76609f3ed2c65

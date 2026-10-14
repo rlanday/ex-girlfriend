@@ -1,0 +1,26 @@
+# Build the glue/vec-math test + bench (run from cpp_infer/):
+#   make -f src/opt/Makefile.glue
+# The bit-exactness contract of glue.cpp is defined against the
+# clang-17-compiled naive reference (see glue.h). g++-13 was verified to pick
+# the same contractions (test_glue ALL PASS under both compilers); the opt
+# kernels themselves are pure intrinsics, identical under either.
+CXX      ?= clang++-17
+CXXFLAGS := -O3 -march=znver2 -std=c++17 -Wall -Wextra -fno-math-errno
+BIN      := bin
+
+all: $(BIN)/test_glue $(BIN)/bench_glue
+
+$(BIN)/test_glue: src/opt/test_glue.cpp src/opt/glue.cpp src/kernels.cpp \
+                  src/opt/glue.h src/opt/vec_math.h src/opt/sparse_acts.h src/kernels.h
+	@mkdir -p $(BIN)
+	$(CXX) $(CXXFLAGS) src/opt/test_glue.cpp src/opt/glue.cpp src/kernels.cpp -o $@ -lm
+
+$(BIN)/bench_glue: src/opt/bench_glue.cpp src/opt/glue.cpp \
+                   src/opt/glue.h src/opt/vec_math.h src/opt/sparse_acts.h bench/bench_common.h
+	@mkdir -p $(BIN)
+	$(CXX) $(CXXFLAGS) src/opt/bench_glue.cpp src/opt/glue.cpp -o $@ -lm
+
+clean:
+	rm -f $(BIN)/test_glue $(BIN)/bench_glue
+
+.PHONY: all clean

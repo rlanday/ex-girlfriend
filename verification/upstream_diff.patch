@@ -1,0 +1,1562 @@
+--- a/src/b1_interp.h
++++ b/src/b1_interp.h
+@@ -0,0 +1,68 @@
++#ifndef B1_INTERP_H_
++#define B1_INTERP_H_
++
++// E1 (work/h3_neif_meta_20261007/e1_spec.py): forecast of a pre-migration
++// revid from its page id.  The MediaWiki 1.5 conversion assigned the revids
++// below 17,000,000 in page-id order, so a B1 revid is predicted by linear
++// interpolation between the already-decoded B1 pages nearest in page id
++// (78 % exact, 92 % within +-1 on enwik9).  Shared by metablock_form::Pack /
++// Unpack and metablock::Einheit::ZeileA; all three feed it in stream order,
++// so encoder and decoder see the same set at every line.  Integer only.
++//   q1/q2 = nearest page ids below/above p in the set (r1/r2 their revids)
++//   both:   r1 + Fdiv((p - q1) * (r2 - r1), q2 - q1)
++//   only q1: r1 + (p - q1);  only q2: r2 - (q2 - p);  none: 15898943
++
++#include <stdio.h>
++#include <stdlib.h>
++
++#include <iterator>
++#include <map>
++
++#include "timestamp_algebra.h"
++
++namespace b1_interp {
++
++static const long long kB1Max = 17000000LL;      // B1 = revid below this
++static const long long kLeer = 15898943LL;       // forecast of an empty set
++static const unsigned char kMark = 0x2b;         // '+': ends the page id delta of a B1 line
++
++static_assert(kMark != 0x09 && kMark != 0x0a && kMark != 0x2d &&
++              (kMark < 0x30 || kMark > 0x39) && kMark < 0x80,
++    "'+' must be neither TAB, LF, '-', a digit nor a base-100 byte");
++
++class Interp {
++ public:
++  long long Prognose(long long p) const {
++    std::map<long long, long long>::const_iterator hi = m_.lower_bound(p);
++    const bool h2 = hi != m_.end();
++    const bool h1 = hi != m_.begin();
++    if (h1 && h2) {
++      std::map<long long, long long>::const_iterator lo = std::prev(hi);
++      const long long q1 = lo->first, r1 = lo->second;
++      const long long q2 = hi->first, r2 = hi->second;
++      return r1 + ts_algebra::Fdiv((p - q1) * (r2 - r1), q2 - q1);
++    }
++    if (h1) {
++      std::map<long long, long long>::const_iterator lo = std::prev(hi);
++      return lo->second + (p - lo->first);
++    }
++    if (h2) return hi->second - (hi->first - p);
++    return kLeer;
++  }
++  void Add(long long p, long long r) {
++    if (!m_.emplace(p, r).second) {
++      fprintf(stderr, "\nb1 interp: page id %lld twice among the B1 lines\n", p);
++      fflush(stderr);
++      exit(1);
++    }
++  }
++  size_t Size() const { return m_.size(); }
++  void Clear() { std::map<long long, long long>().swap(m_); }
++
++ private:
++  std::map<long long, long long> m_;   // page id -> revid
++};
++
++}
++
++#endif
+--- a/src/context-manager.cpp
++++ b/src/context-manager.cpp
+@@ -1,6 +1,7 @@
+ #include "context-manager.h"
+ #include "attributes.h"
+ #include "page_registry.h"
++#include "port_cfg.h"
+ 
+ extern unsigned long long wrtcxt;
+ extern int lstmpr;
+@@ -66,11 +67,21 @@
+ // GPL-3.0).  The initializer list follows the declaration order in
+ // context-manager.h (clang warns otherwise); the order has no effect.
+  ContextManager::ContextManager() : history_(60000000u, 0),
++#if PORT_RESTORE_SHARED
++    shared_map_(256*(std::size_t)1000000, 0),   // W2: 1M rows (neif 500k)
++#else
+     shared_map_(256*(std::size_t)500000, 0),
++#endif
+     words_(8, 0), recent_bytes_(8, 0),
+     hashes_ind1((std::size_t)(dense_index::kN * dense_index::kN * dense_index::kN), 0),
+     hashes_ind4(0x100, 0),
++#if PORT_RESTORE_IND
++    // W2: the double-indirect tables of fx2-cmix-transformer (0x1000000 and
++    // 0x2000000 entries); uint32 holds every value exactly (32- and 25-bit masks).
++    hashes_ind2(0x1000000, 0), hashes_ind3(0x2000000, 0),
++#else
+     hashes_ind2(0, 0), hashes_ind3(0, 0),
++#endif
+     hashes_ind5(0x100, 0) {
+   PAGE_REGISTRY_ADD(history_.data(), history_.size());
+   PAGE_REGISTRY_ADD(shared_map_.data(), shared_map_.size());
+@@ -171,6 +182,18 @@
+    context1_ind = (bd1_d2_ * dense_index::kN + bd1_d1_) * dense_index::kN + bd1_d0_;
+    ind1 = hashes_ind1[context1_ind];
+ 
++#if PORT_RESTORE_IND
++  // W2: update rule of fx2-cmix-transformer (training/tf/tree_upstream
++  // src/context-manager.cpp:138-144), verbatim.
++  hashes_ind2[context1_ind2] = (ind2 * (1 << 8) + c) & (0x100000000-1);
++  context1_ind2 = (context1_ind2 * (1 << 6) + c) & (0x1000000-1);
++  ind2 = hashes_ind2[context1_ind2];
++
++  hashes_ind3[context1_ind3] = (ind3 * (1 << 5) + c) & (0x2000000-1);
++  context1_ind3 = (context1_ind3 * (1 << 5) + c) & (0x2000000-1);
++  ind3 = hashes_ind3[context1_ind3];
++#endif
++
+   hashes_ind5[context1_ind5] = (ind5 * (1 << 6) + c) & (0x40000000-1);
+   context1_ind5 = c;
+   ind5 = hashes_ind5[context1_ind5];
+--- a/src/id_exclude.h
++++ b/src/id_exclude.h
+@@ -7,6 +7,7 @@
+ #endif
+ 
+ #include "metablock.h"
++#include "neif_levers.h"
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -143,12 +144,26 @@
+ 
+ inline int  armed = 0;          // well-formed rows in a row so far
+ inline int  col = 0;            // byte position in the current row
+-inline int  fld = 1;            // 1 = page id delta, 2 = revision id, 3 = rest
++inline int  fld = 1;            // 1 = page id delta, 2 = revision id, 3 = rest,
++                                // 4 = B1 revid residual (E1: after '+')
+ inline int  fcol = 0;           // byte position inside the field
+ inline int  bad = 0;            // the row has already broken the form
+ inline int  neg = 0;            // field 1 starts with '-'
+ inline long long pfx = 0;       // digit prefix of the current field
+ inline long long revpfx = 0;
++#if NEIF_E1
++// E1: a B1 row is "<delta> '+' [-]<residual>[\t<restr>]".  '+' ends field 1;
++// the residual field carries no exclusion (its value depends on the
++// interpolation, not on the free set), the row marks only its page id.
++static const unsigned int kB1Mark = 0x2b;
++// Share of the field-end weight given to '+' - the same factor on the free
++// and on the total count, so the page-id evidence (free/total) is unchanged.
++static const double kB1Share = 1.0 / 101.0;
++// B2 revids are >= 17,000,000: first base-100 digit >= 17.
++static const int kB2FirstMin = 17;
++inline int b1row = 0;           // the row is a B1 row ('+' seen)
++inline int rneg = 0;            // the residual starts with '-'
++#endif
+ inline long long cur_id = 0;    // absolute page id of the previous row
+ inline long long asc = 0;       // length of the current ascending run
+ inline unsigned long long stat_fire = 0, stat_hard = 0, stat_lines = 0,
+@@ -157,7 +172,7 @@
+ 
+ // Candidate table of the current byte (computed once per byte, not per bit).
+ inline int    cw_n = 0;
+-// A base-100 alphabet needs at least 102 entries.
++// A base-100 alphabet needs at least 102 entries (E1: 1 + 100 + 10 = 111).
+ inline unsigned char cw_b[112];
+ inline double cw_w[112], cw_u[112];
+ inline int    cw_valid = 0;
+@@ -205,15 +220,30 @@
+   int ok = 1;
+   if (ch == '\t') {
+     if (fld == 2) { ok = (fcol == 4); fld = 3; fcol = 0; }
++#if NEIF_E1
++    else if (fld == 4) { ok = (fcol >= 1 + rneg); fld = 3; fcol = 0; }
++#endif
+     else if (fld == 1) { ok = 0; }
+     else { ++fcol; }
+   } else if (ch == '\n') {
+     // row end, handled below
+   } else if (fld == 1 && MpAlpha(ch)) {
+     ok = (fcol >= 1 + neg);
++#if NEIF_E1
++    if ((int)(ch - (unsigned int)0x80) < kB2FirstMin) ok = 0;
++#endif
+     fld = 2; fcol = 0;
+     revpfx = revpfx * 100 + (long long)(ch - (unsigned int)0x80);
+     ++fcol;
++#if NEIF_E1
++  } else if (fld == 1 && ch == kB1Mark) {
++    ok = (fcol >= 1 + neg);
++    fld = 4; fcol = 0; b1row = 1;
++  } else if (fld == 4) {
++    if (fcol == 0 && ch == '-') { rneg = 1; }
++    else ok = (ch >= '0' && ch <= '9');
++    ++fcol;
++#endif
+   } else if (fld == 1) {
+     if (fcol == 0 && ch == '-') { neg = 1; }
+     else {
+@@ -233,15 +263,28 @@
+   if (ch == '\n') {
+     ++stat_lines;
+     const long long id = cur_id + (neg ? -pfx : pfx);
++#if NEIF_E1
++    const int good = b1row
++        ? (!bad && ((fld == 4 && fcol >= 1 + rneg) || fld == 3) &&
++           id >= kPgLo && id <= kPgHi)
++        : (!bad && ((fld == 2 && fcol == 4) || fld == 3) &&
++           id >= kPgLo && id <= kPgHi &&
++           revpfx >= kRevLo - kRevBase && revpfx <= kRevHi - kRevBase);
++#else
+     const int good = (!bad && ((fld == 2 && fcol == 4) || fld == 3) &&
+                       id >= kPgLo && id <= kPgHi &&
+                       revpfx >= kRevLo - kRevBase && revpfx <= kRevHi - kRevBase);
++#endif
+     if (good) {
+       if (armed >= 64) {
+         Revive();
+         ++stat_mark;
+         MarkId(id);
++#if NEIF_E1
++        if (!b1row) revt.Mark(revpfx);
++#else
+         revt.Mark(revpfx);
++#endif
+       }
+       asc = (id > cur_id) ? asc + 1 : 0;
+       cur_id = id;
+@@ -254,6 +297,9 @@
+       armed = 0; cur_id = 0; asc = 0;
+     }
+     col = 0; fld = 1; fcol = 0; bad = 0; neg = 0; pfx = 0; revpfx = 0;
++#if NEIF_E1
++    b1row = 0; rneg = 0;
++#endif
+   } else {
+     ++col;
+   }
+@@ -310,7 +356,7 @@
+     }
+     return;
+   }
+-  if (fld != 1) return;
++  if (fld != 1) return;                    // (E1: no candidates in field 4)
+   // Field 1: signed delta, variable length, at most 6 digits.  The field end
+   // is the first revision id byte (one of 100 alphabet bytes), not a tab.
+   {
+@@ -324,9 +370,24 @@
+     }
+     if (nd >= 1) {                         // field end possible
+       SpanW(s, pfx, pfx, &w, &u);
++#if NEIF_E1
++      // E1: the field ends with '+' (B1 row) or with the first byte of a B2
++      // revid; the end weight is split between them by the same factor for
++      // free and total.  A B2 revid's first digit is >= 17, so the bytes
++      // below are excluded (no free value, full total).
++      AddCand((unsigned char)kB1Mark, w * kB1Share, u * kB1Share);
++      {
++        const double wa = w * (1.0 - kB1Share) / 100.0;
++        const double ua = u * (1.0 - kB1Share) / 100.0;
++        for (int d = 0; d < 100; ++d)
++          AddCand((unsigned char)((unsigned)0x80 + (unsigned)d),
++                  d < kB2FirstMin ? 0.0 : wa, ua);
++      }
++#else
+       for (int d = 0; d < 100; ++d)
+         AddCand((unsigned char)((unsigned)0x80 + (unsigned)d),
+                 w / 100.0, u / 100.0);
++#endif
+     }
+     if (nd < 6) {
+       for (int d = 0; d < 10; ++d) {
+--- a/src/metablock.h
++++ b/src/metablock.h
+@@ -13,8 +13,12 @@
+ #include <algorithm>
+ #include <vector>
+ 
++#include "neif_levers.h"
+ #include "ppmd_meta.h"
+ #include "timestamp_algebra.h"
++#if NEIF_E1
++#include "b1_interp.h"
++#endif
+ 
+ namespace metablock {
+ 
+@@ -262,6 +266,16 @@
+         for (int j = i; j < e; ++j) if (!FestAlpha(p[j])) { alpha = false; break; }
+         if (alpha) return 1;
+       }
++#if NEIF_E1
++      // B1 line: delta '+' [-]residual
++      if (i > d0 && i < e && p[i] == b1_interp::kMark) {
++        int j = i + 1;
++        if (j < e && p[j] == 0x2d) ++j;
++        const int r0 = j;
++        while (j < e && p[j] >= 0x30 && p[j] <= 0x39) ++j;
++        if (j > r0 && j == e) return 1;
++      }
++#endif
+     }
+     return 2;
+   }
+@@ -286,7 +300,20 @@
+     const unsigned char* e = p + n;
+     const unsigned char* t = (const unsigned char*)memchr(p, kTab, (size_t)n);
+     if (!t) t = e;
++#if NEIF_E1
++    const unsigned char* const fe = t;    // end of field 1
++    const unsigned char* mp_rv = nullptr;
++    bool b1 = false;
++    {
++      const unsigned char* dz = p;
++      if (dz < fe && *dz == 0x2d) ++dz;
++      while (dz < fe && *dz >= 0x30 && *dz <= 0x39) ++dz;
++      b1 = dz < fe && *dz == b1_interp::kMark;
++      mp_rv = b1 ? dz : fe - 4;
++    }
++#else
+     const unsigned char* mp_rv = t - 4;
++#endif
+     if (mp_rv < p) Fail("A line too short for the revid");
+     t = mp_rv;                            // the page id delta ends here
+     long long d = 0;
+@@ -301,6 +328,22 @@
+     id_lauf_ += vz * d;
+     if (id_lauf_ < 0) Fail("running page id negative");
+     long long rv = 0;
++#if NEIF_E1
++    if (b1) {                             // '+' [-]residual vs the interpolation
++      const unsigned char* q2 = mp_rv + 1;
++      long long res = 0;
++      int vz2 = 1;
++      if (q2 < fe && *q2 == 0x2d) { vz2 = -1; ++q2; }
++      if (q2 == fe) Fail("B1 line without revid residual");
++      for (; q2 < fe; ++q2) {
++        if (*q2 < 0x30 || *q2 > 0x39) Fail("revid residual not numeric");
++        res = res * 10 + (*q2 - 0x30);
++      }
++      rv = b1_.Prognose(id_lauf_) + vz2 * res;
++      if (rv < 0) Fail("B1 revid negative");
++      b1_.Add(id_lauf_, rv);
++    } else
++#endif
+     for (int mq = 0; mq < 4; ++mq) {
+       if (!MpAlpha(mp_rv[mq]))
+         Fail("revid digit outside the base-100 alphabet");
+@@ -438,6 +481,9 @@
+         st_.b_zeilen != (unsigned long long)243425)
+       Fail("A or B line count differs from the page count");
+     text_.shrink_to_fit();
++#if NEIF_E1
++    b1_.Clear();
++#endif
+     std::vector<unsigned int>().swap(hoff_);
+     std::vector<unsigned int>().swap(hlen_);
+   }
+@@ -452,6 +498,9 @@
+   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+ 
+   long long id_lauf_ = 0;
++#if NEIF_E1
++  b1_interp::Interp b1_;             // E1: B1 page id -> revid, stream order
++#endif
+   size_t bk_ = 0;
+   int byy_ = 0;
+   long long bmt_ = 0, bsek_ = 0;
+--- a/src/metablock_form.h
++++ b/src/metablock_form.h
+@@ -3,7 +3,11 @@
+ 
+ #include "metablock.h"
+ 
++#include "neif_levers.h"
+ #include "ts_progress.h"
++#if NEIF_E1
++#include "b1_interp.h"
++#endif
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -169,6 +173,21 @@
+   return v;
+ }
+ 
++#if NEIF_E1
++// E1: signed decimal page id delta of a part-A line, [p, e) = "[-]digits".
++static inline long long LiesDelta(const unsigned char* p, const unsigned char* e) {
++  int vz = 1;
++  if (p < e && *p == 0x2d) { vz = -1; ++p; }
++  if (p == e) Fail("page id delta empty");
++  long long d = 0;
++  for (; p < e; ++p) {
++    if (!Ziffer(*p)) Fail("page id delta not numeric");
++    d = d * 10 + (*p - 0x30);
++  }
++  return vz * d;
++}
++#endif
++
+ static inline void Rangfolge(std::vector<long long>* rev) {
+   std::sort(rev->begin(), rev->end());
+   for (size_t i = 1; i < rev->size(); ++i)
+@@ -196,6 +215,10 @@
+   out.insert(out.end(), d.begin(), d.begin() + (long)ab);
+ 
+   // ---- part A ----
++#if NEIF_E1
++  b1_interp::Interp b1;
++  long long pid = 0;
++#endif
+   for (size_t i = 0; i < nn; ++i) {
+     const unsigned char* p = &d[z[i]];
+     const int n = (int)(z[i + 1] - z[i] - 1);
+@@ -211,7 +234,18 @@
+         rv = rv * 10 + (*q - 0x30);
+       }
+       out.insert(out.end(), p, t);                 // page id delta, decimal
++#if NEIF_E1
++      pid += LiesDelta(p, t);
++      if (rv < b1_interp::kB1Max) {                // B1: '+' residual vs interpolation
++        out.push_back(b1_interp::kMark);
++        Dezimal(&out, rv - b1.Prognose(pid));
++        b1.Add(pid, rv);
++      } else {
++        Fest(&out, rv, 4);
++      }
++#else
+       Fest(&out, rv, 4);
++#endif
+       if (t2) out.insert(out.end(), t2, e);        // TAB restrictions
+     }
+     out.push_back(kNL);
+@@ -259,27 +293,68 @@
+   Zeilen(d, ab, bis, &z);
+ 
+   std::vector<long long> rev(nn);
++#if !NEIF_E1
+   for (size_t i = 0; i < nn; ++i)
+     rev[i] = ALeseRev(&d[z[i]], (int)(z[i + 1] - z[i] - 1), true);
+   Rangfolge(&rev);
++#endif
+ 
+   std::vector<unsigned char> out;
+   out.reserve(d.size() + d.size() / 4);
+   out.insert(out.end(), d.begin(), d.begin() + (long)ab);
+ 
+   // ---- part A ----
++#if NEIF_E1
++  // E1: a B1 revid needs the interpolation over the earlier B1 lines, so the
++  // revids are computed here, in stream order, and checked afterwards.
++  b1_interp::Interp b1;
++  long long pid = 0;
++#endif
+   for (size_t i = 0; i < nn; ++i) {
+     const unsigned char* p = &d[z[i]];
+     const int n = (int)(z[i + 1] - z[i] - 1);
+     {
+       const unsigned char* e = p + n;
+       const unsigned char* t = (const unsigned char*)memchr(p, kTab, (size_t)n);
++#if NEIF_E1
++      const unsigned char* fe = t ? t : e;         // end of field 1
++      const unsigned char* dz = p;
++      if (dz < fe && *dz == 0x2d) ++dz;
++      while (dz < fe && Ziffer(*dz)) ++dz;
++      long long v = 0;
++      const unsigned char* r = nullptr;            // end of the page id delta
++      if (dz < fe && *dz == b1_interp::kMark) {    // B1: delta '+' [-]residual
++        r = dz;
++        pid += LiesDelta(p, r);
++        const unsigned char* q = r + 1;
++        long long res = 0;
++        int vz = 1;
++        if (q < fe && *q == 0x2d) { vz = -1; ++q; }
++        if (q == fe) Fail("B1 line without revid residual");
++        for (; q < fe; ++q) {
++          if (!Ziffer(*q)) Fail("revid residual not numeric");
++          res = res * 10 + (*q - 0x30);
++        }
++        v = b1.Prognose(pid) + vz * res;
++        if (v < 0) Fail("B1 revid negative");
++        b1.Add(pid, v);
++      } else {                                     // B2: delta + 4 base-100 bytes
++        r = fe - 4;
++        if (r < p) Fail("A line without four revid digits");
++        pid += LiesDelta(p, r);
++        v = LiesFest(r, 4);
++      }
++      rev[i] = v;
++#else
+       const unsigned char* r = (t ? t : e) - 4;
+       if (r < p) Fail("A line without four revid digits");
++#endif
+       out.insert(out.end(), p, r);                 // page id delta, decimal
+       out.push_back(kTab);
+       {
++#if !NEIF_E1
+         long long v = LiesFest(r, 4);
++#endif
+         char b[24];
+         for (int q = kRevDig - 1; q >= 0; --q) { b[q] = (char)('0' + (int)(v % 10)); v /= 10; }
+         if (v) Fail("revid has too many digits");
+@@ -289,6 +364,9 @@
+     }
+     out.push_back(kNL);
+   }
++#if NEIF_E1
++  Rangfolge(&rev);
++#endif
+ 
+   // ---- part B ----
+   unsigned long long n_oben = 0, n_unten = 0;
+--- a/src/mixer/mixer.cpp
++++ b/src/mixer/mixer.cpp
+@@ -19,12 +19,12 @@
+     context_(context), /*max_steps_(1),*/ steps_(0),
+     context_base_(inputs.size(), extra_inputs_size_)
+     {
+-  if (inputs_size_ != 588 &&
+-      inputs_size_ != 27) {
++  if (inputs_size_ != PORT_N0 &&
++      inputs_size_ != PORT_N1) {
+     fprintf(stderr,
+         "\nbuild check: mixer with %u inputs, compiled N0=%d (layer 0), N1=%d (layer 1)\n",
+-        (unsigned)inputs_size_, (int)588,
+-        (int)27);
++        (unsigned)inputs_size_, (int)PORT_N0,
++        (int)PORT_N1);
+     fflush(stderr);
+     abort();
+   }
+@@ -107,8 +107,8 @@
+   const float* const inputs = &inputs_[0];
+   const mixw_t* const weights = &data->weights[0];
+   float p = 0;
+-  if (inputs_size_ == 588) {
+-    for (unsigned int i = 0; i < 588; ++i) {
++  if (inputs_size_ == PORT_N0) {
++    for (unsigned int i = 0; i < PORT_N0; ++i) {
+       p += inputs[i] * weights[i];
+     }
+   } else {
+@@ -131,6 +131,27 @@
+   }
+   return p_;
+ }
++
++#if PORT_PRL
++// PRL (port of Z's h3_prl_patch_20260926, mixer_lex.zig perceive): a row that
++// has seen few updates keeps a high step even after the mixer's global step
++// schedule has decayed: decay = max(global(steps_), row(n)), row(n) = 1.0 /
++// 0.7 / 0.3 / floor at n < 1k / 5k / 25k / else.  n counts the updates that
++// reached this row (after the early-out) and is never reset.
++static inline void PrlDecay(ContextData* data, float* decay) {
++  const uint32_t n = data->n;
++  data->n = n + 1u;
++  float rd = mixdecay::kFinal;
++  if (n < 25000u) {
++    rd = 0.3f;
++    if (n < 5000u) {
++      rd = 0.7f;
++      if (n < 1000u) rd = 1.0f;
++    }
++  }
++  if (rd > *decay) *decay = rd;
++}
++#endif
+ 
+ void Mixer::Perceive(int bit) {
+   ContextData* primed = primed_data_;
+@@ -154,14 +175,21 @@
+       return;
+   }
+    // ++data->steps;
++#if PORT_PRL
++  ContextData* data = primed ? primed : GetContextData();
++  PrlDecay(data, &decay);
++  update = decay * update;
++  update *= mxlr_g_;
++#else
+   update = decay * update;
+   update *= mxlr_g_;
+   ContextData* data = primed ? primed : GetContextData();
++#endif
+ 
+   mixw_t* const weights = &data->weights[0];
+   const float* const inputs = &inputs_[0];
+-  if (inputs_size_ == 588) {
+-    for (unsigned int i = 0; i < 588; ++i) {
++  if (inputs_size_ == PORT_N0) {
++    for (unsigned int i = 0; i < PORT_N0; ++i) {
+       weights[i] -= update * inputs[i];
+     }
+   } else {
+@@ -255,9 +283,16 @@
+   if(fabsf(update)<0.000000000005f && extra_inputs_size_>0) {
+       return false;
+   }
++#if PORT_PRL
++  bank_data_ = primed ? primed : GetContextData();
++  PrlDecay(bank_data_, &decay);
++  update = decay * update;
++  update *= mxlr_g_;
++#else
+   update = decay * update;
+   update *= mxlr_g_;
+   bank_data_ = primed ? primed : GetContextData();
++#endif
+ 
+   *update_out = update;
+   return true;
+--- a/src/mixer/mixer.h
++++ b/src/mixer/mixer.h
+@@ -16,6 +16,7 @@
+ #include "../mixer_chain.h"
+ 
+ #include "../mixer_lr_restart.h"
++#include "../port_cfg.h"
+ #include <memory>
+ 
+ typedef float mixw_t;
+@@ -33,6 +34,9 @@
+   ContextData& operator=(ContextData&&) = default;
+   //unsigned long long steps;
+   arena_row_t weights, extra_weights;
++#if PORT_PRL
++  uint32_t n = 0;   // PRL: updates applied to this row (never reset)
++#endif
+ 
+ };
+ 
+--- a/src/models/fxcmv1.cpp
++++ b/src/models/fxcmv1.cpp
+@@ -29,6 +29,7 @@
+ #include "../attributes.h"
+ #include "../page_contexts.h"
+ #include "../page_registry.h"
++#include "../port_cfg.h"
+ #include "../fast_math.h"
+ #include "../word_recency.h"
+ #include "../sentence_intersect.h"
+@@ -1438,7 +1439,11 @@
+     void __attribute__ ((noinline)) Init(U32 m1, int c1, int s2, int s3,const U8 *nn1,int cs4,int k, const int u,short *st
+     ) {
+         C=min(c1, MAXCXT);
++#if PORT_BIGTAB_CM3
++        int m=m1*4;   // W3: every ContextMap3 table x2 (neif m1*2)
++#else
+         int m=m1*2;
++#endif
+         tmask=((m>>7)-1);
+         cn=result=0;
+         cxtMask=InitialContextMask(C);
+@@ -4050,14 +4055,28 @@
+     scmA[1].Init(9);
+     scmA[2].Init(8);
+ 
++#if PORT_RESTORE_MAPS16
++    maps1.Init(16,8);   // W2: 16 context bits (neif 15)
++    maps2.Init(16,8);
++#else
+     maps1.Init(16 - (1),8);
+     maps2.Init(16 - (1),8);
++#endif
+     const int dccount=6;
++#if PORT_BIGTAB_DSM
++    // W3: every direct state map +1 bit (neif 28/29/24/27/26).
++    dcsm.Init(29,dccount-1, &STA7[0][0] );
++    dcsm0.Init(30,dccount, &STA7[0][0] );
++    dcsm1.Init(25,2, &STA7[0][0] );
++    dcsm2.Init(28,3, &STA7[0][0] );
++    dcsmN.Init(27,3, &STA7[0][0] );
++#else
+     dcsm.Init(28,dccount-1, &STA7[0][0] );
+     dcsm0.Init(29,dccount, &STA7[0][0] );
+     dcsm1.Init(24,2, &STA7[0][0] );
+     dcsm2.Init(27,3, &STA7[0][0] );
+     dcsmN.Init(26,3, &STA7[0][0] );
++#endif
+ 
+     // Mixers      size,  shift, err, errmul
+     mxA[0].Init((0x8000),  75,  8, 14);
+--- a/src/neif_levers.h
++++ b/src/neif_levers.h
+@@ -0,0 +1,19 @@
++#ifndef NEIF_LEVERS_H_
++#define NEIF_LEVERS_H_
++
++// Metadata-coding levers of work/h3_neif_meta_20261007 (2026-10-07).  Both are
++// compile-time switches; every combination builds (stock A0 = 0/0).
++//   NEIF_E1   part A: a pre-migration revid (< 17,000,000) is coded as
++//             '+' [-]decimal(rv - F(page id)), F interpolating between the
++//             nearest already-decoded B1 page ids (b1_interp.h).
++//   NEIF_E3B  part B: the timestamp forecast of a B2 record (rank >= 87,813) is
++//             the 8-step long-baseline slope over the last 9 B2 records
++//             (ts_progress.h); B1 keeps the median-of-32-slopes estimator.
++#ifndef NEIF_E1
++#define NEIF_E1 1
++#endif
++#ifndef NEIF_E3B
++#define NEIF_E3B 1
++#endif
++
++#endif
+--- a/src/port_cfg.h
++++ b/src/port_cfg.h
+@@ -0,0 +1,89 @@
++#ifndef PORT_CFG_H_
++#define PORT_CFG_H_
++
++// Lane C A/B arm switches (work/h3_neif_port_20261006, 2026-10-06).  Each arm
++// tree carries its own copy of this header; the code is the same in every arm.
++//
++//   PORT_GEOM  layer-0 row 588 -> 589 and final mixer 27 -> 28.  The new
++//              columns are 0 (neutral) unless PORT_FW wires them.  Adaptive
++//              depth gathers the old 588 columns only and BITLSTM keeps its
++//              28-wide row (final-mixer cols 0..26 + byte-LSTM logit).
++//   PORT_FW    FW-DUAL/FWRH: fast weights on the last MLP of the transformer
++//              (dual head, FW-ROW per-feature RMS step, DIC kappa 6e-3 ->
++//              1.5e-3, tau 8000), its distribution as layer-0 col 588 and
++//              (FW1) as final-mixer col 27.  All FW math is in the precise TU
++//              src/tf1/opt/model_opt.cpp.
++//   PORT_PRL   per-row mixer decay: max(global step schedule, row schedule
++//              1.0/0.7/0.3/floor at row updates < 1k/5k/25k/else).
++//   PORT_ETA0  word-label eta for byte-0 trie nodes = 0.0225 (WL2 eta0).
++//
++// Lane C second wave (2026-10-07), LTCB-only capacity knobs, each on top of B
++// (GEOM+FW) and switchable so they can be stacked:
++//   PORT_CASCADE  (W1) the mixer cascade (layer-0 mixers, final mixer, SSE)
++//              runs on EVERY bit.  Adaptive depth still computes its skip
++//              decision and trains on every bit as before; the decision now
++//              only gates BITLSTM (Adjust/Observe in coder/encoder.cpp and
++//              decoder.cpp, unchanged), so BITLSTM's bit set and position
++//              counter are the same as with adaptive depth.  On a would-be-
++//              skipped bit the coder takes the cascade p instead of p_pre.
++//   PORT_RESTORE  (W2) undo neif's Hutter-RAM cuts (README 3.3 "two models
++//              removed, two maps halved" + shared map):
++//                PORT_RESTORE_IND    double-indirect models ind2/ind3 with
++//                  their tables (16M + 32M uint32), update rule and position
++//                  (between ind1 and ind5) as in fx2-cmix-transformer
++//                  (training/tf/tree_upstream); layer-0 row +2 (589 -> 591);
++//                  the two columns sit inside the adaptive-depth gather, as
++//                  before the removal (AD: 33 -> 35 features).
++//                PORT_RESTORE_MAPS16 text-model stationary maps maps1/maps2
++//                  at 16 context bits (neif: 15).
++//                PORT_RESTORE_SHARED shared indirect map 1,000,000 rows
++//                  (neif: 500,000).
++//   PORT_BIGTAB   (W3) bigger text-model tables:
++//                PORT_BIGTAB_CM3 every ContextMap3 table x2 (m = m1*4,
++//                  neif m1*2; fxcmv1.cpp ContextMap3::Init).
++//                PORT_BIGTAB_DSM the five direct state maps +1 bit each
++//                  (28/29/24/27/26 -> 29/30/25/28/27).
++#define PORT_GEOM 1
++#define PORT_FW 1
++#define PORT_PRL 0
++#define PORT_ETA0 0
++#define PORT_FW_LAYERS 4   /* F4: FW on the last 4 MLP blocks (see F4/src port_cfg.h) */
++#define PORT_CASCADE 0
++#define PORT_RESTORE 0
++#define PORT_BIGTAB 1
++
++#ifndef PORT_RESTORE_IND
++#define PORT_RESTORE_IND PORT_RESTORE
++#endif
++#ifndef PORT_RESTORE_MAPS16
++#define PORT_RESTORE_MAPS16 PORT_RESTORE
++#endif
++#ifndef PORT_RESTORE_SHARED
++#define PORT_RESTORE_SHARED PORT_RESTORE
++#endif
++#ifndef PORT_BIGTAB_CM3
++#define PORT_BIGTAB_CM3 PORT_BIGTAB
++#endif
++#ifndef PORT_BIGTAB_DSM
++#define PORT_BIGTAB_DSM PORT_BIGTAB
++#endif
++
++#if PORT_FW && !PORT_GEOM
++#error "PORT_FW needs PORT_GEOM (the FW columns are the new ones)"
++#endif
++
++#if PORT_RESTORE_IND
++#define PORT_IND_COLS 2
++#else
++#define PORT_IND_COLS 0
++#endif
++
++#if PORT_GEOM
++#define PORT_N0 (589 + PORT_IND_COLS)
++#define PORT_N1 28
++#else
++#define PORT_N0 (588 + PORT_IND_COLS)
++#define PORT_N1 27
++#endif
++
++#endif
+--- a/src/predictor.cpp
++++ b/src/predictor.cpp
+@@ -71,6 +71,9 @@
+   num += byte_mixer_->NumOutputs();
+   num += tf1_slot_->NumOutputs();
+   num += 1;
++#if PORT_GEOM
++  num += 1;   // col 588: FW-DUAL row (0 when not wired)
++#endif
+   return num;
+ }
+ 
+@@ -173,7 +176,15 @@
+  void Predictor::AddDoubleIndirect() {
+   float delta = 400;
+   indirect_ns_models_.emplace_back(manager_.nonstationary_, manager_.ind1,  manager_.bit_context_, delta, manager_.shared_map_);
++#if PORT_RESTORE_IND
++  // W2: the two double-indirect models neif removed, at their original place
++  // (fx2-cmix-transformer AddDoubleIndirect); they consume the two rand()
++  // calls the placeholder below kept for them.
++  indirect_ns_models_.emplace_back(manager_.nonstationary_, manager_.ind2,  manager_.bit_context_, delta, manager_.shared_map_);
++  indirect_ns_models_.emplace_back(manager_.nonstationary_, manager_.ind3,  manager_.bit_context_, delta, manager_.shared_map_);
++#else
+   (void)rand(); (void)rand();
++#endif
+   indirect_ns_models_.emplace_back(manager_.nonstationary_, manager_.ind5,  manager_.bit_context_, delta, manager_.shared_map_);
+ }
+ 
+@@ -209,6 +220,9 @@
+   }
+   bitl_lhid_ = byte_mixer_->LstmHidden(&bitl_n_lhid_);
+   tf1_slot_.emplace(vocab_);
++#if PORT_FW
++  fw_slot_.emplace(vocab_);
++#endif
+ 
+   // The gate zone of the byte about to be coded.  A POINTER: the
+   // automaton writes it once per byte (on already decoded tokens only), the
+@@ -250,6 +264,9 @@
+ 
+   input_size = mixer_0_.size() + auxiliary_size_;
+   ++input_size;
++#if PORT_GEOM
++  ++input_size;   // col 27: FW1 (0 when not wired); BITLSTM still reads cols 0..26
++#endif
+   layers_[1].SetNumModels(input_size);
+ 
+   // Final mixer with the transformer's gate zone as its context: zone 0 (not
+@@ -276,6 +293,9 @@
+ float byte_mixer_output=0.0f;
+ 
+ float tf1_slot_output=0.0f;
++#if PORT_FW
++float fw_slot_output=0.0f;
++#endif
+  float Predictor::Predict() {
+   fxcm_model_.PredictHalf();
+   manager_.UpdateLx1();
+@@ -400,14 +420,31 @@
+                    (adepth_.coded >= (unsigned long long)0) &&
+                    !adaptive_depth::MetaOff();
+   }
++#if PORT_GEOM
++  // Col 588, appended AFTER the adaptive-depth gather: the AD feature set and
++  // its skip decisions (hence BITLSTM's bit set and position counter) do not
++  // see it.
++  const unsigned int fw_index = input_index++;
++#if PORT_FW
++  layers_[0].SetInput(fw_index, fw_slot_output);
++#else
++  layers_[0].SetZero(fw_index);
++#endif
++#endif
+   const bool chr_skip_mix =
+       (byte_mixer_override >= 0) && char_rate::Forced(manager_.bit_context_);
+   float p;
+   if (chr_skip_mix) {
+     p = 0.5f;
++#if PORT_CASCADE
++  // W1: no cascade skip.  adepth_.skip (computed above, unchanged) only gates
++  // BITLSTM in the coder; the cascade, SSE and the final rules run on every bit.
++  } else {
++#else
+   } else if (adepth_.skip) {
+     p = adepth_.p;
+   } else {
++#endif
+   for (unsigned int i = 0; i < mixer_0_.size(); ++i) mixer_0_[i].Prime();
+   mixer_1_[0].Prime();
+   const unsigned int bank_n = mixer_0_.size();
+@@ -429,6 +466,14 @@
+   layers_[1].SetStretchedInput(mixer_0_.size(), aux_aux_in);
+   layers_[1].SetStretchedInput(mixer_0_.size() + 1, layers_[0].Inputs()[byte_mixer_index]);
+   layers_[1].SetStretchedInput(mixer_0_.size() + 2, layers_[0].Inputs()[tf1_slot_index]);
++#if PORT_GEOM
++#if PORT_FW
++  // FW1: the FW row's stretched input also feeds the final mixer.
++  layers_[1].SetStretchedInput(mixer_0_.size() + 3, layers_[0].Inputs()[fw_index]);
++#else
++  layers_[1].SetZero(mixer_0_.size() + 3);
++#endif
++#endif
+ 
+   const float m1raw = mixer_1_[0].Mix();
+   bitl_stage1_ = &layers_[1].Inputs()[0];
+@@ -531,15 +576,20 @@
+   byte_model_->Perceive(bit);
+   byte_mixer_->Perceive(bit);
+   tf1_slot_->Perceive(bit);
++#if PORT_FW
++  fw_slot_->Perceive(bit);
++#endif
+ 
+   if (char_rate::Forced(manager_.bit_context_)) {
+     sse_.PerceiveContextOnly(bit);
+     for (auto& mixer: mixer_0_) mixer.PerceiveSkip();
+     for (auto& mixer: mixer_1_) mixer.PerceiveSkip();
++#if !PORT_CASCADE
+   } else if (adepth_.skip) {
+     sse_.PerceiveContextOnly(bit);
+     for (auto& mixer: mixer_0_) mixer.PerceiveSkip();
+     for (auto& mixer: mixer_1_) mixer.PerceiveSkip();
++#endif
+   } else {
+   E2EGrad(bit);
+   PerceiveBank(&mixer_0_[0], mixer_0_.size(), bit);
+@@ -613,11 +663,26 @@
+           || timestamp_skip::Laeuft()
+          ) {
+         tf1_slot_->SetProbsNeutral();
++#if PORT_FW
++        fw_slot_->SetProbsNeutral();
++        tf1_engine_->FwNeutral();
++#endif
+       } else
++#if PORT_FW
++      {
+       tf1_slot_->SetProbs(tf1_row);
++      fw_slot_->SetProbs(tf1_engine_->FwRow());
++      }
++#else
++      tf1_slot_->SetProbs(tf1_row);
++#endif
+     } else {
+       // no transformer: abstention row, arithmetically no slot at all.
+       tf1_slot_->SetProbsOff();
++#if PORT_FW
++      fw_slot_->SetProbsOff();
++      if (tf1_engine_) tf1_engine_->FwNeutral();
++#endif
+     }
+     {
+     const std::valarray<float>& p = byte_model_->BytePredict();
+@@ -638,6 +703,9 @@
+   lstmex=byte_mixer_->ex;
+   lstm_fx_link::Push(lstmpr, lstmex);
+   tf1_slot_output = tf1_slot_->Predict()[0];
++#if PORT_FW
++  fw_slot_output = fw_slot_->Predict()[0];
++#endif
+   lstm_sharpen::state.full_alive =
+       (lstm_sharpen::state.full_ex >= byte_mixer_->Lx1Bot() &&
+        lstm_sharpen::state.full_ex <= byte_mixer_->Lx1Top()) ? 1 : 0;
+--- a/src/predictor.h
++++ b/src/predictor.h
+@@ -39,6 +39,7 @@
+ #include "adaptive_depth.h"
+ #include "word_label.h"
+ #include "lstm_mixer_inputs.h"
++#include "port_cfg.h"
+ 
+ #include "ds/SmallVector.h"
+ #include "ds/emhash_set.hpp"
+@@ -123,6 +124,9 @@
+   std::optional<ByteMixer> byte_mixer_;
+   float bitl_s1buf_[128] = {0.0f};
+   std::optional<Tf1Slot> tf1_slot_;
++#if PORT_FW
++  std::optional<Tf1Slot> fw_slot_;   // FW-DUAL row of the transformer
++#endif
+   word_label::State* wordlbl_ = nullptr;
+   std::vector<bool> vocab_;
+    FXCM fxcm_model_;
+--- a/src/tf1/opt/arena_build.cpp
++++ b/src/tf1/opt/arena_build.cpp
+@@ -243,6 +243,20 @@
+     die("layer pattern mismatch");
+ 
+   unembed = qsite("unembedding", V, D, true);
++#if PORT_FW
++  {  // FW: float copy of the unembedding for the fast-weight backward (Z arena_build.cpp:376-385)
++    const WTensor& uq = wf.get("unembedding.weight.q", DT_I8,
++                               {static_cast<uint32_t>(V), static_cast<uint32_t>(D)});
++    const WTensor& us = wf.get("unembedding.weight.scale", DT_BF16,
++                               {static_cast<uint32_t>(V)});
++    unembed_f32.assign(size_t(V) * D, 0.0f);
++    for (int o = 0; o < V; o++) {
++      const float sc = bf16_to_f32(us.bf16_bits()[o]);
++      for (int i = 0; i < D; i++)
++        unembed_f32[size_t(o) * D + i] = float(uq.i8()[size_t(o) * D + i]) * sc;
++    }
++  }
++#endif
+   stream_bytes = round64(off);
+ 
+   // ---- non-stream data: tail slack gap, then the normed embedding table ----
+--- a/src/tf1/opt/arena_build.h
++++ b/src/tf1/opt/arena_build.h
+@@ -27,6 +27,7 @@
+ // stream). RoPE tables (32 MB, 256 B/token) live in separate heap vectors.
+ #pragma once
+ 
++#include "../../port_cfg.h"
+ #include <cstddef>
+ #include <cstdint>
+ #include <vector>
+@@ -147,6 +148,12 @@
+   std::vector<float> rope_sin, rope_cos;  // 131072 x 32 each
+   float inv_freq[32] = {};
+   PaketArenas paket;
++#if PORT_FW
++  // FW (Lane C port of Z h3_fw_native_patch_20260924): float copy of the
++  // unembedding, int8 weight x bf16 row scale, V x D row-major; read by the
++  // fast-weight backward in model_opt.cpp only.
++  std::vector<float> unembed_f32;
++#endif
+ 
+   void load(const char* weights_path);
+ };
+--- a/src/tf1/opt/model_opt.cpp
++++ b/src/tf1/opt/model_opt.cpp
+@@ -287,6 +287,30 @@
+   // sum, `pk` the channels of the row that step() is about to consume.
+   alignas(64) float tok_paket[D] = {};
+   PaketChannels pk;
++#if PORT_FW
++  // FW state (Z h3_fw_native_patch_20260924 + fwdual + fw_rules + fw_row).
++  // dW is column-per-h-index: dW[i*D + j]; zero-init, never reset.
++  // FWK > 1 (port_cfg.h PORT_FW_LAYERS, arms F2/F4 2026-10-07): one dW per
++  // block for the last FWK MLP blocks (block k = layer NL-FWK+k, so k = FWK-1
++  // is the last MLP, the only block of B); all FWK deltas go into the ONE dual
++  // head on x + sum_k dW_k h_k.  dW_k is fw_dW[(k*DMLP + i)*D + j].
++  static constexpr int FWK = PORT_FW_LAYERS;
++  static_assert(FWK >= 1 && FWK <= 8, "PORT_FW_LAYERS out of range");
++  std::vector<float> fw_dW = std::vector<float>(size_t(FWK) * DMLP * D, 0.0f);
++  int fw_nnz[FWK] = {};
++  uint16_t fw_idx[FWK][DMLP] = {};
++  float fw_h[FWK][DMLP] = {};
++  bool fw_gel = true;     // the current step() is a read row (captures h)
++  alignas(64) float fw_xn[D] = {};
++  float fw_denom = 0.0f;
++  float fw_lc[208] = {}, fw_p[208] = {};
++  uint64_t fw_t = 0;      // FW-RULES update counter
++  float fw_v[FWK][DMLP] = {};  // FW-ROW EMA of h_i^2 (per block)
++  float fw_sh[FWK][DMLP] = {};
++  alignas(64) float fw_dx[D] = {}, fw_x2[D] = {}, fw_xn2[D] = {};
++  alignas(64) uint8_t fw_q[256] = {};
++  alignas(64) float fw_logits[208] = {}, fw_probs208[208] = {};
++#endif
+ 
+   COLD_SIZE_ATTR explicit TransformerOptImpl(const char* path, AttnKind k) : kind(k) {
+     M.load(path);
+@@ -567,7 +591,128 @@
+       else
+         qsparse4_add(mm.down, q768, idx768, nnz, x);
+     }
+-  }
++#if PORT_FW
++    // FW: the relu^2 code (raw u8 x static scale) of the last FWK MLPs, on
++    // read rows only.  mlp_block(NL-1) runs on read rows only (an unread row
++    // stops before the last layer); the earlier blocks also run on unread
++    // rows, whose code must not replace the read row's (fw_gel).
++    if (fw_gel && l >= NL - FWK)
++      fw_apply(l - (NL - FWK), mm.up.m.d_out, mm.down_s_act);
++#endif
++  }
++
++#if PORT_FW
++  // FW forward: h_i = q768[i] * s over the nonzero h_i of the last MLP (width
++  // w <= DMLP: dead neurons were removed from the container; they are always 0
++  // and are exactly the ones that never enter here).  DUAL: x stays untouched,
++  // the fast-weight delta goes to fw_dx.
++  // Block b (0 = the first FW block, which runs first in every read row and
++  // clears fw_dx); the deltas of the blocks are summed into fw_dx.
++  void fw_apply(int b, int w, float s) {
++    int nnz = 0;
++    uint16_t* const idx = fw_idx[b];
++    float* const h = fw_h[b];
++    for (int i = 0; i < w; i++) {
++      if (q768[i] == 0) continue;
++      const float hv = float(q768[i]) * s;
++      idx[nnz] = uint16_t(i);
++      h[nnz] = hv;
++      nnz++;
++    }
++    fw_nnz[b] = nnz;
++    if (b == 0)
++      for (int j = 0; j < D; j++) fw_dx[j] = 0.0f;
++    const float* const dWb = fw_dW.data() + size_t(b) * DMLP * D;
++    for (int k = 0; k < nnz; k++) {
++      const float* col = dWb + size_t(idx[k]) * D;
++      const float hv = h[k];
++      for (int j = 0; j < D; j++) fw_dx[j] += col[j] * hv;
++    }
++  }
++
++  // DUAL: the fast-weight head from x + dW h into its own buffers (the static
++  // head, xn/q5/logits/probs208 and last_hidden(), stay untouched).
++  void fw_head() {
++    for (int i = 0; i < D; i++) fw_x2[i] = x[i] + fw_dx[i];
++    rms_norm_quant192(fw_x2, fw_xn2, M.unembed.s_act, fw_q);
++    float sx = 0.0f, sn = 0.0f;
++    for (int i = 0; i < D; i++) {
++      sx += fw_x2[i] * fw_x2[i];
++      sn += fw_xn2[i] * fw_xn2[i];
++      fw_xn[i] = fw_xn2[i];
++    }
++    fw_denom = sx > 0.0f ? std::sqrt(sn / sx) : 0.0f;
++    qgemv_f32(M.unembed.m, fw_q, fw_logits);  // rows_padded 208
++    head_softcap_softmax(fw_logits, fw_probs208);  // fw_logits -> 15 tanh(l/15)
++    std::memcpy(fw_lc, fw_logits, sizeof(float) * V);
++    std::memcpy(fw_p, fw_probs208, sizeof(float) * V);
++  }
++
++  // FW backward + update on the last read row's FW prediction with target y:
++  // gradient of the cross-entropy on the soft-capped logits, back through the
++  // frozen unembedding (float copy) and the RMS norm to x, then one
++  // NLMS-style step on dW with FW-ROW per-feature RMS preconditioning and the
++  // DIC kappa schedule kappa_t = 1.5e-3 + 4.5e-3 / (1 + t / 8000).
++  void fw_update(uint8_t y) {
++    float dl[V];
++    for (int o = 0; o < V; o++) {
++      const float d = fw_p[o] - (o == int(y) ? 1.0f : 0.0f);
++      const float c = fw_lc[o] * (1.0f / 15.0f);
++      dl[o] = d * (1.0f - c * c);
++    }
++    float gxn[D];
++    for (int i = 0; i < D; i++) gxn[i] = 0.0f;
++    const float* U = M.unembed_f32.data();
++    for (int o = 0; o < V; o++) {
++      const float g = dl[o];
++      const float* row = U + size_t(o) * D;
++      for (int i = 0; i < D; i++) gxn[i] += row[i] * g;
++    }
++    float m = 0.0f;
++    for (int i = 0; i < D; i++) m += gxn[i] * fw_xn[i];
++    m *= (1.0f / float(D));
++    float gx[D];
++    for (int i = 0; i < D; i++) gx[i] = fw_denom * (gxn[i] - fw_xn[i] * m);
++    // FW-RULES: kappa_t = kf + (k0 - kf) / (1 + t / tau)
++    const double kap = 1500.0e-6 + (6000.0e-6 - 1500.0e-6) / (1.0 + double(fw_t) / 8000.0);
++    fw_t++;
++    // FW-ROW: per-feature RMS preconditioning of the update direction, with
++    // per-block statistics (msd = mean RMS over the block's DMLP features).
++    // One NLMS step over the concatenated code of all FWK blocks: the joint
++    // denominator 1 + sum_b h_b . sh_b (FWK = 1 is exactly B).
++    const float fb = 999000.0e-6f;
++    float hsh = 0.0f;
++    for (int b = 0; b < FWK; b++) {
++      float* const v = fw_v[b];
++      const uint16_t* const idx = fw_idx[b];
++      const float* const h = fw_h[b];
++      float* const sh = fw_sh[b];
++      const int nnz = fw_nnz[b];
++      for (int i = 0; i < DMLP; i++) v[i] *= fb;
++      for (int k = 0; k < nnz; k++) v[idx[k]] += (1.0f - fb) * h[k] * h[k];
++      float msd = 0.0f;
++      for (int i = 0; i < DMLP; i++) msd += std::sqrt(v[i]);
++      msd *= 1.0f / float(DMLP);
++      for (int k = 0; k < nnz; k++) {
++        const float sk = msd / (std::sqrt(v[idx[k]]) + 1e-3f * msd + 1e-12f);
++        sh[k] = sk * h[k];
++        hsh += h[k] * sh[k];
++      }
++    }
++    const float step = float(kap) / (1.0f + hsh);
++    for (int b = 0; b < FWK; b++) {
++      const uint16_t* const idx = fw_idx[b];
++      const float* const sh = fw_sh[b];
++      const int nnz = fw_nnz[b];
++      float* const dWb = fw_dW.data() + size_t(b) * DMLP * D;
++      for (int k = 0; k < nnz; k++) {
++        float* col = dWb + size_t(idx[k]) * D;
++        const float c = step * sh[k];
++        for (int j = 0; j < D; j++) col[j] -= c * gx[j];
++      }
++    }
++  }
++#endif
+ 
+   static void proj_add(const float* f, int d_in, const int8_t* q,
+                        const float* fold, float s_act, float* acc_out) {
+@@ -655,6 +800,9 @@
+     // Fail-safe: the flag holds for exactly one step.
+     const bool gel = gelesen;
+     gelesen = true;
++#if PORT_FW
++    fw_gel = gel;
++#endif
+     const float* tok = M.tok_table + size_t(token) * D;
+     if (M.paket.present) tok = paket_token_row(token);
+     int nnzp;
+@@ -716,6 +864,9 @@
+       PSCOPE(PS_EL_HEAD);
+       head_softcap_softmax(logits, probs208);
+       std::memcpy(probs_out, probs208, sizeof(float) * V);
++#if PORT_FW
++      fw_head();  // DUAL: the fast-weight distribution; probs_out is untouched
++#endif
+     }
+     t++;
+   }
+@@ -772,5 +923,10 @@
+ 
+ AttnKind TransformerOpt::attn_kind() const { return impl->kind; }
+ 
++#if PORT_FW
++void TransformerOpt::fw_update(uint8_t target) { impl->fw_update(target); }
++const float* TransformerOpt::fw_probs() const { return impl->fw_probs208; }
++#endif
++
+ }  // namespace opt
+ }  // namespace fx2
+--- a/src/tf1/opt/model_opt.h
++++ b/src/tf1/opt/model_opt.h
+@@ -23,6 +23,7 @@
+ #include <memory>
+ 
+ #include "../tf1_paket.h"
++#include "../../port_cfg.h"
+ 
+ 
+ namespace fx2 {
+@@ -87,6 +88,18 @@
+ 
+   AttnKind attn_kind() const;
+ 
++#if PORT_FW
++  // FW-DUAL (Lane C port of Z third_party/fx2_transformer, h3_fw*/fwdual/
++  // fw_rules/fw_row patches): fast weights dW on the last MLP; every read row
++  // also produces the distribution of a second head on x + dW h.
++  // fw_update(y): one step of dW on the prediction of the LAST read row with
++  // target token y (< 208).  Call before the next read row overwrites it.
++  void fw_update(uint8_t target);
++  // the 208 FW-head probabilities of the last read row (valid until the
++  // next read row)
++  const float* fw_probs() const;
++#endif
++
+  private:
+   std::unique_ptr<TransformerOptImpl> impl;
+ };
+--- a/src/tf1/tf1_engine.cpp
++++ b/src/tf1/tf1_engine.cpp
+@@ -250,6 +250,21 @@
+   bool gate_masked = false;
+   unsigned long long alias_rows = 0;
+   bool in_redir_run = false;
++#if PORT_FW
++  // FW pairing (training target rule, training/tf/tree_overlay/zctx/
++  // dumpv2.py: the target of a row is the next STREAM token past all inserted
++  // rows; a document's last row targets its closing token, coded but never
++  // fed).  fw_have: the transformer's FW scratch holds the prediction of a
++  // read row that has not had its target yet (any later read row, inserted
++  // or not, supersedes it).  fw_live: the FW slot row the predictor codes the
++  // next stream token with came from the FW head (not neutral/off/PPMd).  The
++  // update happens at the start of the next stream Step(), with that token.
++  bool fw_have = false;
++  bool fw_live = false;
++  bool probs_from_tf = false;  // s.probs was taken from tf_out (a read row)
++  std::vector<float> fw_row;
++  std::vector<uint16_t> fw_half;
++#endif
+   void Feed(int tok, const uint16_t* prior, bool inserted, float* out
+             , bool gelesen
+            ) {
+@@ -260,6 +275,9 @@
+     ch.match_byte = inserted ? 208 : m_hot;
+     ch.match_class = inserted ? 0 : (m_class & 15);
+     opt->step((uint8_t)tok, prior, out, ch);
++#if PORT_FW
++    if (gelesen) fw_have = true;
++#endif
+     pk_prev2 = pk_prev1;
+     pk_prev1 = tok;
+     ++pk_fed;
+@@ -307,6 +325,10 @@
+   impl_->half.assign(208, 0);
+   impl_->ppmd_cur.assign(208, 0);
+   impl_->ppmd_prev.assign(208, 0);
++#if PORT_FW
++  impl_->fw_row.assign(208, 1.0f);
++  impl_->fw_half.assign(208, 0);
++#endif
+   impl_->sep_len = SeparatorLength();
+   if (impl_->sep_len > (int)sizeof(impl_->window)) {
+     Fail("article separator longer than the match window");
+@@ -419,6 +441,9 @@
+            GATE_ARG(last_row, Impl::SG_ALIAS));
+     FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
+     HalvesToFloats(s.half.data(), s.probs.data(), 208);
++#if PORT_FW
++    s.probs_from_tf = true;
++#endif
+     if (s.probs_writer) s.probs_writer->WriteHalves(s.half.data(), 208);
+     for (int i = 0; i < 208; ++i) {
+       if (!(s.probs[i] >= 1e-6f)) s.probs[i] = 1e-6f;
+@@ -445,6 +470,12 @@
+   if (token < 0) {
+     Fail("byte 0x%02x is not in the frozen byte set", byte);
+   }
++#if PORT_FW
++  // FW target: this stream token, if it was coded with an FW-head row.
++  if (s.fw_have && s.fw_live && s.opt) s.opt->fw_update((uint8_t)token);
++  s.fw_have = false;
++  s.fw_live = false;
++#endif
+   redirect_table::tab.Byte((unsigned char)byte);
+   alias_table::tab.Byte((unsigned char)byte);
+   // Gate: the flag for this token was fixed after the previous one; the
+@@ -518,6 +549,9 @@
+   if (last_of_piece) {
+     // The next token starts a fresh context; its distribution is PPMd's.
+     HalvesToFloats(s.half.data(), s.probs.data(), 208);
++#if PORT_FW
++    s.probs_from_tf = false;
++#endif
+     s.article_tokens = 0;
+     s.NewDocument();
+     if (s.opt) s.opt->begin_article();
+@@ -616,6 +650,9 @@
+     // carries that prior, the same row as in the `last_of_piece` branch.
+     if (s.prompt->PriorNext()) {
+       HalvesToFloats(s.half.data(), s.probs.data(), 208);
++#if PORT_FW
++      s.probs_from_tf = false;
++#endif
+     } else {
+     // Link-context prefix.  It ends on the separator sequence, the reset
+     // trigger, so it is fed directly through `step()`: `window` and
+@@ -639,6 +676,9 @@
+     }
+     FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
+     HalvesToFloats(s.half.data(), s.probs.data(), 208);
++#if PORT_FW
++    s.probs_from_tf = true;
++#endif
+     }
+   }
+   if (at_separator) {
+@@ -657,6 +697,9 @@
+         s.prompt->AddFed((unsigned long long)vn);
+         FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
+         HalvesToFloats(s.half.data(), s.probs.data(), 208);
++#if PORT_FW
++        s.probs_from_tf = true;
++#endif
+       } else {
+         s.pre_verworfen_zone += (unsigned long long)vn;
+       }
+@@ -682,6 +725,27 @@
+ 
+ bool Tf1Engine::GateMasked() const { return impl_->gate_masked; }
+ 
++#if PORT_FW
++const float* Tf1Engine::FwRow() {
++  Impl& s = *impl_;
++  if (s.probs_from_tf && s.opt) {
++    // the same float16 rounding and 1e-6 floor as the transformer row
++    FloatsToHalves(s.opt->fw_probs(), s.fw_half.data(), 208);
++    HalvesToFloats(s.fw_half.data(), s.fw_row.data(), 208);
++    for (int i = 0; i < 208; ++i) {
++      if (!(s.fw_row[i] >= 1e-6f)) s.fw_row[i] = 1e-6f;
++    }
++    s.fw_live = true;
++  } else {
++    memcpy(s.fw_row.data(), s.probs.data(), sizeof(float) * 208);
++    s.fw_live = false;
++  }
++  return s.fw_row.data();
++}
++
++void Tf1Engine::FwNeutral() { impl_->fw_live = false; }
++#endif
++
+ // Pure observation, see tf1_engine.h.
+ const float* Tf1Engine::LastHidden() const {
+   return impl_->opt ? impl_->opt->last_hidden() : nullptr;
+--- a/src/tf1/tf1_engine.h
++++ b/src/tf1/tf1_engine.h
+@@ -17,6 +17,7 @@
+ // first token of a piece, float16 rounding and the 1e-6 floor of each row).
+ 
+ #include "../transformer.h"
++#include "../port_cfg.h"
+ 
+ #include <stdint.h>
+ #include <stdio.h>
+@@ -96,6 +97,18 @@
+   // End-of-run check: stops if a document exceeded the rotary-table length.
+   void ReportChannels() const;
+ 
++#if PORT_FW
++  // FW-DUAL row for the slot fw_slot_, to be called right after Step() when
++  // the transformer row goes to the slot: the FW-head distribution of the
++  // same read row the Step() row came from (float16-rounded and 1e-6-floored
++  // like that row), or a copy of the Step() row when it came from the PPMd
++  // prior (piece start, title/sentinel prior).  Marks the next stream token
++  // as a target of the FW head iff the row came from the FW head.
++  const float* FwRow();
++  // The slot is neutral or off for the next stream token: no FW target.
++  void FwNeutral();
++#endif
++
+  private:
+   struct Impl;
+   Impl* impl_;
+--- a/src/ts_progress.h
++++ b/src/ts_progress.h
+@@ -2,6 +2,7 @@
+ #define TS_PROGRESS_H_
+ 
+ #include "metablock.h"
++#include "neif_levers.h"
+ #ifndef AUX_BUILD
+ #define AUX_BUILD 0
+ #endif
+@@ -40,10 +41,47 @@
+   unsigned long long hits = 0;
+   unsigned long long ausgelassen = 0;
+   long long abs_error = 0;
++  unsigned long long b2_basis = 0;      // E3b: B2 forecasts from the long baseline
+ };
+ 
+ static const unsigned char kNL = 0x0a;
+ static const unsigned char kTab = 0x09;
++
++#if NEIF_E3B
++// E3b (work/h3_neif_meta_20261007/e3b_curve.py, m = 8): forecast of a B2
++// record k from the long baseline over the last 9 B2 records,
++//   t_{k-1} + (r_k - r_{k-1}) * (t_{k-1} - t_j) / (r_{k-1} - r_j),
++//   j = max(first B2 rank, k - 9),
++// floor division (Fdiv), integer only.  It returns false (the caller keeps the
++// median-of-32-slopes forecast) while fewer than two B2 records are known or
++// the baseline has no revid span.
++class B2Basis {
++ public:
++  enum { kN = 9 };
++  void Beobachte(long long rev, long long t) {
++    rev_[pos_] = rev; t_[pos_] = t;
++    pos_ = (pos_ + 1) % kN;
++    if (n_ < kN) ++n_;
++  }
++  bool Prognose(long long rev, long long* f) const {
++    if (n_ < 2) return false;
++    const int neu = (pos_ + kN - 1) % kN;              // record k-1
++    const int alt = (pos_ + kN - n_) % kN;             // record j
++    const long long dr = rev_[neu] - rev_[alt];
++    if (dr <= 0) return false;
++    const long long drev = rev - rev_[neu];
++    const long long dt = t_[neu] - t_[alt];
++    const long long kLim = 1LL << 31;                  // product < 2^62
++    if (drev >= kLim || drev <= -kLim || dt >= kLim || dt <= -kLim) return false;
++    *f = t_[neu] + Fdiv(drev * dt, dr);
++    return true;
++  }
++
++ private:
++  long long rev_[kN] = {0}, t_[kN] = {0};
++  int pos_ = 0, n_ = 0;
++};
++#endif
+ 
+ class Aut {
+  public:
+@@ -66,6 +104,9 @@
+         st_.abs_error += fehler < 0 ? -fehler : fehler;
+       }
+       sch_.Beobachte(Rev(k), t_k);
++#if NEIF_E3B
++      if (Oben(k)) b2_.Beobachte(Rev(k), t_k);
++#endif
+       ++st_.b_zeilen;
+       const size_t kn = k + 1;
+       if (kn < metablock::mk.RangZahl()) Einspeisen(kn);
+@@ -117,6 +158,12 @@
+   void Einspeisen(size_t kn) {
+     block_.clear();
+     letzte_prognose_ = sch_.Prognose(Rev(kn));
++#if NEIF_E3B
++    if (Oben(kn)) {
++      long long f = 0;
++      if (b2_.Prognose(Rev(kn), &f)) { letzte_prognose_ = f; ++st_.b2_basis; }
++    }
++#endif
+     if (Oben(kn)) {
+       Dezimal(letzte_prognose_ - (sch_.Leer() ? 0LL : sch_.LetztesT()));
+       block_.push_back(kTab);
+@@ -196,6 +243,9 @@
+   unsigned long long guard_pos_ = 0;
+   std::vector<unsigned char> block_;
+   Schaetzer sch_;
++#if NEIF_E3B
++  B2Basis b2_;
++#endif
+   long long letzte_prognose_ = 0;
+   Stats st_;
+ };
+--- a/src/word_label.cpp
++++ b/src/word_label.cpp
+@@ -13,6 +13,7 @@
+ 
+ #include "word_label.h"
+ #include "page_registry.h"
++#include "port_cfg.h"
+ 
+ #include <cmath>
+ #include <cstdint>
+@@ -37,8 +38,14 @@
+ 
+ constexpr float kEtaN = (float)60 / 1000.0f;
+ constexpr float kEtaE = (float)30 / 1000.0f;
++#if PORT_ETA0
++// WL2 eta0 (Z: -Dwordlbl-eta0=0.0225): its own eta for byte-0 trie nodes.
++constexpr float kEta0 = 0.0225f;
++constexpr bool kEta0Live = true;
++#else
+ constexpr float kEta0 = (float)60 / 1000.0f;
+ constexpr bool kEta0Live = (60 != 60);
++#endif
+ constexpr float kLambda = (float)850 / 1000.0f;
+ 
+ // The three numbers the instrument does not expose as build options; they are
+--- a/makefile
++++ b/makefile
+@@ -75,10 +75,10 @@
+ prof_gen: LFLAGS                            += -fprofile-generate=$(ROOT_DIR)/pgo_data
+ prof_gen: clean cmix
+ 
+-prof_use: CPPFLAGS_PART-THAT-CAN-BE-SLOW    += -fprofile-use=$(ROOT_DIR)/pgo_data
+-prof_use: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -fprofile-use=$(ROOT_DIR)/pgo_data -flto
+-prof_use: CPPFLAGS_PART-THAT-IS-COLD        += -fprofile-use=$(ROOT_DIR)/pgo_data
+-prof_use: LFLAGS                            += -fprofile-use=$(ROOT_DIR)/pgo_data -flto
++prof_use: CPPFLAGS_PART-THAT-CAN-BE-SLOW    +=
++prof_use: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -flto
++prof_use: CPPFLAGS_PART-THAT-IS-COLD        +=
++prof_use: LFLAGS                            += -flto
+ prof_use: clean cmix
+ 
+ 
+@@ -169,9 +169,9 @@
+ # and the article order).  It is never shipped and never packed; with
+ # AUX_BUILD=1 the transformer head does not run, so the blocks are written the
+ # same way they are later read.
+-cmix_aux: CPPFLAGS_PART-THAT-CAN-BE-SLOW    += -fprofile-use=$(ROOT_DIR)/pgo_data -DAUX_BUILD=1
+-cmix_aux: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -fprofile-use=$(ROOT_DIR)/pgo_data -flto -DAUX_BUILD=1
+-cmix_aux: CPPFLAGS_PART-THAT-IS-COLD        += -fprofile-use=$(ROOT_DIR)/pgo_data -DAUX_BUILD=1
+-cmix_aux: LFLAGS                            += -fprofile-use=$(ROOT_DIR)/pgo_data -flto
++cmix_aux: CPPFLAGS_PART-THAT-CAN-BE-SLOW    += -DAUX_BUILD=1
++cmix_aux: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -flto -DAUX_BUILD=1
++cmix_aux: CPPFLAGS_PART-THAT-IS-COLD        += -DAUX_BUILD=1
++cmix_aux: LFLAGS                            += -flto
+ cmix_aux: clean cmix
+ 	mv cmix cmix_aux

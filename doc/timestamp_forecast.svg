@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 790" width="960" height="790" role="img" aria-labelledby="t d">
+<title id="t">Timestamp forecast in part B of the metadata block</title>
+<desc id="d">Three records of part B with the forecast that is fed in front of them and the bytes that repeat it, a count of how close the forecast is, and the rule that computes it.</desc>
+<rect x="0.5" y="0.5" width="959" height="789" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">Timestamp forecast in part B of the metadata block</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">In front of a record the models are fed a forecast of its timestamp as known bytes. The forecast is not coded; the record behind it is.</text>
+<text x="24" y="72" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">It is the last thing the models see before the record. A right forecast is repeated byte for byte; in B2 a wrong one is mostly close.</text>
+<line x1="713.5" y1="99" x2="713.5" y2="111" stroke="#52514e" stroke-width="1.3"/>
+<line x1="718.5" y1="99" x2="718.5" y2="111" stroke="#52514e" stroke-width="1.3"/>
+<text x="728" y="110" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">the record repeats the byte above</text>
+<rect x="24" y="99" width="4" height="13" fill="#5598e7"/>
+<text x="36" y="110" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Part B2, record 87,863</tspan><tspan fill="#52514e" dx="8">the forecast is exact</tspan></text>
+<rect x="24" y="121" width="912" height="40" fill="#f3f2ee" rx="4"/>
+<text x="34" y="146" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">fed, not coded</text>
+<rect x="172" y="126" width="60" height="30" fill="#fcfcfb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="146" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="218" y="146" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">31</text>
+<rect x="236" y="126" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="250" y="146" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="34" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">coded</text>
+<rect x="172" y="182" width="60" height="30" fill="#fcfcfb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="202" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="218" y="202" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">31</text>
+<rect x="236" y="182" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="250" y="202" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<rect x="268" y="182" width="124" height="30" fill="#fcfcfb" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="330" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="middle">contributor</text>
+<rect x="396" y="182" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="410" y="202" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">0A</text>
+<line x1="183.5" y1="163" x2="183.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<line x1="188.5" y1="163" x2="188.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<line x1="215.5" y1="163" x2="215.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<line x1="220.5" y1="163" x2="220.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<line x1="247.5" y1="163" x2="247.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<line x1="252.5" y1="163" x2="252.5" y2="175" stroke="#52514e" stroke-width="1.3"/>
+<text x="442" y="146" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">forecast of the difference: +11 s</text>
+<text x="442" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">+11 s to the record before: 28 June 2005, 09:38:06</text>
+<path d="M172 217 v4 H232 v-4" fill="none" stroke="#52514e" stroke-width="1.1"/>
+<text x="172" y="235" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">repeats the forecast</text>
+<line x1="24" y1="243" x2="936" y2="243" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="254" width="4" height="13" fill="#5598e7"/>
+<text x="36" y="265" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Part B2, record 87,870</tspan><tspan fill="#52514e" dx="8">the forecast is 8 s short</tspan></text>
+<rect x="24" y="276" width="912" height="40" fill="#f3f2ee" rx="4"/>
+<text x="34" y="301" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">fed, not coded</text>
+<rect x="172" y="281" width="60" height="30" fill="#fcfcfb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="301" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="218" y="301" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">31</text>
+<rect x="236" y="281" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="250" y="301" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="34" y="357" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">coded</text>
+<rect x="172" y="337" width="60" height="30" fill="#fcfcfb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="357" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="218" y="357" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">39</text>
+<rect x="236" y="337" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="250" y="357" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<rect x="268" y="337" width="124" height="30" fill="#fcfcfb" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="330" y="357" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="middle">contributor</text>
+<rect x="396" y="337" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="410" y="357" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">0A</text>
+<line x1="183.5" y1="318" x2="183.5" y2="330" stroke="#52514e" stroke-width="1.3"/>
+<line x1="188.5" y1="318" x2="188.5" y2="330" stroke="#52514e" stroke-width="1.3"/>
+<line x1="247.5" y1="318" x2="247.5" y2="330" stroke="#52514e" stroke-width="1.3"/>
+<line x1="252.5" y1="318" x2="252.5" y2="330" stroke="#52514e" stroke-width="1.3"/>
+<text x="442" y="301" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">forecast of the difference: +31 s</text>
+<text x="442" y="357" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">+39 s to the record before: 28 June 2005, 10:39:17</text>
+<path d="M172 372 v4 H200 v-4" fill="none" stroke="#52514e" stroke-width="1.1"/>
+<text x="200" y="390" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">repeats</text>
+<path d="M204 372 v4 H232 v-4" fill="none" stroke="#52514e" stroke-width="1.1"/>
+<text x="204" y="390" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">differs</text>
+<line x1="24" y1="398" x2="936" y2="398" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="409" width="4" height="13" fill="#2a78d6"/>
+<text x="36" y="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Part B1, record 87,812</tspan><tspan fill="#52514e" dx="8">six bytes of base 100; one of the close cases, the forecast is 7 min 11 s early</tspan></text>
+<rect x="24" y="431" width="912" height="40" fill="#f3f2ee" rx="4"/>
+<text x="34" y="456" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">fed, not coded</text>
+<rect x="172" y="436" width="28" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">82</text>
+<rect x="204" y="436" width="60" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="218" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">82</text>
+<text x="250" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">C8</text>
+<rect x="268" y="436" width="92" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="282" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="314" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">95</text>
+<text x="346" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">E0</text>
+<rect x="364" y="436" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="378" y="456" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="34" y="512" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">coded</text>
+<rect x="172" y="492" width="28" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="186" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">82</text>
+<rect x="204" y="492" width="60" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="218" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">82</text>
+<text x="250" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">C8</text>
+<rect x="268" y="492" width="92" height="30" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="282" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="314" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">9A</text>
+<text x="346" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">9B</text>
+<rect x="364" y="492" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="378" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">09</text>
+<rect x="396" y="492" width="124" height="30" fill="#fcfcfb" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="458" y="512" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="middle">contributor</text>
+<rect x="524" y="492" width="28" height="30" fill="#f0efec" rx="3" stroke="#c3c2b7" stroke-width="1"/>
+<text x="538" y="512" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" text-anchor="middle">0A</text>
+<line x1="183.5" y1="473" x2="183.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="188.5" y1="473" x2="188.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="215.5" y1="473" x2="215.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="220.5" y1="473" x2="220.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="247.5" y1="473" x2="247.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="252.5" y1="473" x2="252.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="279.5" y1="473" x2="279.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="284.5" y1="473" x2="284.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="375.5" y1="473" x2="375.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<line x1="380.5" y1="473" x2="380.5" y2="485" stroke="#52514e" stroke-width="1.3"/>
+<text x="570" y="456" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">forecast: 25 September 2003, 00:36:36</text>
+<text x="570" y="512" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">25 September 2003, 00:43:47</text>
+<path d="M172 527 v4 H296 v-4" fill="none" stroke="#52514e" stroke-width="1.1"/>
+<text x="172" y="545" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">repeats</text>
+<path d="M300 527 v4 H360 v-4" fill="none" stroke="#52514e" stroke-width="1.1"/>
+<text x="300" y="545" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">differs</text>
+<line x1="24" y1="555" x2="936" y2="555" stroke="#e1e0d9" stroke-width="1"/>
+<text x="24" y="579" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">How close the forecast is</tspan><tspan fill="#52514e" dx="8">counted on the stream</tspan></text>
+<text x="24" y="601" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Part B2, 155,612 records</text>
+<text x="102" y="622" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="end">exact</text>
+<rect x="110" y="612" width="30.45" height="12" fill="#5598e7" rx="2"/>
+<text x="146.45" y="622" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">13 %</text>
+<text x="102" y="641" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="end">within 1 s</text>
+<rect x="110" y="631" width="77.44" height="12" fill="#5598e7" rx="2"/>
+<text x="193.44" y="641" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">34 %</text>
+<text x="102" y="660" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="end">within 3 s</text>
+<rect x="110" y="650" width="128.88" height="12" fill="#5598e7" rx="2"/>
+<text x="244.88" y="660" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">56 %</text>
+<text x="102" y="679" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="end">within 10 s</text>
+<rect x="110" y="669" width="181.95" height="12" fill="#5598e7" rx="2"/>
+<text x="297.95" y="679" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">79 %</text>
+<text x="102" y="698" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="end">within 30 s</text>
+<rect x="110" y="688" width="207.5" height="12" fill="#5598e7" rx="2"/>
+<text x="323.5" y="698" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">90 %</text>
+<line x1="110" y1="609" x2="110" y2="703" stroke="#b5b4aa" stroke-width="1"/>
+<text x="24" y="722" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">same number of digits as the true difference: 93 %</text>
+<text x="24" y="739" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Part B1, 87,812 forecasts (record 0 has none):</text>
+<text x="24" y="756" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">exact 2 %, within 30 s 12 %, median error 50 days;</text>
+<text x="24" y="773" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">four or more leading bytes equal 33 %, none 42 %</text>
+<text x="452" y="601" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">How it is computed.</tspan><tspan fill="#52514e" dx="6">From the revision ids, which part A carries, and the</tspan></text>
+<text x="452" y="618" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">timestamps of the records before, in integer arithmetic:</text>
+<text x="464" y="635" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" dx="0">slope = seconds per revision id between two neighbouring records</text>
+<text x="464" y="652" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" dx="0">forecast = previous timestamp + step of the revision id</text>
+<text x="464" y="669" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" dx="60">x median of the last 32 slopes</text>
+<text x="452" y="686" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Form.</tspan><tspan fill="#52514e" dx="6">B1: the forecast timestamp in six bytes. B2: the forecast of the</tspan></text>
+<text x="452" y="703" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">difference as a decimal number. A tab follows in both.</text>
+<text x="452" y="720" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Decompressor.</tspan><tspan fill="#52514e" dx="6">It computes the same bytes from what it has decoded and</tspan></text>
+<text x="452" y="737" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">feeds them at the same place.</text>
+</svg>

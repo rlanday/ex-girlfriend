@@ -1,0 +1,23 @@
+     13.91 1791384605 dictionary: Loaded 54857 words
+     44.88 1791384636 pretraining the model on the dictionary ... 30.97 s.
+     44.88 1791384636 progress 0.00 %
+     45.56 1791384637 entering metadata block at 0.00 %
+     95.77 1791384687 progress 6.87 %
+    152.12 1791384743 progress 13.75 %
+    206.28 1791384797 progress 20.62 %
+    271.51 1791384862 progress 27.50 %
+    349.15 1791384940 progress 34.37 %
+    427.25 1791385018 progress 41.24 %
+    496.89 1791385088 progress 48.12 %
+    565.29 1791385156 progress 54.99 %
+    634.34 1791385225 progress 61.87 %
+    704.66 1791385296 progress 68.74 %
+    706.60 1791385298 entering redirect block at 68.79 %
+    952.63 1791385544 progress 75.61 %
+   1197.49 1791385788 progress 82.49 %
+   1440.62 1791386032 progress 89.36 %
+   1687.04 1791386278 progress 96.24 %
+   1821.40 1791386412 undoing the preprocessing ... 0.91 s.
+   1821.40 1791386412 decoding preprocessed enwik9: 1630460 bytes -> 12000000 bytes in 1809.69 s.
+   1821.41 1791386412 TIMEIT rc=0 wall=1821.40s user=1804.71s sys=16.26s maxrss=6048.9MiB
+   1821.43 1791386412 LOSSLESS: decoded == input (12000000 B)

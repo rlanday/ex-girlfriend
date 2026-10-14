@@ -1,0 +1,740 @@
+diff -ruN a/src/coder/encoder.cpp b/src/coder/encoder.cpp
+--- a/src/coder/encoder.cpp
++++ b/src/coder/encoder.cpp
+@@ -1,4 +1,5 @@
+ #include "encoder.h"
++#include "../train_mode.h"
+ 
+ Encoder::Encoder(std::ofstream* os, Predictor* p) : os_(os), x1_(0),
+     x2_(0xffffffff), p_(p) {
+@@ -37,7 +38,8 @@
+     return;
+   }
+   unsigned int p = Discretize(p_->Predict());
+-  if (bit_head::Enabled()
++  // (training tool: the prediction is a constant, the BITLSTM is not used)
++  if (!TRAIN_FEED && bit_head::Enabled()
+       && !bit_head::AuxOff()
+       && !bit_head::MetaOff()
+       && !p_->AdepthSkipped()
+@@ -52,7 +54,7 @@
+   } else {
+     x1_ = xmid + 1;
+   }
+-  if (bit_head::Enabled()
++  if (!TRAIN_FEED && bit_head::Enabled()
+       && !bit_head::AuxOff()
+       && !bit_head::MetaOff()
+       && !p_->AdepthSkipped()
+diff -ruN a/src/models/ppmd.cpp b/src/models/ppmd.cpp
+--- a/src/models/ppmd.cpp
++++ b/src/models/ppmd.cpp
+@@ -16,6 +16,7 @@
+ #include "../ppmd_order_table.h"
+ 
+ #include "../ppmd_prewarm.h"
++#include "../train_mode.h"
+ 
+ #include <cstring>
+ #include <malloc.h>
+@@ -186,8 +187,21 @@
+   if( MetaGetan || !ppmd_meta::block_fertig ) return;
+   MetaGetan = true;
+   LtMeta = false;
++#if TRAIN_PRIORS
++  // Training tool: the restart position on the prior raster (the trimming of
++  // the priors in training/tf/2_package/build_package.sh cuts there).
++  {
++    qword used_before = GetUsedMemory();
++    int order_before = _MaxOrder;
++    StartModelRare();
++    fprintf(stderr, "ppmd: metablock end at model byte %llu, order %d -> %d, used %llu -> %llu B\n",
++            (unsigned long long)modellbytes, order_before, _MaxOrder,
++            (unsigned long long)used_before, (unsigned long long)GetUsedMemory());
++  }
++#else
+   (void)modellbytes;
+   StartModelRare();
++#endif
+   {
+     size_t n = 0;
+     unsigned char* m = ppmd_prewarm::Material(&n);
+diff -ruN a/src/predictor.cpp b/src/predictor.cpp
+--- a/src/predictor.cpp
++++ b/src/predictor.cpp
+@@ -43,11 +43,44 @@
+   AddMatch();
+   AddDoubleIndirect();
+   AddGrammarMatch();
++#if TRAIN_PRIORS
++  // Training tool, priors: one float16 row of 208 values per byte fed to PPMd
++  // (row i is the distribution of byte i+1), and the token of that byte.
++  tf1_prior_writer_.reset(new transformer::HalfFileWriter("ppmd-probs.float16"));
++  tf1_prior_row_.assign(transformer::kSetSize, 0.0f);
++  tf1_vocab_bytes_.clear();
++  for (int i = 0; i < 256; ++i) {
++    if (transformer::InSet(i)) tf1_vocab_bytes_.push_back(i);
++  }
++  ppmd_bytes_ = fopen("ppmd-bytes.uint8", "wb");
++  if (!ppmd_bytes_) {
++    fprintf(stderr, "cannot create ppmd-bytes.uint8\n");
++    exit(1);
++  }
++  ppmd_bytes_buf_.reserve(1 << 16);
++#endif
+   AddMixers();
+   auxiliary_size_ = 2;
+   sigmoid_.S52Activate();
+ }
+ 
++#if TRAIN_PRIORS
++void Predictor::PpmdBytesFlush() {
++  if (ppmd_bytes_buf_.empty()) return;
++  const size_t n = ppmd_bytes_buf_.size();
++  if (fwrite(ppmd_bytes_buf_.data(), 1, n, ppmd_bytes_) != n) {
++    fprintf(stderr, "short write on ppmd-bytes.uint8\n");
++    exit(1);
++  }
++  ppmd_bytes_buf_.clear();
++}
++
++Predictor::~Predictor() {
++  PpmdBytesFlush();
++  fclose(ppmd_bytes_);
++}
++#endif
++
+ void Predictor::FreeFxcmMemory() {
+   fxcm_model_.FreeMemory();
+ }
+@@ -196,7 +229,8 @@
+     bitl_n_hid_ = bitl_hid_ ? tf1_engine_->HiddenSize() : 0;
+     bitl_n_tf_ = 4;
+   }
+-  if (!transformer::Active()) {
++  // (training tool: no forward step, so no transformer state either)
++  if (!transformer::Active() || TRAIN_FEED) {
+     static const float kKeinTfZustand[192] = {0.0f};
+     bitl_hid_ = kKeinTfZustand;
+     bitl_n_hid_ = 192;
+@@ -277,6 +311,20 @@
+ 
+ float tf1_slot_output=0.0f;
+  float Predictor::Predict() {
++#if TRAIN_PRIORS
++  // Training tool, priors: nothing runs.  PPMD::Predict() changes no state, so
++  // leaving it out cannot move PPMd.  The prediction is constant; the coder
++  // still codes every byte of the stream.
++  last_p16_ = 32768;
++  return 0.5f;
++#elif TRAIN_FEED
++  // Training tool, dump: only the match models, which feed the match channel.
++  for (unsigned int i = 0; i < match_models_.size(); ++i) {
++    match_models_[i].Predict();
++  }
++  last_p16_ = 32768;
++  return 0.5f;
++#endif
+   fxcm_model_.PredictHalf();
+   manager_.UpdateLx1();
+   manager_.UpdateTf1Gate();   // gate zone as mixer context
+@@ -509,6 +557,62 @@
+ }
+ 
+  void Predictor::Perceive(int bit) {
++#if TRAIN_PRIORS
++  // Training tool, priors: the PPMd steps of the full path below, in the same
++  // order, and the transformer step (it drives the automata that write the
++  // dump).  The prior row is the one the full path hands to the transformer.
++  {
++    byte_model_->Perceive(bit);
++    const bool byte_update = (manager_.bit_context_ >= 128);
++    manager_.UpdateContexts(bit);
++    if (byte_update) {
++      byte_model_->ByteUpdate();
++      const std::valarray<float>& pp = byte_model_->BytePredict();
++      for (int i = 0; i < transformer::kSetSize; ++i) {
++        tf1_prior_row_[i] = pp[tf1_vocab_bytes_[i]];
++      }
++      tf1_prior_writer_->Write(tf1_prior_row_.data(), transformer::kSetSize);
++      // the completed byte is still in bit_context_ (reset below)
++      const int byte = manager_.bit_context_ & 0xFF;
++      if (!transformer::InSet(byte)) {
++        fprintf(stderr, "byte 0x%02X is not in the frozen byte set\n", byte);
++        exit(1);
++      }
++      ppmd_bytes_buf_.push_back((unsigned char)transformer::kByteToIndex[byte]);
++      if (ppmd_bytes_buf_.size() >= (1u << 16)) PpmdBytesFlush();
++      if (tf1_engine_) tf1_engine_->Step(train_prior_, manager_.bit_context_);
++      manager_.bit_context_ = 1;
++    }
++    return;
++  }
++#elif TRAIN_FEED
++  // Training tool, dump: the match-model steps of the full path below, in the
++  // same order, then the match channel and the transformer step.
++  {
++    for (unsigned int i = 0; i < match_models_.size(); ++i) {
++      match_models_[i].Perceive(bit);
++    }
++    const bool byte_update = (manager_.bit_context_ >= 128);
++    manager_.UpdateContexts(bit);
++    if (byte_update) {
++      for (unsigned int i = 0; i < match_models_.size(); ++i) {
++        match_models_[i].ByteUpdate();
++      }
++      if (tf1_engine_ && tf1_match_count_ > 0) {
++        unsigned int best = tf1_match_base_;
++        unsigned char best_len = match_models_[tf1_match_base_].MatchLength();
++        for (unsigned int q = 1; q < tf1_match_count_; ++q) {
++          unsigned char l = match_models_[tf1_match_base_ + q].MatchLength();
++          if (l > best_len) { best_len = l; best = tf1_match_base_ + q; }
++        }
++        tf1_engine_->SetMatch(match_models_[best].MatchByte(), (int)best_len);
++      }
++      if (tf1_engine_) tf1_engine_->Step(train_prior_, manager_.bit_context_);
++      manager_.bit_context_ = 1;
++    }
++    return;
++  }
++#endif
+   word_label::Perceive(wordlbl_, bit);
+   pagectx::surprise.AddBit(last_p16_, bit, manager_.bit_context_ >= 128);
+   lstm_mixer_inputs::st.AddBit(bit, last_p16_);
+diff -ruN a/src/predictor.h b/src/predictor.h
+--- a/src/predictor.h
++++ b/src/predictor.h
+@@ -39,6 +39,7 @@
+ #include "adaptive_depth.h"
+ #include "word_label.h"
+ #include "lstm_mixer_inputs.h"
++#include "train_mode.h"
+ 
+ #include "ds/SmallVector.h"
+ #include "ds/emhash_set.hpp"
+@@ -52,6 +53,9 @@
+ class Predictor {
+  public:
+   Predictor(const std::vector<bool>& vocab);
++#if TRAIN_PRIORS
++  ~Predictor();   // writes the last buffer of ppmd-bytes.uint8
++#endif
+   float Predict();
+   void Perceive(int bit);
+   void Pretrain(int bit);
+@@ -99,6 +103,19 @@
+   std::unique_ptr<transformer::HalfFileWriter> tf1_prior_writer_;
+   std::vector<float> tf1_prior_row_;
+   std::vector<int> tf1_vocab_bytes_;
++#if TRAIN_FEED
++  // Training tool: the PPMd row is an input of the transformer step and in no
++  // column of the dump, so the step gets a constant row (uniform over the 256
++  // byte values, Step() indexes it by byte value).
++  std::valarray<float> train_prior_ = std::valarray<float>(1.0f / 256.0f, 256);
++#endif
++#if TRAIN_PRIORS
++  // ppmd-bytes.uint8: the token of every byte fed to PPMd, on the raster of
++  // the prior rows.
++  FILE* ppmd_bytes_ = nullptr;
++  std::vector<unsigned char> ppmd_bytes_buf_;
++  void PpmdBytesFlush();
++#endif
+   llvm::SmallVector<Indirect<Nonstationary>, 32> indirect_ns_models_; // non-stationary
+   llvm::SmallVector<Indirect<RunMap>, 1> indirect_r_models_; // run map
+   llvm::SmallVector<Direct, 4> direct_models_;
+diff -ruN a/src/runner.cpp b/src/runner.cpp
+--- a/src/runner.cpp
++++ b/src/runner.cpp
+@@ -38,6 +38,7 @@
+ #include "lstm_sharpen.h"
+ #include "vocab_frozen.h"
+ #include "run_mode.h"
++#include "train_mode.h"
+ 
+ static_assert(54857 <= 65360,
+     "exceeds the capacity of the code plan "
+@@ -351,6 +352,11 @@
+     ts_progress::aut.Report("compress");
+   }
+   *output_bytes = os->tellp();
++#if TRAIN_FEED
++  // Training tool: the run is complete when this equals the stream size + 6
++  // (the segment header of "-n").
++  fprintf(stderr, "coded stream bytes %llu\n", pos);
++#endif
+ }
+ 
+ void Decompress(unsigned long long output_length, std::ifstream* is,
+@@ -487,6 +493,27 @@
+   fclose(data_in);
+   fclose(temp_out);
+ 
++#if TRAIN_STREAM
++  // Training tool: keep the stream before the pack steps as
++  // <temp>.vorpack.  It is the input of the "-n" runs of the dump and prior
++  // tools, which apply both pack steps themselves.
++  {
++    FILE* vs = fopen(temp_path.c_str(), "rb");
++    FILE* vd = fopen((temp_path + ".vorpack").c_str(), "wb");
++    if (!vs || !vd) { fprintf(stderr, "vorpack copy failed\n"); return false; }
++    static char vbuf[1 << 20];
++    size_t vn;
++    while ((vn = fread(vbuf, 1, sizeof vbuf, vs)) > 0) {
++      if (fwrite(vbuf, 1, vn, vd) != vn) {
++        fprintf(stderr, "vorpack copy failed\n");
++        return false;
++      }
++    }
++    fclose(vs);
++    if (fclose(vd) != 0) { fprintf(stderr, "vorpack copy failed\n"); return false; }
++  }
++#endif
++
+   if (!metablock_form::Pack(temp_path)) {
+     fprintf(stderr, "metablock codec: pack failed\n");
+     return false;
+@@ -498,6 +525,14 @@
+   }
+ 
+   console_progress::PhaseEnd();   // "preprocessing enwik9" ends here
++#if TRAIN_STREAM
++  // Training tool: stop here; <temp> is the coder stream (packed form).
++  printf("stream: %s %llu B, %s.vorpack %llu B\n", temp_path.c_str(),
++      (unsigned long long)getFileSize(temp_path), temp_path.c_str(),
++      (unsigned long long)getFileSize(temp_path + ".vorpack"));
++  remove(output_path.c_str());
++  exit(0);
++#endif
+ 
+   std::ifstream temp_in(temp_path, std::ios::in | std::ios::binary);
+   if (!temp_in.is_open()) return false;
+@@ -519,6 +554,20 @@
+   Predictor p(vocab);
+   if (dictionary) console_progress::Phase("pretraining the model on the dictionary");
+   if (enable_preprocess) preprocessor::Pretrain(&p, dictionary);
++#if TRAIN_FEED
++  // Training tool, "-n": the same dictionary pretraining as "-e", from ./.dict
++  // (it warms the match models, which feed the match channel).  `dictionary`
++  // stays NULL, so the grammar automaton below stays off.
++  else {
++    FILE* d = fopen(".dict", "rb");
++    if (!d) {
++      fprintf(stderr, "training tool: no ./.dict in the working directory\n");
++      exit(6);
++    }
++    preprocessor::Pretrain(&p, d);
++    fclose(d);
++  }
++#endif
+   HUGEPAGE_COLLAPSE("c-init");
+   if (dictionary != NULL) {
+     run_mode::gram.Init(dictionary, temp_bytes,
+@@ -621,6 +670,15 @@
+       ))) {
+     return Help();
+   }
++#if TRAIN_STREAM || TRAIN_FEED
++  // Training tool: one mode only, "-e" for the stream, "-n" for dump and
++  // priors.  The tools read no weight container (no forward step).
++  if (argc != 4 || argv[1][1] != (TRAIN_STREAM ? 'e' : 'n')) {
++    fprintf(stderr, "training tool: %s %s <input> <output>\n", argv[0],
++        TRAIN_STREAM ? "-e" : "-n");
++    return 2;
++  }
++#else
+   if (argc > 1 && (argv[1][1] == 'C' || argv[1][1] == 'D')) {
+     transformer::SetBlobForm();
+     argv[1][1] = (argv[1][1] == 'C') ? 'c' : 'd';
+@@ -634,6 +692,7 @@
+       extract_weights_only();
+     }
+   }
++#endif
+   srand((unsigned int)run_options::ParamI("seed", SEED));
+   progress_steps = run_options::ParamI("progress_steps", 10000);
+   if (progress_steps < 1) progress_steps = 10000;
+@@ -719,6 +778,20 @@
+     goto print_end_message;
+   }
+ 
++#if TRAIN_FEED
++  // Training tool: "-n" codes a stream that is already preprocessed (the
++  // unpacked stream of the stream tool), without a dictionary argument;
++  // RunCompression() packs it and pretrains from ./.dict.
++  if (argv[1][1] == 'n') {
++    if (!RunCompression(false, input_path, temp_path, output_path,
++        NULL, &input_bytes, &output_bytes)) {
++      return Help();
++    }
++    // The output is not an archive: no end line.  The stderr line
++    // "coded stream bytes N" ends the run.
++    goto exit;
++  } else
++#endif
+   if (argv[1][1] == 'c') {
+       if (argv[1][1] == 'c' && argc == 5) {
+         if (!provide_dict_file(argv[2])) return Help();
+@@ -732,6 +805,22 @@
+     input_path = argv[2];
+     output_path = argv[3]; //name of a compressor output
+ 
++#if TRAIN_STREAM
++    // Training tool: the dictionary and the article order are files in the
++    // working directory (dictionary/english.dic and
++    // src/readalike_prepr/data/new_article_order of this package) instead of
++    // blocks of the binary.
++    {
++      FILE* d = fopen(".dict", "rb");
++      FILE* o = fopen(".new_article_order", "rb");
++      if (d) fclose(d);
++      if (o) fclose(o);
++      if (!d || !o) {
++        fprintf(stderr, "training tool: ./.dict and ./.new_article_order are needed\n");
++        return 2;
++      }
++    }
++#else
+     if (selfextract_comp() != 0) {
+       return Help();
+     }
+@@ -760,6 +849,7 @@
+       remove(".hints");
+       remove(".hints.comp");
+     }
++#endif
+ 
+     console_progress::Phase("preprocessing enwik9");
+     if (!census_file(input_path.c_str(), ".census_prepr", 1)) {
+diff -ruN a/src/tf1/tf1_engine.cpp b/src/tf1/tf1_engine.cpp
+--- a/src/tf1/tf1_engine.cpp
++++ b/src/tf1/tf1_engine.cpp
+@@ -5,6 +5,7 @@
+ #include "tf1_engine.h"
+ 
+ #include "../alias_title_subst.h"
++#include "../train_mode.h"
+ 
+ #include <stdarg.h>
+ #include <stdlib.h>
+@@ -250,9 +251,84 @@
+   bool gate_masked = false;
+   unsigned long long alias_rows = 0;
+   bool in_redir_run = false;
++#if TRAIN_FEED
++  // Training tool: the dump of the rows fed to the transformer
++  // (paket-zeilen.bin), read by training/tf/1_dump/dumpleser.py and
++  // training/tf/2_package/dumpv2.py.
++  // 12-byte little-endian records.  Record 0 is a header:
++  //   int32 -2 | 'P' 'K' 'D' | uint8 version 2 | uint8 record size 12 |
++  //   uint8 number of used flag bits | uint16 0
++  // Data records:
++  //   int32 src (stream position, -1 = inserted row) | uint8 tok prev1 prev2
++  //   match_b match_cls flags | uint16 0
++  // flags: bit0 inserted, bit1 masked (the row's output is not the coder's
++  // distribution), bit2 document start, bit3 redirect page, bit4 prior0 row
++  // (no stream target), bit5 reinjected alias or author byte, bit6 author
++  // byte, bit7 metadata prompt row.
++  FILE* pk_dump = nullptr;
++  std::vector<unsigned char> pk_dbuf;
++  // Every record is written masked; the row whose output really became the
++  // coder's distribution is unmasked at the top of the next Step(), where
++  // that is known (see PkUnmaskLast()).
++  size_t pk_last_off = 0;
++  bool pk_last_valid = false;
++  bool pk_docstart = true;
++  bool pk_alias_now = false;
++  bool pk_autor_now = false;
++  bool pk_meta_now = false;
++  bool pk_prior_prev = false;   // PriorNext() of the previous step
++  void PkUnmaskLast() {
++    if (pk_last_valid) pk_dbuf[pk_last_off + 9] &= (unsigned char)~2u;
++  }
++  void PkHeader() {
++    unsigned char r[12] = {0};
++    const int32_t magic = -2;
++    memcpy(r, &magic, 4);
++    r[4] = 'P'; r[5] = 'K'; r[6] = 'D';
++    r[7] = 2;    // format version
++    r[8] = 12;   // record size
++    r[9] = 8;    // used flag bits
++    pk_dbuf.insert(pk_dbuf.end(), r, r + 12);
++  }
++  void PkRecord(int tok, bool inserted, bool prior0) {
++    if (!pk_dump) return;
++    // flush BEFORE the write, so the record just written stays addressable
++    if (pk_dbuf.size() >= (1u << 20)) {
++      fwrite(pk_dbuf.data(), 1, pk_dbuf.size(), pk_dump);
++      pk_dbuf.clear();
++    }
++    const int32_t src = inserted ? -1 : (int32_t)pk_stream_pos;
++    unsigned char r[12] = {0};
++    memcpy(r, &src, 4);
++    r[4] = (unsigned char)tok;
++    r[5] = (unsigned char)pk_prev1;
++    r[6] = (unsigned char)pk_prev2;
++    r[7] = (unsigned char)(inserted ? 208 : m_hot);
++    r[8] = (unsigned char)(inserted ? 0 : (m_class & 15));
++    unsigned char fl = (unsigned char)((inserted ? 1 : 0) | 2);
++    if (pk_docstart) { fl |= 4; pk_docstart = false; }
++    if (prompt && prompt->InRedirect()) fl |= 8;
++    if (prior0) fl |= 16;
++    if (pk_alias_now) fl |= 32;
++    if (pk_autor_now) fl |= 64;
++    if (pk_meta_now) fl |= 128;
++    r[9] = fl;
++    pk_last_off = pk_dbuf.size();
++    pk_last_valid = true;
++    pk_dbuf.insert(pk_dbuf.end(), r, r + 12);
++  }
++#endif
+   void Feed(int tok, const uint16_t* prior, bool inserted, float* out
+             , bool gelesen
+            ) {
++#if TRAIN_FEED
++    // The row is recorded instead of computed: no forward step.  A prior0 row
++    // is recognised by its prior pointer.
++    (void)gelesen; (void)out;
++    bool p0 = (prompt && prior == prompt->Prior0())
++        || (z3 && prior == z3->Prior0());
++    PkRecord(tok, inserted, p0);
++#else
+     if (opt) opt->set_gelesen(gelesen);
+     fx2::PaketChannels ch;
+     ch.prev1 = pk_prev1;
+@@ -260,6 +336,7 @@
+     ch.match_byte = inserted ? 208 : m_hot;
+     ch.match_class = inserted ? 0 : (m_class & 15);
+     opt->step((uint8_t)tok, prior, out, ch);
++#endif
+     pk_prev2 = pk_prev1;
+     pk_prev1 = tok;
+     ++pk_fed;
+@@ -272,6 +349,9 @@
+     pk_prev1 = 216;
+     pk_prev2 = 216;
+     ++pk_documents;
++#if TRAIN_FEED
++    pk_docstart = true;
++#endif
+     doc_rows = 0;
+   }
+ 
+@@ -318,6 +398,10 @@
+   // The coder always runs the optimized int8 engine; the fp32 reference path
+   // is not used.
+   const bool use_ref = false;
++#if TRAIN_FEED
++  // Training tool: the forward step is off, no container is read.
++  (void)weights_path;
++#else
+   // Exactly one stamped container is accepted.  FNV-1a-64 over the file is
+   // enough to catch a swapped or truncated container.
+   {
+@@ -340,6 +424,7 @@
+   }
+   impl_->opt = new fx2::opt::TransformerOpt(weights_path,
+       fx2::opt::AttnKind::KVI8);
++#endif
+   {
+     tf_z3::Params zp;
+     impl_->z3 = new tf_z3::CoderZ3(zp);
+@@ -353,6 +438,12 @@
+     tf_gate::Params gp;
+     impl_->gate = new tf_gate::CoderGate(gp);
+   }
++#if TRAIN_FEED
++  impl_->pk_dump = fopen("paket-zeilen.bin", "wb");
++  if (!impl_->pk_dump) Fail("cannot create paket-zeilen.bin");
++  impl_->pk_dbuf.reserve(1 << 20);
++  impl_->PkHeader();
++#endif
+   if (const char* p = MatchDumpPath()) {
+     std::string pb = std::string(p) + "match-bytes.uint8";
+     std::string pl = std::string(p) + "match-len.uint8";
+@@ -374,6 +465,14 @@
+   // Close the last article before the document-length check below.
+   if (impl_->prompt) impl_->prompt->Finish();
+   ReportChannels();
++#if TRAIN_FEED
++  if (impl_->pk_dump) {
++    if (!impl_->pk_dbuf.empty()) {
++      fwrite(impl_->pk_dbuf.data(), 1, impl_->pk_dbuf.size(), impl_->pk_dump);
++    }
++    fclose(impl_->pk_dump);
++  }
++#endif
+   if (impl_->m_dump_b) {
+     if (!impl_->m_bbuf.empty()) {
+       fwrite(impl_->m_bbuf.data(), 1, impl_->m_bbuf.size(), impl_->m_dump_b);
+@@ -415,8 +514,16 @@
+     }
+     s.m_have = false;
+     ++s.alias_rows;
++#if TRAIN_FEED
++    s.pk_alias_now = true;
++    s.pk_autor_now = tf_author_prompt::Laeuft();
++#endif
+     s.Feed(atok, aprior, /*inserted=*/true, s.tf_out.data()
+            GATE_ARG(last_row, Impl::SG_ALIAS));
++#if TRAIN_FEED
++    s.pk_alias_now = false;
++    s.pk_autor_now = false;
++#endif
+     FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
+     HalvesToFloats(s.half.data(), s.probs.data(), 208);
+     if (s.probs_writer) s.probs_writer->WriteHalves(s.half.data(), 208);
+@@ -426,6 +533,11 @@
+     return s.probs.data();
+   }
+   ++s.pk_stream_pos;
++#if TRAIN_FEED
++  // The last record written is the row that predicted the token now arriving.
++  // It keeps its mask bit if that token was gated or got the PPMd prior.
++  if (!s.gate_masked && !s.pk_prior_prev) s.PkUnmaskLast();
++#endif
+ 
+   // (1) no loss is computed; only ReportLoss() would read it, and the coder
+   //     does not print that report (print_loss is false), so loss_sum and
+@@ -555,11 +667,19 @@
+         if (feed_pre) {
+           const uint16_t* p0 = s.prompt->Prior0();
+           for (int i = 0; i < pn; ++i) {
++#if TRAIN_FEED
++            // only the slice of the metadata prompt, not the sentinel rows
++            s.pk_meta_now = (i >= s.prompt->PreMetaFrom()
++                             && i < s.prompt->PreMetaTo());
++#endif
+             const uint16_t* pz = (i + 1 == pn && s.ppmd_prev_gueltig)
+                 ? s.ppmd_prev.data() : p0;
+             s.Feed(ptoks[i], pz, /*inserted=*/true, s.tf_out.data()
+                    GATE_ARG(false, Impl::SG_VOR));
+           }
++#if TRAIN_FEED
++          s.pk_meta_now = false;
++#endif
+           s.prompt->AddFed((unsigned long long)pn);
+         } else {
+           s.pre_verworfen_zone += (unsigned long long)pn;
+@@ -603,11 +723,18 @@
+         }
+         const uint16_t* p0 = s.prompt->Prior0();
+         for (int i = 0; i < pn; ++i) {
++#if TRAIN_FEED
++          s.pk_meta_now = (i >= s.prompt->PostMetaFrom()
++                           && i < s.prompt->PostMetaTo());
++#endif
+           const uint16_t* pz =
+               (i + 1 == pn && !z3_folgt) ? s.half.data() : p0;
+           s.Feed(ptoks[i], pz, /*inserted=*/true, s.tf_out.data()
+                  GATE_ARG(i + 1 == pn && !z3_folgt, Impl::SG_NACH));
+         }
++#if TRAIN_FEED
++        s.pk_meta_now = false;
++#endif
+         s.prompt->AddFed((unsigned long long)pn);
+       }
+     }
+@@ -650,10 +777,16 @@
+       if (vfeed) {
+         const uint16_t* p0 = s.prompt->Prior0();
+         for (int i = 0; i < vn; ++i) {
++#if TRAIN_FEED
++          s.pk_meta_now = (i >= mv && i < mb);
++#endif
+           const uint16_t* pz = (i + 1 == vn) ? s.ppmd_cur.data() : p0;
+           s.Feed(vt[i], pz, /*inserted=*/true, s.tf_out.data()
+                  GATE_ARG(i + 1 == vn, Impl::SG_SEITE));
+         }
++#if TRAIN_FEED
++        s.pk_meta_now = false;
++#endif
+         s.prompt->AddFed((unsigned long long)vn);
+         FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
+         HalvesToFloats(s.half.data(), s.probs.data(), 208);
+@@ -662,6 +795,10 @@
+       }
+     }
+   }
++#if TRAIN_FEED
++  // mask reason "PPMd prior instead of transformer" for the next step
++  s.pk_prior_prev = s.prompt->PriorNext();
++#endif
+   if (s.probs_writer) s.probs_writer->WriteHalves(s.half.data(), 208);
+   for (int i = 0; i < 208; ++i) {
+     if (!(s.probs[i] >= 1e-6f)) s.probs[i] = 1e-6f;
+diff -ruN a/src/tf1/tf1_gate.cpp b/src/tf1/tf1_gate.cpp
+--- a/src/tf1/tf1_gate.cpp
++++ b/src/tf1/tf1_gate.cpp
+@@ -1,6 +1,7 @@
+ #include "tf1_gate.h"
+ 
+ #include "../cold_size.h"
++#include "../train_mode.h"
+ 
+ #include <stdarg.h>
+ #include <stdlib.h>
+@@ -44,6 +45,12 @@
+   for (int i = 0; i < kZoneCount; ++i) arm_[i] = false;
+   arm_[kZoneHdrblock] = true;
+   r_anker_.Init(kAnker, 8);
++#if TRAIN_FEED
++  // Training tool: one zone id per stream byte (Observe() below).
++  dump_ = fopen("zonenmaske.u8", "wb");
++  if (!dump_) G1Fail("cannot create zonenmaske.u8");
++  dbuf_.reserve(1 << 16);
++#endif
+ }
+ 
+ COLD_SIZE_ATTR CoderGate::~CoderGate() {
+diff -ruN a/src/train_mode.h b/src/train_mode.h
+--- a/src/train_mode.h
++++ b/src/train_mode.h
+@@ -0,0 +1,25 @@
++#ifndef TRAIN_MODE_H_
++#define TRAIN_MODE_H_
++
++// Build modes of the training-data tools (training/tf/1_dump/trainmodes.patch,
++// built by build_dump_tools.sh with -DTRAIN_MODE=<n>).  Without the define the
++// source builds the compressor, unchanged.
++//   1  stream: "-e" stops after the preprocessing and keeps the coder stream,
++//      packed (<out>.cmix.temp) and before the pack step (<out>.cmix.temp.vorpack)
++//   2  dump:   "-n" on the unpacked stream writes the rows fed to the
++//      transformer (paket-zeilen.bin), the zone mask (zonenmaske.u8) and the
++//      match channel (match-bytes.uint8, match-len.uint8); while coding, the
++//      transformer forward step and all models except the match models are off
++//   3  priors: as 2, but PPMd is the only model while coding; it also writes
++//      the PPMd distribution of every byte fed to PPMd (ppmd-probs.float16)
++//      and the token of that byte (ppmd-bytes.uint8)
++// The archive of a run in mode 2 or 3 is not decodable.  All outputs go to
++// the working directory.
++#ifndef TRAIN_MODE
++#define TRAIN_MODE 0
++#endif
++#define TRAIN_STREAM (TRAIN_MODE == 1)
++#define TRAIN_FEED (TRAIN_MODE == 2 || TRAIN_MODE == 3)
++#define TRAIN_PRIORS (TRAIN_MODE == 3)
++
++#endif  // TRAIN_MODE_H_
+diff -ruN a/src/transformer.h b/src/transformer.h
+--- a/src/transformer.h
++++ b/src/transformer.h
+@@ -3,6 +3,7 @@
+ 
+ 
+ #include "author_block.h"
++#include "train_mode.h"
+ 
+ // The pre-trained transformer in the byte mixer.
+ //
+@@ -120,7 +121,11 @@
+   return nullptr;
+ }
+ inline const char* MatchDumpPath() {
++#if TRAIN_FEED
++  return "./";   // training tool: match-bytes.uint8, match-len.uint8
++#else
+   return nullptr;
++#endif
+ }
+ // Match length class as in the training package: min(raw_bits / 8, 15).
+ inline int MatchLengthClass(int raw_bits) {

@@ -1,0 +1,23 @@
+{
+ "note": "neif metadata block, 12 MB fixture = whole block (control payload 1,653,282 B, block 1,390,556 B coded by CM). All proxies causal/decoder-legal. 'mix' = online 2-expert mixture of the traced CM probability with the expert (mixgain.py); 'curve' = CM's own cost-vs-forecast-error curve (calib_ts.py).",
+ "bounds": {
+  "B2 revid permutation log2(155612!)": 307430,
+  "B2 revid sorted set, local-geometric gaps": 150780,
+  "B2 revid CM (stream order)": 450609,
+  "B2 ts|rev CM (incl TAB)": 94608,
+  "normal-cluster page ids: uniform multinomial (1727 segments)": 143812,
+  "normal-cluster page ids: id set among free ids": 31499,
+  "normal-cluster page ids CM": 147674,
+  "B1 revid sorted set gaps": 30905,
+  "B1/B2 class (adaptive, ctx region/prev/pid bucket)": 13771
+ },
+ "designs": {
+  "a: ts in stream order + TAILNUM revids": {"B2 ts marginal proxy": 446841, "B2 ts calibrated (CM beats marginal by 1.83% on revids)": 438600, "B2 rev|ts TAILNUM causal (median|e| 4)": 103341, "B2 net vs current": -3300, "B1 ts two-sided nearest-pid forecast (curve)": -2700, "B1 revid via E1": -18000, "total vs current": "-18..-24 KB +-10 KB (= E1 within noise)", "verdict": "no gain beyond E1; large grammar rewrite"},
+  "b: revids as ranks vs decoded sorted set": {"revid total": "~511 KB vs CM 488 KB", "verdict": "+23 KB worse; CM is 7.6 KB under the B2 permutation+set bound already"},
+  "c: page ids via original order (order residual in archive9)": {"verdict": "infeasible: DecodeOrderV3 votes article t (original order) with feats[t] and articles j<t; the decoder needs original order given stream order+content (the interleaving, >=116 KB as the CM pays it); residual codes stream|original; LTCB would pay +43,780 B for nothing", "free-rank pid expert (mix)": -710},
+  "E1: B1 revid interpolation residual (part A)": {"expert alone": 11449, "class": 8029, "CM B1 revid": 37479, "gain": -18001, "residual exact": 0.780, "within+-1": 0.919, "coded bytes": -159000},
+  "E3b: B2 ts forecast long-baseline slope m=8": {"curve": -2826, "mix": -3919},
+  "IP octet-trie expert (mix)": -5209,
+  "zero-gain tests": {"B2 revid cluster kernel": -476, "B2 revid pid-neighbour kernel": -32, "B1 ts prev/same-class experts": -420, "B1 contributor-first + same-contributor ts forecast (net)": "~0 (-11.3 ts, +11.4 names)", "name-level freq/recency expert": -744, "uid running-max expert": 5}
+ }
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "NEIF_FINAL_EXISTING_RELEASE_REBUILD_AUDIT_V1",
+  "observed_utc": "2026-10-12T04:34:51.543866+00:00",
+  "status": "existing_rebuild_matches_measured_comp9",
+  "new_build_launched": false,
+  "artifacts": {
+    "release_rebuild": {
+      "path": "experiments/work/release_exgf2_20261010/FINAL_build/comp9",
+      "bytes": 3995122,
+      "sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+    },
+    "measured_compressor": {
+      "path": "experiments/work/h3_neif_port_20261006/full/FINAL/comp9",
+      "bytes": 3995122,
+      "sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+    },
+    "rebuild_log": {
+      "path": "experiments/work/release_exgf2_20261010/FINAL_build/build.out",
+      "bytes": 52098,
+      "sha256": "9d4e23e51b389ecfe878c68b19c0423c591406720ed7db2ec9d7f48974d99f74"
+    }
+  },
+  "archive_bytes": 91778237,
+  "pinned_neif_archive_bytes": 91913343,
+  "saving_bytes": 135106,
+  "saving_percent_of_neif": 0.1469928038630909,
+  "full_decode_cmp": "pending_replacement_decode",
+  "live_decode_log": "experiments/work/h3_neif_port_20261006/full_d2/FINAL/d.log",
+  "limitations": [
+    "This verifies the saved rebuild output; it does not claim a new build from the current source tree.",
+    "Original FINAL decode stopped under memory pressure; replacement full decode/cmp remains required.",
+    "Fresh leaderboard and final decode memory/timing checks remain required immediately before release."
+  ],
+  "release_name": "Ex-Girlfriend 1.0",
+  "release_candidate": "FINAL only",
+  "publication_or_email_sent": false
+}

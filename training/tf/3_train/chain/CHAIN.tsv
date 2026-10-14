@@ -1,0 +1,15 @@
+row	env_file	script	warm_start	warm_start_sha256	package	window	bf16_epochs	qat_epochs	fp32_epochs	sched_total	sched_done	cards	accumulation	end_state	end_sha256	bf16_epochs_seen	note
+01	01_anchor_w2048.env	kette_arm.sh	none (cold start)	-	A	2048	13	-	-	fresh	-	2	4	/root/ckpt/a8m_2048-ep13.tch	ed5ac02a0e0ae37e	13	plan 80 bf16; continued in 01b
+01b	01_anchor_w2048.env	wiederanlauf.sh <ckpt> bf16 13	/root/ckpt/a8m_2048-ep13.tch (+ .opt)	ed5ac02a0e0ae37e	A	2048	67	-	-	80	13	2	4	/root/ckpt/a8m_2048-ep80.tch	11f26e97dac824d7	80	continued schedule
+02	02_w1024.env	kette_arm.sh	/root/ckpt/a8m_2048-ep80.tch (+ .opt)	11f26e97dac824d7	A	1024	40	-	-	fresh	-	2	4	/root/ckpt/w1024_bf16.tch	d696edb8	120	only the bf16 end is carried on
+03	03_w1536.env	kette_arm.sh	/root/ckpt/w1024_bf16.tch (+ .opt)	d696edb8	B	1536	120	-	-	fresh	-	4	2	/root/ckpt/w1536v8_ep120.tch	e4026626e5ea8139	240	-
+04	04_w1536_second.env	kette_arm.sh	/root/ckpt/w1536v8_ep120.tch (+ .opt)	e4026626e5ea8139	B	1536	160	-	-	fresh	-	4	2	/root/ckpt/w1536v8_ep280.tch	bb420a689b9491f8	400	-
+05	05_w2048.env	kette_arm.sh	/root/ckpt/w1536v8_ep280.tch (+ .opt)	bb420a689b9491f8	B	2048	96	-	-	fresh	-	4	2	epoch-96 checkpoint	768e489bc7053e89	496	plan 200 bf16; continued in 05b
+05b	05_w2048.env	wiederanlauf.sh <ckpt> bf16 96 (same variables)	epoch-96 checkpoint (+ .opt)	768e489bc7053e89	B	2048	104	-	-	200	96	4	2	/root/ckpt/w2048v8_ep600.tch	f83fc26de816f4e4	600	continued schedule
+06	06_w2560.env	kette_arm.sh	/root/ckpt/w2048v8_ep600.tch (+ .opt)	f83fc26de816f4e4	B	2560	30	-	-	fresh	-	2	4	/root/ckpt/w2560_stand.tch	c6113dcf6c3ed4c4	630	plan 200 bf16; the epoch-30 checkpoint is carried on
+07	07_w2048.env	kette_arm.sh	/root/ckpt/w2560_stand.tch (+ .opt)	c6113dcf6c3ed4c4	C	2048	170	-	-	fresh	-	4	2	/root/ckpt/p14_bf16_ende.tch	02ef775c035f5900	800	only the bf16 end is carried on
+08	08_w2048.env	kette_arm.sh	/root/ckpt/p14_bf16_ende.tch (+ .opt)	02ef775c035f5900	D	2048	123	-	-	fresh	-	4	2	/root/ckpt/p15_bf16_ep123.tch	7b0f1370b3978e202d492a4bc8bf414a669b8575c8f0b0fdc4e30ce90c2ab619	923	plan 200 bf16; continued in 08b
+08b	08b_w2048_resume.env	kette_arm.sh	/root/ckpt/p15_bf16_ep123.tch (+ .opt)	7b0f1370b3978e202d492a4bc8bf414a669b8575c8f0b0fdc4e30ce90c2ab619	D	2048	77	-	-	200	123	4	2	models/poc8m_w2048-pkd.tch	ce2ce0c933dd3569	1000	continued schedule
+08r	-	fix_subnormal_rows.py	models/poc8m_w2048-pkd.tch	ce2ce0c933dd3569	-	-	-	-	-	-	-	-	-	models/poc8m_w2048-pkd.tch	377e6a7feaf413d6d2dbc52dd3cf91f4415cd73608c8ada196d9f73e2819f1ab	1000	lifting of subnormal rows: 77 rows in 35 matrices scaled to |max| = 1e-30
+09	09_qat.env	qat_arm.sh	models/poc8m_w2048-pkd.tch	377e6a7feaf413d6d2dbc52dd3cf91f4415cd73608c8ada196d9f73e2819f1ab	D	2048	-	32	-	fresh	-	4	2	models/poc8m_w2048-pkd-q4.tch	2a698b86c7430daa	1000	only the qat end is used; the fp32 phase is row 10
+10	10_fp32.env	fp32_arm.sh	models/poc8m_w2048-pkd-q4.tch	2a698b86c7430daa	D	2048	-	-	6	fresh	-	4	2	models/poc8m_w2048-pkd-q4-fp32.tch	15b1d56b44af6300	1000	export: weights-poc8m_w2048.bin sha256 614e2ea500fd5bbb006e3759d019d5d9d2f4a9677d47a7808d575fad7473a3ac

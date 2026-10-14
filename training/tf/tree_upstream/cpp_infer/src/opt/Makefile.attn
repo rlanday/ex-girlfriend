@@ -1,0 +1,49 @@
+# Vanilla-attention workstream (attn.h/attn.cpp + capture/test/bench).
+# Separate makefile so the concurrently-edited shared Makefile is untouched:
+#   make -f Makefile.attn        (from cpp_infer/src/opt)
+# Binaries land in cpp_infer/bin/opt-attn/.
+ifeq ($(origin CXX),default)
+CXX := clang++-17
+endif
+CXXFLAGS ?= -O3 -march=znver2 -std=c++17 -Wall -Wextra -fno-math-errno
+# NO -ffast-math (SPEC forbids it)
+
+BIN := ../../bin/opt-attn
+
+all: $(BIN)/capture_qkv $(BIN)/test_attn $(BIN)/bench_attn
+
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/attn.o: attn.cpp attn.h vec_math.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/kernels.o: ../kernels.cpp ../kernels.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/model.o: ../model.cpp ../model.h ../kernels.h ../weights_io.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/weights_io.o: ../weights_io.cpp ../weights_io.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/capture_qkv: capture_qkv.cpp $(BIN)/model.o $(BIN)/weights_io.o $(BIN)/kernels.o ../model.h ../testdata.h ../weights_io.h
+	$(CXX) $(CXXFLAGS) capture_qkv.cpp $(BIN)/model.o $(BIN)/weights_io.o $(BIN)/kernels.o -o $@ -lm
+
+$(BIN)/test_attn: test_attn.cpp $(BIN)/attn.o $(BIN)/kernels.o attn.h ../kernels.h
+	$(CXX) $(CXXFLAGS) test_attn.cpp $(BIN)/attn.o $(BIN)/kernels.o -o $@ -lm
+
+$(BIN)/bench_attn: bench_attn.cpp $(BIN)/attn.o $(BIN)/kernels.o attn.h ../../bench/bench_common.h
+	$(CXX) $(CXXFLAGS) bench_attn.cpp $(BIN)/attn.o $(BIN)/kernels.o -o $@ -lm
+
+# phase-profiled build (rdtsc inside attn.cpp; ~2% distortion)
+$(BIN)/bench_attn_prof: bench_attn.cpp attn.cpp attn.h vec_math.h ../../bench/bench_common.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -DATTN_PROFILE bench_attn.cpp attn.cpp -o $@ -lm
+
+$(BIN)/pipe_probe: pipe_probe.cpp ../../bench/bench_common.h | $(BIN)
+	$(CXX) $(CXXFLAGS) pipe_probe.cpp -o $@ -lm
+
+clean:
+	rm -rf $(BIN)
+
+.PHONY: all clean

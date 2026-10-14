@@ -1,0 +1,24 @@
+      0.01 1791360269 bin /workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/ablate/cd/comp9 cpu 4 input /workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/ablate/r4c_12000000 (12000000 B, sha 8634dffef9c3ffc6)  comp9 2384cc9ed018a414  env [COSTDUMP=/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/ablate/run/c0/trace]  2026-10-07T08:04:29Z
+     14.80 1791360284 dictionary: Loaded 54857 words
+     46.65 1791360316 pretraining the model on the dictionary ... 31.85 s.
+     46.66 1791360316 progress 0.00 %
+     47.36 1791360316 entering metadata block at 0.00 %
+    100.08 1791360369 progress 6.73 %
+    157.98 1791360427 progress 13.47 %
+    216.10 1791360485 progress 20.20 %
+    275.04 1791360544 progress 26.94 %
+    355.73 1791360625 progress 33.67 %
+    437.37 1791360706 progress 40.41 %
+    514.47 1791360784 progress 47.14 %
+    589.60 1791360859 progress 53.88 %
+    665.33 1791360934 progress 60.61 %
+    744.35 1791361013 progress 67.35 %
+    770.53 1791361040 entering redirect block at 69.46 %
+    949.20 1791361218 progress 74.08 %
+   1207.42 1791361476 progress 80.82 %
+   1454.27 1791361723 progress 87.55 %
+   1707.75 1791361977 progress 94.29 %
+   1921.00 1791362190 costdump: 7434697 bytes, 13226210.1 bits = 1653276.3 B
+   1921.05 1791362190 encoding preprocessed enwik9: 12000000 bytes -> 1653282 bytes in 1908.99 s.
+   1921.10 1791362190 TIMEIT rc=0 wall=1921.07s user=1901.92s sys=18.80s maxrss=6046.3MiB
+   1921.12 1791362190 PAYLOAD 1653282 B  sha256 c13ed09e3cb0ebf8

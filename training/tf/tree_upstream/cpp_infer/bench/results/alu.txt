@@ -1,0 +1,17 @@
+CALIB alu_start tsc_hz=2.0000e+09 core_hz=3.3387e+09 (scalar-chain check 3.3379e+09) ratio=1.6694
+RESULT vpmaddubsw       0.9992 /cycle  (best 0.9997 worst 0.9972)  cyc/instr=1.0008
+RESULT vpmaddwd         0.9984 /cycle  (best 0.9991 worst 0.9968)  cyc/instr=1.0016
+RESULT vpaddw           2.9990 /cycle  (best 2.9996 worst 2.9988)  cyc/instr=0.3334
+RESULT vpand            3.9884 /cycle  (best 3.9898 worst 3.9781)  cyc/instr=0.2507
+RESULT vpsrlw           0.9990 /cycle  (best 0.9997 worst 0.9969)  cyc/instr=1.0010
+RESULT mix2M2A          1.9955 /cycle  (best 1.9987 worst 1.9891)  cyc/instr=0.5011
+RESULT mix1M1A          1.9991 /cycle  (best 1.9992 worst 1.9934)  cyc/instr=0.5002
+RESULT mix2M1A          1.4992 /cycle  (best 1.4996 worst 1.4953)  cyc/instr=0.6670
+RESULT mix1M1S          1.9993 /cycle  (best 1.9996 worst 1.9964)  cyc/instr=0.5002
+RESULT mix1M1SH         1.9968 /cycle  (best 1.9990 worst 1.9942)  cyc/instr=0.5008
+RESULT fma231ps         1.9972 /cycle  (best 1.9992 worst 1.9929)  cyc/instr=0.5007
+RESULT vdivps           0.2856 /cycle  (best 0.2857 worst 0.2855)  cyc/instr=3.5016
+RESULT loads32B         1.9955 /cycle  (best 1.9994 worst 1.9929)  cyc/instr=0.5011
+RESULT combo6           0.4990 /cycle  (best 0.4998 worst 0.4947)  cyc/instr=2.0041
+# combo6: groups of (2 loads + 2 vpmaddubsw + 2 vpaddw) per cycle; 1.0 = sustained
+CALIB alu_end tsc_hz=2.0000e+09 core_hz=3.3369e+09 (scalar-chain check 3.3371e+09) ratio=1.6684

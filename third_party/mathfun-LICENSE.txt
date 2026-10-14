@@ -1,0 +1,66 @@
+Notices of avx_mathfun.h and sse_mathfun.h (zlib licence)
+
+`Exp8` in src/bit_head.cpp and in training/bitl/trainer/bit_head.cpp (through
+cmix-obias), `exp256_ps` in src/tf1/opt/vec_math.h and `exp_full8` in
+src/tf1/opt/kda_math.h (through fx2-cmix-transformer) are altered versions of
+the function `exp256_ps` of avx_mathfun.h, which is based on sse_mathfun.h.
+The upstream copies in training/tf/tree_upstream/cpp_infer/ (bench/misc.cpp,
+src/opt/vec_math.h) belong to the same family. The notices of both files
+follow verbatim.
+
+---- avx_mathfun.h ----
+
+/* 
+   AVX implementation of sin, cos, sincos, exp and log
+
+   Based on "sse_mathfun.h", by Julien Pommier
+   http://gruntthepeon.free.fr/ssemath/
+
+   Copyright (C) 2012 Giovanni Garberoglio
+   Interdisciplinary Laboratory for Computational Science (LISC)
+   Fondazione Bruno Kessler and University of Trento
+   via Sommarive, 18
+   I-38123 Trento (Italy)
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  (this is the zlib license)
+*/
+
+
+---- sse_mathfun.h ----
+
+/* Copyright (C) 2007  Julien Pommier
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  (this is the zlib license)
+*/

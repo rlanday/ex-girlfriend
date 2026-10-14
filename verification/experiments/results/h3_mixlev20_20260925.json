@@ -1,0 +1,715 @@
+{
+ "status": "complete",
+ "started_utc": "2026-09-25T13:50:49Z",
+ "plan_sha256": "977d0c03dc5f1c8af8a8b86035975dafa10e2ddc3ba7f39fcc84f2725e4bc429",
+ "steps": [
+  {
+   "name": "FW1_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev_20260925/src_FW1_bench",
+   "cpu": 27,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T13:50:49Z",
+   "returncode": 0,
+   "seconds": 82.52,
+   "peak_rss_kib": 340948,
+   "user_s": 39.09,
+   "system_s": 5.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_build.log"
+  },
+  {
+   "name": "FW1_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small",
+   "cpu": 27,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T13:52:11Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 13236,
+   "user_s": 0.01,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_small_prepare.log"
+  },
+  {
+   "name": "HS3_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100g_20260924/src_HS3_bench",
+   "cpu": 26,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T13:50:49Z",
+   "returncode": 0,
+   "seconds": 93.53,
+   "peak_rss_kib": 340984,
+   "user_s": 79.61,
+   "system_s": 12.36,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_build.log"
+  },
+  {
+   "name": "HS3_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small",
+   "cpu": 26,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T13:52:22Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 15280,
+   "user_s": 0.02,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_small_prepare.log"
+  },
+  {
+   "name": "prefix_baseline",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_baseline"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_c4_sidecoder_20260923/source_c4",
+   "cpu": 36,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-25T13:50:49Z",
+   "returncode": 0,
+   "seconds": 99.52,
+   "peak_rss_kib": 182548,
+   "user_s": 82.52,
+   "system_s": 13.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/prefix_baseline.log"
+  },
+  {
+   "name": "prefix_HS3",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_HS3"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100g_20260924/src_HS3_c4",
+   "cpu": 36,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-25T13:52:28Z",
+   "returncode": 0,
+   "seconds": 39.51,
+   "peak_rss_kib": 179956,
+   "user_s": 33.66,
+   "system_s": 5.14,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/prefix_HS3.log"
+  },
+  {
+   "name": "prefix_FW1",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_FW1"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev_20260925/src_FW1_c4",
+   "cpu": 36,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-25T13:53:08Z",
+   "returncode": 0,
+   "seconds": 39.51,
+   "peak_rss_kib": 179804,
+   "user_s": 33.78,
+   "system_s": 5.18,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/prefix_FW1.log"
+  },
+  {
+   "name": "HS3_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small",
+   "cpu": 26,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-25T13:52:23Z",
+   "returncode": 0,
+   "seconds": 246.06,
+   "peak_rss_kib": 8314488,
+   "user_s": 236.41,
+   "system_s": 9.61,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_small_encode.log"
+  },
+  {
+   "name": "FW1_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small",
+   "cpu": 27,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-25T13:52:12Z",
+   "returncode": 0,
+   "seconds": 257.55,
+   "peak_rss_kib": 8314696,
+   "user_s": 247.23,
+   "system_s": 9.95,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_small_encode.log"
+  },
+  {
+   "name": "HS3_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small",
+   "cpu": 26,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-25T13:56:29Z",
+   "returncode": 0,
+   "seconds": 254.56,
+   "peak_rss_kib": 8314528,
+   "user_s": 244.54,
+   "system_s": 9.69,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_small_decode.log"
+  },
+  {
+   "name": "HS3_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_20mb_20260922/fixtures/enwik9_prefix_20000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large",
+   "cpu": 26,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T14:00:43Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 69136,
+   "user_s": 0.23,
+   "system_s": 0.05,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_large_prepare.log"
+  },
+  {
+   "name": "FW1_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small",
+   "cpu": 27,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-25T13:56:29Z",
+   "returncode": 0,
+   "seconds": 257.55,
+   "peak_rss_kib": 8314580,
+   "user_s": 247.59,
+   "system_s": 9.52,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_small_decode.log"
+  },
+  {
+   "name": "FW1_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_20mb_20260922/fixtures/enwik9_prefix_20000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large",
+   "cpu": 27,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-25T14:00:47Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 69144,
+   "user_s": 0.22,
+   "system_s": 0.06,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_large_prepare.log"
+  },
+  {
+   "name": "HS3_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large",
+   "cpu": 26,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 86400,
+   "started_utc": "2026-09-25T14:00:44Z",
+   "returncode": 0,
+   "seconds": 4949.09,
+   "peak_rss_kib": 8640980,
+   "user_s": 4763.9,
+   "system_s": 184.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/HS3_large_encode.log"
+  },
+  {
+   "name": "FW1_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large",
+   "cpu": 27,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 86400,
+   "started_utc": "2026-09-25T14:00:47Z",
+   "returncode": 0,
+   "seconds": 5017.03,
+   "peak_rss_kib": 8640984,
+   "user_s": 4827.73,
+   "system_s": 188.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_large_encode.log"
+  },
+  {
+   "name": "FW1_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large",
+   "cpu": 27,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 86400,
+   "started_utc": "2026-09-25T15:24:25Z",
+   "returncode": 0,
+   "seconds": 3561.71,
+   "peak_rss_kib": 8640904,
+   "user_s": 3406.46,
+   "system_s": 154.86,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/logs/FW1_large_decode.log"
+  }
+ ],
+ "gates": {
+  "FW1_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T13:52:11Z"
+  },
+  "FW1_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T13:52:12Z"
+  },
+  "HS3_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T13:52:22Z"
+  },
+  "HS3_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T13:52:23Z"
+  },
+  "prefix_baseline_reproduced": {
+   "passed": true,
+   "evidence": {
+    "rebuilt": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_baseline/armc_prefix",
+     "bytes": 161012,
+     "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+    }
+   },
+   "utc": "2026-09-25T13:52:28Z"
+  },
+  "HS3_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:43Z"
+  },
+  "HS3_reproduces_c0": {
+   "passed": true,
+   "evidence": {
+    "payload": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/payload",
+     "bytes": 130443,
+     "sha256": "81d07ddfba146e2d0c6580a7dc4448913da9ac70e9804a8ac5af0285f3694248"
+    }
+   },
+   "utc": "2026-09-25T14:00:43Z"
+  },
+  "HS3_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:43Z"
+  },
+  "HS3_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:44Z"
+  },
+  "FW1_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:47Z"
+  },
+  "FW1_live": {
+   "passed": true,
+   "evidence": {
+    "payload": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/payload",
+     "bytes": 130354,
+     "sha256": "2775a8ffcc508ee2b3104e26e153893aabcfa101dc3cfab6091107fa4984c4fe"
+    }
+   },
+   "utc": "2026-09-25T14:00:47Z"
+  },
+  "FW1_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:47Z"
+  },
+  "FW1_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T14:00:47Z"
+  },
+  "FW1_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T16:23:46Z"
+  }
+ },
+ "lanes": {
+  "rows": {
+   "FW1": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+     "bytes": 5636096,
+     "sha256": "e1020b18d1660ec0bcbb3609a5b9c36a9542ec55ee46be794ab5f86b071f7792"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/payload",
+      "bytes": 130354,
+      "sha256": "2775a8ffcc508ee2b3104e26e153893aabcfa101dc3cfab6091107fa4984c4fe"
+     },
+     "encode_seconds": 257.55,
+     "encode_peak_rss_kib": 8314696,
+     "fresh_decode_exact": true,
+     "decode_seconds": 257.55,
+     "delta_vs_c0": -89
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/payload",
+      "bytes": 2536225,
+      "sha256": "4c14779b30d855a458db4964ef1d5121f647d37278e5263ba8d37ccd0981a3e3"
+     },
+     "encode_seconds": 5017.03,
+     "encode_peak_rss_kib": 8640984,
+     "fresh_decode_exact": true,
+     "decode_seconds": 3561.71,
+     "delta_vs_control": -463,
+     "rel_delta_vs_control": -0.00018252
+    }
+   },
+   "HS3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+     "bytes": 5636040,
+     "sha256": "a14264d2fe3926154b1f6edb1aef8304ec846f6aca589db3a9bc29b85e5ee4f8"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/payload",
+      "bytes": 130443,
+      "sha256": "81d07ddfba146e2d0c6580a7dc4448913da9ac70e9804a8ac5af0285f3694248"
+     },
+     "encode_seconds": 246.06,
+     "encode_peak_rss_kib": 8314488,
+     "fresh_decode_exact": true,
+     "decode_seconds": 254.56,
+     "delta_vs_c0": 0
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/payload",
+      "bytes": 2536688,
+      "sha256": "a146d663e79cb1d218db798da6e96c7440d712680da8b2288284b374af9aa9b2"
+     },
+     "encode_seconds": 4949.09,
+     "encode_peak_rss_kib": 8640980
+    }
+   }
+  },
+  "prefix": {
+   "baseline": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_baseline/armc_prefix",
+    "bytes": 161012,
+    "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+   },
+   "HS3": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_HS3/armc_prefix",
+    "bytes": 164308,
+    "sha256": "0f47ae5b0774bc4164f4d4144dcd05793d422636eba5c05c1937d241edd89d48"
+   },
+   "FW1": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/armc_FW1/armc_prefix",
+    "bytes": 164324,
+    "sha256": "5389febc78968b059f3dfb0505c967198b82ab5a7f2dfc39282b98411e8542aa"
+   }
+  }
+ },
+ "result": {
+  "rows": {
+   "FW1": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_FW1/bin/runner_lex",
+     "bytes": 5636096,
+     "sha256": "e1020b18d1660ec0bcbb3609a5b9c36a9542ec55ee46be794ab5f86b071f7792"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/small/payload",
+      "bytes": 130354,
+      "sha256": "2775a8ffcc508ee2b3104e26e153893aabcfa101dc3cfab6091107fa4984c4fe"
+     },
+     "encode_seconds": 257.55,
+     "encode_peak_rss_kib": 8314696,
+     "fresh_decode_exact": true,
+     "decode_seconds": 257.55,
+     "delta_vs_c0": -89
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/FW1/large/payload",
+      "bytes": 2536225,
+      "sha256": "4c14779b30d855a458db4964ef1d5121f647d37278e5263ba8d37ccd0981a3e3"
+     },
+     "encode_seconds": 5017.03,
+     "encode_peak_rss_kib": 8640984,
+     "fresh_decode_exact": true,
+     "decode_seconds": 3561.71,
+     "delta_vs_control": -463,
+     "rel_delta_vs_control": -0.00018252
+    }
+   },
+   "HS3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/bench_HS3/bin/runner_lex",
+     "bytes": 5636040,
+     "sha256": "a14264d2fe3926154b1f6edb1aef8304ec846f6aca589db3a9bc29b85e5ee4f8"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/small/payload",
+      "bytes": 130443,
+      "sha256": "81d07ddfba146e2d0c6580a7dc4448913da9ac70e9804a8ac5af0285f3694248"
+     },
+     "encode_seconds": 246.06,
+     "encode_peak_rss_kib": 8314488,
+     "fresh_decode_exact": true,
+     "decode_seconds": 254.56,
+     "delta_vs_c0": 0
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_mixlev20_20260925/runs/HS3/large/payload",
+      "bytes": 2536688,
+      "sha256": "a146d663e79cb1d218db798da6e96c7440d712680da8b2288284b374af9aa9b2"
+     },
+     "encode_seconds": 4949.09,
+     "encode_peak_rss_kib": 8640980
+    }
+   }
+  },
+  "lane_errors": {},
+  "removed_temp_files": [],
+  "control": {
+   "bytes": 2536688,
+   "sha256": "a146d663e79cb1d218db798da6e96c7440d712680da8b2288284b374af9aa9b2",
+   "source": "control arm HS3"
+  },
+  "verdicts": {
+   "HS3": {
+    "live": null,
+    "small_lossless": true,
+    "delta_prefix": 3296
+   },
+   "FW1": {
+    "live": true,
+    "small_lossless": true,
+    "large_delta_vs_control": -463,
+    "large_better_and_lossless": true,
+    "delta_prefix": 3312
+   }
+  },
+  "note": "large-window decider; small window = liveness + losslessness only; no full-file claim; in-job control = HS3 (reproduces its 1 MB payload exactly); runtimes CONTENDED; bench path"
+ },
+ "finished_utc": "2026-09-25T16:23:47Z",
+ "wall_seconds": 9177.9
+}

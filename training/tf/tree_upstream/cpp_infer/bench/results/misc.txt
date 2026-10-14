@@ -1,0 +1,15 @@
+CALIB misc_start tsc_hz=2.0000e+09 core_hz=3.3389e+09 (scalar-chain check 3.3376e+09) ratio=1.6694
+# exp256_ps max rel err vs exp(double) on [-30,30]: 8.02e-08 (0.67 ulp-ish)
+RESULT exp256_ps        0.590 elem/cyc (best 0.591 worst 0.587)  = 1.70 cyc/elem
+RESULT libm_expf       0.0995 elem/cyc  = 10.0 cyc/elem
+RESULT libm_tanhf      0.0178 elem/cyc  = 56.2 cyc/elem
+RESULT libm_sinf       0.0843 elem/cyc  = 11.9 cyc/elem
+RESULT qk_pmovsx_256 K   6.388 MAC/cyc (best 6.395 worst 6.373) = 10.02 cyc/row64
+RESULT qk_maddubs_256K   7.602 MAC/cyc (best 7.629 worst 7.579) = 8.42 cyc/row64
+RESULT qk_pmovsx_1024K   6.384 MAC/cyc (best 6.387 worst 6.380) = 10.02 cyc/row64
+RESULT qk_maddubs_1024K   7.647 MAC/cyc (best 7.648 worst 7.611) = 8.37 cyc/row64
+RESULT kvrows_seq      22.761 B/cyc (8.44 cyc/192B-row)  76.00 GB/s
+RESULT kvrows_rand     18.183 B/cyc (10.56 cyc/192B-row)  60.71 GB/s  penalty x1.25
+RESULT rdtsc_lfence   40.0 tsc-ticks = 66.8 core cycles (median back-to-back)
+RESULT rdtscp_lfence  60.0 tsc-ticks = 100.2 core cycles (median back-to-back)
+CALIB misc_end tsc_hz=2.0000e+09 core_hz=3.3374e+09 (scalar-chain check 3.3367e+09) ratio=1.6687

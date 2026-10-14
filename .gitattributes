@@ -1,0 +1,6 @@
+# Preserve byte-exact constructor inputs on every checkout platform.
+* -text
+*.c4 binary
+*.profdata binary
+*.hints binary
+src/readalike_prepr/data/new_article_order binary

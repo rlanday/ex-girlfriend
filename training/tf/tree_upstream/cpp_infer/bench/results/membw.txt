@@ -1,0 +1,22 @@
+CALIB membw_start tsc_hz=2.0000e+09 core_hz=3.3372e+09 (scalar-chain check 3.3379e+09) ratio=1.6686
+# sequential read bandwidth; B/cyc = bytes per CORE cycle; GB/s at measured core clock
+size        raw B/c   madd B/c bestPF B/c  pf dist     raw GB/s  bestPF GB/s
+RESULT 16           63.033     26.872     26.023     2048       210.35        86.84   (pf256=25.94 pf512=25.96 pf1k=25.79 pf2k=26.02)
+RESULT 128          31.790     25.635     25.325      256       106.09        84.51   (pf256=25.32 pf512=25.32 pf1k=25.11 pf2k=24.96)
+RESULT 384          30.389     25.400     25.303      256       101.41        84.44   (pf256=25.30 pf512=25.00 pf1k=24.90 pf2k=24.95)
+RESULT 1024         23.069     22.095     23.098     2048        76.99        77.08   (pf256=22.15 pf512=21.79 pf1k=22.88 pf2k=23.10)
+RESULT 2048         22.706     21.927     23.176     2048        75.78        77.34   (pf256=21.88 pf512=21.49 pf1k=22.99 pf2k=23.18)
+RESULT 4096         22.720     21.900     23.186     2048        75.82        77.38   (pf256=21.84 pf512=21.44 pf1k=22.97 pf2k=23.19)
+RESULT 8192         22.319     21.539     22.892     2048        74.48        76.40   (pf256=21.45 pf512=21.14 pf1k=22.62 pf2k=22.89)
+RESULT 12288        15.847     14.957     15.767     2048        52.89        52.62   (pf256=15.10 pf512=15.13 pf1k=15.30 pf2k=15.77)
+RESULT 32768         5.658      6.011      5.608      256        18.88        18.71   (pf256=5.61 pf512=5.39 pf1k=4.84 pf2k=4.66)
+RESULT 262144        5.582      6.001      5.583      256        18.63        18.63   (pf256=5.58 pf512=5.40 pf1k=4.84 pf2k=4.64)
+CALIB membw_mid tsc_hz=2.0000e+09 core_hz=3.3355e+09 (scalar-chain check 3.3359e+09) ratio=1.6677
+# read+write 50/50 (load 64B, modify, store 64B per line); B/c counts BOTH directions
+RESULT RW 128          53.022 B/c      176.85 GB/s (r+w)
+RESULT RW 384          50.012 B/c      166.81 GB/s (r+w)
+RESULT RW 1024         43.499 B/c      145.09 GB/s (r+w)
+RESULT RW 2048         42.877 B/c      143.02 GB/s (r+w)
+RESULT RW 4096         42.879 B/c      143.02 GB/s (r+w)
+RESULT RW 8192         42.864 B/c      142.97 GB/s (r+w)
+CALIB membw_end tsc_hz=2.0000e+09 core_hz=3.3369e+09 (scalar-chain check 3.3379e+09) ratio=1.6685

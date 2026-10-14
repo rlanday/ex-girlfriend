@@ -1,0 +1,50 @@
+# KDA workstream: builds cpp_infer/bin/opt/{test_kda,bench_kda}.
+# Usage: make -C cpp_infer/src/opt -f Makefile.kda
+# (separate from ./Makefile which the qmat workstream owns)
+ifeq ($(origin CXX),default)
+CXX := clang++-17
+endif
+
+CXXFLAGS ?= -O3 -march=znver2 -std=c++17 -Wall -Wextra -fno-math-errno
+# NO -ffast-math anywhere (SPEC forbids it).
+# test_kda.cpp additionally uses -ffp-contract=off so its scalar reference
+# glue has pinned rounding (intended fusions are written as std::fma).
+
+ROOT := ../..
+BIN := $(ROOT)/bin/opt-kda
+
+KDA_HDRS := kda.h kda_math.h vec_math.h
+NAIVE_HDRS := $(ROOT)/src/kernels.h $(ROOT)/src/weights_io.h $(ROOT)/src/npy.h \
+              $(ROOT)/src/testdata.h
+
+all: $(BIN)/test_kda $(BIN)/bench_kda
+
+$(BIN):
+	mkdir -p $(BIN)
+
+$(BIN)/kda.o: kda.cpp $(KDA_HDRS) | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/kernels_kda.o: $(ROOT)/src/kernels.cpp $(ROOT)/src/kernels.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/weights_io_kda.o: $(ROOT)/src/weights_io.cpp $(ROOT)/src/weights_io.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BIN)/test_kda.o: test_kda.cpp $(KDA_HDRS) $(NAIVE_HDRS) | $(BIN)
+	$(CXX) $(CXXFLAGS) -ffp-contract=off -I$(ROOT)/src -c $< -o $@
+
+$(BIN)/bench_kda.o: bench_kda.cpp $(KDA_HDRS) $(ROOT)/bench/bench_common.h | $(BIN)
+	$(CXX) $(CXXFLAGS) -I$(ROOT)/bench -c $< -o $@
+
+$(BIN)/test_kda: $(BIN)/test_kda.o $(BIN)/kda.o $(BIN)/kernels_kda.o $(BIN)/weights_io_kda.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lm
+
+$(BIN)/bench_kda: $(BIN)/bench_kda.o $(BIN)/kda.o
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lm
+
+clean:
+	rm -f $(BIN)/kda.o $(BIN)/kernels_kda.o $(BIN)/weights_io_kda.o \
+	      $(BIN)/test_kda.o $(BIN)/bench_kda.o $(BIN)/test_kda $(BIN)/bench_kda
+
+.PHONY: all clean

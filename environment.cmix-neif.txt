@@ -1,0 +1,29 @@
+# Build environment of this entry
+#
+# The toolchain is part of the artefact: the binary is built with
+# profile-guided optimisation and LTO, and lld does the code
+# generation.  A different major version produces a different binary.
+
+source date            2026-10-02T18:32:52Z
+target                 linux-x86_64, x86-64-v3 (AVX2+FMA), single thread
+
+## toolchain of the machine that generated this package
+clang++-18             Ubuntu clang version 18.1.3 (1ubuntu1)
+clang-18               Ubuntu clang version 18.1.3 (1ubuntu1)
+ld.lld-18              Ubuntu LLD 18.1.3 (compatible with GNU linkers)
+llvm-profdata-18       Ubuntu LLVM version 18.1.3
+llvm-objcopy-18        llvm-objcopy, compatible with GNU objcopy
+llvm-strip-18          llvm-strip, compatible with GNU strip
+make                   GNU Make 4.3
+objcopy                GNU objcopy (GNU Binutils for Ubuntu) 2.42
+
+kernel                 Linux 6.8.0-137-generic
+distribution           Ubuntu 24.04.4 LTS
+
+## submitted artefacts
+# Measured on the shipped files themselves; the same sums stand in the
+# result table of README.md.
+comp9 sha256           8b07d85f0a374b55688fd08d1a464222f766efbb5bfefc2bc94d6abb201133d7
+archive9 sha256        30eaf239168bd4efb4c57af09002b968308d7614d0cca619540e971fc38f4f18
+comp9 bytes            4000689
+archive9 bytes         91913343

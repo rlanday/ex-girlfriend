@@ -1,0 +1,642 @@
+Reusing existing PGO profile ./pgo_data/default.profdata
+rm -f *.o
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -march=x86-64-v3 -mtune=znver2 -O3 -fdata-sections -ffunction-sections -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -flto src/coder/decoder.cpp src/coder/encoder.cpp src/context-manager.cpp src/contexts/bit-context.cpp src/contexts/bracket-context.cpp src/contexts/combined-context.cpp src/contexts/context-hash.cpp src/contexts/indirect-hash.cpp src/contexts/interval-hash.cpp src/contexts/interval.cpp src/contexts/sparse.cpp src/models/bracket.cpp src/models/byte-model.cpp src/models/direct-hash.cpp src/models/direct.cpp src/models/indirect.cpp src/models/match.cpp src/models/grammar-match.cpp src/models/fxcmv1.cpp src/models/ppmd.cpp src/states/nonstationary.cpp src/states/run-map.cpp src/mixer/byte-mixer.cpp src/mixer/mixer-input.cpp src/mixer/mixer.cpp src/mixer/sigmoid.cpp src/mixer/sse.cpp -c src/predictor.cpp
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -march=x86-64-v3 -mtune=znver2 -Os -fdata-sections -ffunction-sections -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -Oz  src/preprocess/preprocessor.cpp src/preprocess/dictionary.cpp -c 
+rm -f cmix
+rm -f tf1_dump
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden  src/r1_reorder_transform.cpp src/runner.cpp -c
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden  -c src/glibc_compat.cpp -o glibc_compat.o
+clang++-18 -O2 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/detmath.cpp -o detmath.o
+rm -f tf1_z3
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/fast_math_vec.cpp -o fast_math_vec.o
+rm -f remap
+rm -f sstrip
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/optimizer_vec.cpp -o optimizer_vec.o
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden  src/preprocess/dict_derive.cpp -c
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/bit_head.cpp -o bit_head.o
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -mrecip=none -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wno-unused-variable -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -c src/tf1/tf1_engine.cpp src/tf1/kernels.cpp src/tf1/model.cpp src/tf1/opt/attn.cpp src/tf1/opt/glue.cpp src/tf1/opt/kda.cpp src/tf1/opt/qmat_dense.cpp src/tf1/opt/qmat_sparse.cpp src/tf1/opt/model_opt.cpp src/tf1/tf1_z3.cpp src/tf1/tf1_prompt.cpp src/tf1/tf1_gate.cpp
+clang++-18 -Os -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/word_label.cpp -o word_label.o
+clang++-18 -O2 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/adaptive_depth.cpp -o adaptive_depth.o
+In file included from src/coder/decoder.cpp:1:
+In file included from src/coder/decoder.h:6:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:10:
+src/coder/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/coder/decoder.cpp:1:
+In file included from src/coder/decoder.h:6:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+src/coder/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+In file included from src/preprocess/preprocessor.cpp:7:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:10:
+src/preprocess/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/preprocess/preprocessor.cpp:7:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+src/preprocess/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+In file included from src/runner.cpp:15:
+In file included from src/readalike_prepr/article_reorder.h:17:
+src/readalike_prepr/order_codec.h:443:13: warning: unused function 'DecodeOrder' [-Wunused-function]
+  443 | static bool DecodeOrder(const char* residual_path, const char* main_path,
+      |             ^~~~~~~~~~~
+src/readalike_prepr/order_codec.h:561:13: warning: unused function 'DecodeOrderV2' [-Wunused-function]
+  561 | static bool DecodeOrderV2(const char* residual_path, const char* main_path,
+      |             ^~~~~~~~~~~~~
+In file included from src/runner.cpp:17:
+src/readalike_prepr/phda9_preprocess.h:436:15: warning: unused function 'revid_apply' [-Wunused-function]
+  436 | static size_t revid_apply(const char *in, size_t n, char *out, int enc) {
+      |               ^~~~~~~~~~~
+In file included from src/runner.cpp:17:
+In file included from src/readalike_prepr/phda9_preprocess.h:603:
+src/readalike_prepr/header_sort.h:51:13: warning: unused function 'idnum_guard' [-Wunused-function]
+   51 | static void idnum_guard(long long v, long long lo, long long hi,
+      |             ^~~~~~~~~~~
+src/readalike_prepr/header_sort.h:61:13: warning: unused function 'idnum_pad' [-Wunused-function]
+   61 | static void idnum_pad(char *out, size_t *o, long long v, int dig) {
+      |             ^~~~~~~~~
+src/readalike_prepr/header_sort.h:67:13: warning: unused function 'idnum_dec' [-Wunused-function]
+   67 | static void idnum_dec(char *out, size_t *o, long long v) {
+      |             ^~~~~~~~~
+src/readalike_prepr/header_sort.h:74:18: warning: unused function 'idnum_num' [-Wunused-function]
+   74 | static long long idnum_num(const char *p, int len) {
+      |                  ^~~~~~~~~
+In file included from src/runner.cpp:10:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:10:
+src/preprocess/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/runner.cpp:10:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+src/preprocess/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+In file included from src/coder/encoder.cpp:1:
+In file included from src/coder/encoder.h:7:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:10:
+src/coder/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/coder/encoder.cpp:1:
+In file included from src/coder/encoder.h:7:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+src/coder/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+In file included from src/context-manager.cpp:1:
+In file included from src/context-manager.h:20:
+In file included from src/transformer.h:5:
+In file included from src/author_block.h:10:
+src/ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/context-manager.cpp:1:
+In file included from src/context-manager.h:20:
+In file included from src/transformer.h:5:
+src/author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+9 warnings generated.
+In file included from src/models/match.cpp:1:
+In file included from src/models/match.h:6:
+In file included from src/models/../transformer.h:5:
+In file included from src/models/../author_block.h:10:
+src/models/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/models/match.cpp:1:
+In file included from src/models/match.h:6:
+In file included from src/models/../transformer.h:5:
+src/models/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+src/tf1/opt/model_opt.cpp:479:19: warning: use of logical '&&' with constant operand [-Wconstant-logical-operand]
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^  ~
+src/tf1/opt/model_opt.cpp:479:19: note: use '&' for a bitwise operation
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^~
+      |                   &
+src/tf1/opt/model_opt.cpp:479:19: note: remove constant to silence this warning
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^~~~
+src/tf1/opt/model_opt.cpp:568:21: warning: use of logical '&&' with constant operand [-Wconstant-logical-operand]
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^  ~
+src/tf1/opt/model_opt.cpp:568:21: note: use '&' for a bitwise operation
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^~
+      |                     &
+src/tf1/opt/model_opt.cpp:568:21: note: remove constant to silence this warning
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^~~~
+2 warnings generated.
+src/models/ppmd.cpp:992:29: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]
+  992 |       PAGE_WI(p,0).Freq += (!suff(pc)->NumStats & (p[0].Freq<16));
+      |                            ~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                 &&
+src/models/ppmd.cpp:992:29: note: cast one or both operands to int to silence this warning
+src/models/ppmd.cpp:1106:29: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]
+ 1106 |       PAGE_WI(p,0).Freq += (!suff(pc)->NumStats & (p[0].Freq<16));
+      |                            ~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                 &&
+src/models/ppmd.cpp:1106:29: note: cast one or both operands to int to silence this warning
+2 warnings generated.
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -mrecip=none -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wno-unused-variable -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -Oz -c src/tf1/weights_io.cpp src/tf1/weights_io_compressed.cpp src/tf1/opt/arena_build.cpp
+In file included from src/mixer/byte-mixer.cpp:1:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:10:
+src/mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/mixer/byte-mixer.cpp:1:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+src/mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+In file included from src/predictor.cpp:1:
+In file included from src/predictor.h:8:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:10:
+src/mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+In file included from src/predictor.cpp:1:
+In file included from src/predictor.h:8:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+src/mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+2 warnings generated.
+clang++-18 -m64 -fuse-ld=lld-18 -Wl,--gc-sections -std=c++17 -no-pie -Wl,--icf=all -Wl,-z,norelro -Wl,--version-script=runtime_exports.map -Wl,--as-needed -Wl,--build-id=none -Wl,-T,/workspace/nncp-experiments/experiments/work/release_exgf2_20261010/FINAL_build/.build/encoder_split.lds -flto -Wl,-Map=cmix.map bit-context.o bracket-context.o bracket.o byte-mixer.o byte-model.o combined-context.o context-hash.o context-manager.o decoder.o dictionary.o direct-hash.o direct.o encoder.o indirect-hash.o indirect.o interval-hash.o interval.o match.o grammar-match.o mixer-input.o mixer.o nonstationary.o fxcmv1.o ppmd.o predictor.o preprocessor.o r1_reorder_transform.o run-map.o runner.o sigmoid.o sparse.o sse.o glibc_compat.o detmath.o fast_math_vec.o optimizer_vec.o dict_derive.o bit_head.o tf1_engine.o weights_io.o weights_io_compressed.o kernels.o model.o arena_build.o attn.o glue.o kda.o qmat_dense.o qmat_sparse.o model_opt.o tf1_z3.o tf1_prompt.o tf1_gate.o word_label.o adaptive_depth.o  -s -o cmix
+rm -f *.o
+sstrip: llvm-objcopy-18 --strip-sections
+CUT guard: checking /workspace/nncp-experiments/experiments/work/release_exgf2_20261010/FINAL_build/.build/cmix.cutguard against /workspace/nncp-experiments/experiments/work/release_exgf2_20261010/FINAL_build/.build/encoder_split.lds
+cut_dpath: .encoder_only 0x283060..0x28d2b0 (41552 B), 1213 functions reachable from the argc==1 entry 0x214378 + 14 init/fini roots (data hull: 8 data objects with code pointers)
+cut_dpath: clean - no .encoder_only function on the -d path.
+xform Nf=565936 ranges=2
+orig=565936 cm=169108
+/usr/bin/ld: warning: cutstub.s2.elf has a LOAD segment with RWX permissions
+boot stage2 10109 -> 7313
+/usr/bin/ld: warning: cutstub.elf has a LOAD segment with RWX permissions
+stub=8048 strom=169108 paket=177156 Nf=565936 Nd=524384 K=154504 decomp_bin=162552
+unpack off=8048 clen=169108 dlen=565936 ilen=565936 split=524384
+CUT-Gegenprobe voll: bitidentisch
+cut 177156->162552 K=154504 Nd=524384
+unpack off=8048 clen=154504 dlen=524384 ilen=565936 split=524384
+CUT-Gegenprobe dec: Praefix bitidentisch
+/usr/bin/ld: warning: cutprobe.s2.elf has a LOAD segment with RWX permissions
+boot stage2 9519 -> 6930
+/usr/bin/ld: warning: cutprobe.elf has a LOAD segment with RWX permissions
+CUT-Stubprobe voll: bitidentisch
+CUT-Stubprobe dec: Praefix bitidentisch
+
+input (raw)                               565936
+after sstrip (Nf)                         565936
+  of which encoder block from Nd           41552
+Nd (cut point)                            524384
+CM raw stream                             169108
+stage 2 (flat / compressed)                10109
+  compressed                                7313
+Stub (sstripped)                            8048
+Package = cmix_orig                       177156
+.decomp_bin (truncated)                   162552
+savings per .decomp_bin                    14604
+~/run ~
+building build helper cmix_aux (-DAUX_BUILD=1)
+rm -f *.o
+rm -f cmix
+rm -f tf1_dump
+rm -f tf1_z3
+rm -f remap
+rm -f sstrip
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -march=x86-64-v3 -mtune=znver2 -O3 -fdata-sections -ffunction-sections -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -flto -DAUX_BUILD=1 src/coder/decoder.cpp src/coder/encoder.cpp src/context-manager.cpp src/contexts/bit-context.cpp src/contexts/bracket-context.cpp src/contexts/combined-context.cpp src/contexts/context-hash.cpp src/contexts/indirect-hash.cpp src/contexts/interval-hash.cpp src/contexts/interval.cpp src/contexts/sparse.cpp src/models/bracket.cpp src/models/byte-model.cpp src/models/direct-hash.cpp src/models/direct.cpp src/models/indirect.cpp src/models/match.cpp src/models/grammar-match.cpp src/models/fxcmv1.cpp src/models/ppmd.cpp src/states/nonstationary.cpp src/states/run-map.cpp src/mixer/byte-mixer.cpp src/mixer/mixer-input.cpp src/mixer/mixer.cpp src/mixer/sigmoid.cpp src/mixer/sse.cpp -c src/predictor.cpp
+In file included from src/coder/decoder.cpp:1:
+In file included from src/coder/decoder.h:6:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:4:
+src/coder/../mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/coder/decoder.cpp:1:
+In file included from src/coder/decoder.h:6:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:10:
+src/coder/../mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/coder/../mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/coder/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/coder/../mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/coder/../mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/coder/decoder.cpp:1:
+In file included from src/coder/decoder.h:6:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+src/coder/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/coder/../mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+In file included from src/coder/encoder.cpp:1:
+In file included from src/coder/encoder.h:7:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:4:
+src/coder/../mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/coder/encoder.cpp:1:
+In file included from src/coder/encoder.h:7:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+In file included from src/coder/../mixer/../author_block.h:10:
+src/coder/../mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/coder/../mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/coder/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/coder/../mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/coder/../mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/coder/encoder.cpp:1:
+In file included from src/coder/encoder.h:7:
+In file included from src/coder/../predictor.h:8:
+In file included from src/coder/../mixer/byte-mixer.h:9:
+In file included from src/coder/../mixer/../transformer.h:5:
+src/coder/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/coder/../mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+In file included from src/context-manager.cpp:1:
+In file included from src/context-manager.h:20:
+In file included from src/transformer.h:5:
+In file included from src/author_block.h:4:
+src/metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/context-manager.cpp:1:
+In file included from src/context-manager.h:20:
+In file included from src/transformer.h:5:
+In file included from src/author_block.h:10:
+src/ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/context-manager.cpp:1:
+In file included from src/context-manager.h:20:
+In file included from src/transformer.h:5:
+src/author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+In file included from src/models/match.cpp:1:
+In file included from src/models/match.h:6:
+In file included from src/models/../transformer.h:5:
+In file included from src/models/../author_block.h:4:
+src/models/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/models/match.cpp:1:
+In file included from src/models/match.h:6:
+In file included from src/models/../transformer.h:5:
+In file included from src/models/../author_block.h:10:
+src/models/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/models/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/models/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/models/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/models/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/models/match.cpp:1:
+In file included from src/models/match.h:6:
+In file included from src/models/../transformer.h:5:
+src/models/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/models/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+src/models/ppmd.cpp:992:29: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]
+  992 |       PAGE_WI(p,0).Freq += (!suff(pc)->NumStats & (p[0].Freq<16));
+      |                            ~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                 &&
+src/models/ppmd.cpp:992:29: note: cast one or both operands to int to silence this warning
+src/models/ppmd.cpp:1106:29: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]
+ 1106 |       PAGE_WI(p,0).Freq += (!suff(pc)->NumStats & (p[0].Freq<16));
+      |                            ~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                 &&
+src/models/ppmd.cpp:1106:29: note: cast one or both operands to int to silence this warning
+2 warnings generated.
+In file included from src/mixer/byte-mixer.cpp:1:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:4:
+src/mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/mixer/byte-mixer.cpp:1:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:10:
+src/mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/mixer/byte-mixer.cpp:1:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+src/mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+In file included from src/predictor.cpp:1:
+In file included from src/predictor.h:8:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:4:
+src/mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/predictor.cpp:1:
+In file included from src/predictor.h:8:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+In file included from src/mixer/../author_block.h:10:
+src/mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/predictor.cpp:1:
+In file included from src/predictor.h:8:
+In file included from src/mixer/byte-mixer.h:9:
+In file included from src/mixer/../transformer.h:5:
+src/mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -march=x86-64-v3 -mtune=znver2 -Os -fdata-sections -ffunction-sections -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -Oz -DAUX_BUILD=1 src/preprocess/preprocessor.cpp src/preprocess/dictionary.cpp -c 
+In file included from src/preprocess/preprocessor.cpp:7:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:4:
+src/preprocess/../mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/preprocess/preprocessor.cpp:7:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:10:
+src/preprocess/../mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/preprocess/../mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/preprocess/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/preprocess/../mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/preprocess/../mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/preprocess/preprocessor.cpp:7:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+src/preprocess/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/preprocess/../mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+8 warnings generated.
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -DAUX_BUILD=1 src/r1_reorder_transform.cpp src/runner.cpp -c
+In file included from src/runner.cpp:15:
+In file included from src/readalike_prepr/article_reorder.h:17:
+src/readalike_prepr/order_codec.h:443:13: warning: unused function 'DecodeOrder' [-Wunused-function]
+  443 | static bool DecodeOrder(const char* residual_path, const char* main_path,
+      |             ^~~~~~~~~~~
+src/readalike_prepr/order_codec.h:561:13: warning: unused function 'DecodeOrderV2' [-Wunused-function]
+  561 | static bool DecodeOrderV2(const char* residual_path, const char* main_path,
+      |             ^~~~~~~~~~~~~
+In file included from src/runner.cpp:17:
+src/readalike_prepr/phda9_preprocess.h:436:15: warning: unused function 'revid_apply' [-Wunused-function]
+  436 | static size_t revid_apply(const char *in, size_t n, char *out, int enc) {
+      |               ^~~~~~~~~~~
+In file included from src/runner.cpp:17:
+In file included from src/readalike_prepr/phda9_preprocess.h:603:
+src/readalike_prepr/header_sort.h:51:13: warning: unused function 'idnum_guard' [-Wunused-function]
+   51 | static void idnum_guard(long long v, long long lo, long long hi,
+      |             ^~~~~~~~~~~
+src/readalike_prepr/header_sort.h:61:13: warning: unused function 'idnum_pad' [-Wunused-function]
+   61 | static void idnum_pad(char *out, size_t *o, long long v, int dig) {
+      |             ^~~~~~~~~
+src/readalike_prepr/header_sort.h:67:13: warning: unused function 'idnum_dec' [-Wunused-function]
+   67 | static void idnum_dec(char *out, size_t *o, long long v) {
+      |             ^~~~~~~~~
+src/readalike_prepr/header_sort.h:74:18: warning: unused function 'idnum_num' [-Wunused-function]
+   74 | static long long idnum_num(const char *p, int len) {
+      |                  ^~~~~~~~~
+In file included from src/runner.cpp:10:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:4:
+src/preprocess/../mixer/../metablock.h:498:8: warning: private field 'tail_closed_' is not used [-Wunused-private-field]
+  498 |   bool tail_closed_ = false, nach_endet_ = false, bzeile_ = false;
+      |        ^
+In file included from src/runner.cpp:10:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+In file included from src/preprocess/../mixer/../author_block.h:10:
+src/preprocess/../mixer/../ts_progress.h:241:9: warning: private field 'phase_' is not used [-Wunused-private-field]
+  241 |   Phase phase_ = kBlock;
+      |         ^
+src/preprocess/../mixer/../ts_progress.h:242:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |        ^
+src/preprocess/../mixer/../ts_progress.h:242:31: warning: private field 'line_has_tab_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                               ^
+src/preprocess/../mixer/../ts_progress.h:242:54: warning: private field 'part_b_done_' is not used [-Wunused-private-field]
+  242 |   bool block_opened_ = false, line_has_tab_ = false, part_b_done_ = false, have_block_ = false;
+      |                                                      ^
+src/preprocess/../mixer/../ts_progress.h:243:22: warning: private field 'guard_pos_' is not used [-Wunused-private-field]
+  243 |   unsigned long long guard_pos_ = 0;
+      |                      ^
+In file included from src/runner.cpp:10:
+In file included from src/preprocess/preprocessor.h:7:
+In file included from src/preprocess/../predictor.h:8:
+In file included from src/preprocess/../mixer/byte-mixer.h:9:
+In file included from src/preprocess/../mixer/../transformer.h:5:
+src/preprocess/../mixer/../author_block.h:158:8: warning: private field 'block_opened_' is not used [-Wunused-private-field]
+  158 |   bool block_opened_ = false;
+      |        ^
+src/preprocess/../mixer/../author_block.h:160:17: warning: private field 'prev_' is not used [-Wunused-private-field]
+  160 |   unsigned char prev_ = 0;
+      |                 ^
+15 warnings generated.
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -DAUX_BUILD=1 -c src/glibc_compat.cpp -o glibc_compat.o
+clang++-18 -O2 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/detmath.cpp -o detmath.o
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/fast_math_vec.cpp -o fast_math_vec.o
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -c src/optimizer_vec.cpp -o optimizer_vec.o
+clang++-18 -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -m64 -Wall -std=c++17 -ffp-model=fast -mrecip=none -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-threadsafe-statics -Wno-unknown-escape-sequence -Wno-unused-variable -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable -Wno-format -Oz -fdata-sections -ffunction-sections -march=x86-64-v3 -mtune=znver2 -fno-unroll-loops -fno-pie -fmerge-all-constants -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -DAUX_BUILD=1 src/preprocess/dict_derive.cpp -c
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/bit_head.cpp -o bit_head.o
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -mrecip=none -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wno-unused-variable -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -c src/tf1/tf1_engine.cpp src/tf1/kernels.cpp src/tf1/model.cpp src/tf1/opt/attn.cpp src/tf1/opt/glue.cpp src/tf1/opt/kda.cpp src/tf1/opt/qmat_dense.cpp src/tf1/opt/qmat_sparse.cpp src/tf1/opt/model_opt.cpp src/tf1/tf1_z3.cpp src/tf1/tf1_prompt.cpp src/tf1/tf1_gate.cpp
+src/tf1/opt/model_opt.cpp:479:19: warning: use of logical '&&' with constant operand [-Wconstant-logical-operand]
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^  ~
+src/tf1/opt/model_opt.cpp:479:19: note: use '&' for a bitwise operation
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^~
+      |                   &
+src/tf1/opt/model_opt.cpp:479:19: note: remove constant to silence this warning
+  479 |     if (!((3 & 2) && 1) && kind == AttnKind::KVF32) {
+      |                   ^~~~
+src/tf1/opt/model_opt.cpp:568:21: warning: use of logical '&&' with constant operand [-Wconstant-logical-operand]
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^  ~
+src/tf1/opt/model_opt.cpp:568:21: note: use '&' for a bitwise operation
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^~
+      |                     &
+src/tf1/opt/model_opt.cpp:568:21: note: remove constant to silence this warning
+  568 |       if (!((3 & 2) && 1) &&
+      |                     ^~~~
+2 warnings generated.
+clang++-18 -O3 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -mrecip=none -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wno-unused-variable -DSEED=923 -DUPDATE_LIMIT=3000 -DNDEBUG -Oz -c src/tf1/weights_io.cpp src/tf1/weights_io_compressed.cpp src/tf1/opt/arena_build.cpp
+clang++-18 -Os -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/word_label.cpp -o word_label.o
+clang++-18 -O2 -m64 -std=c++17 -march=x86-64-v3 -mtune=znver2 -fno-pie -fno-direct-access-external-data -fno-rtti -fvisibility=hidden -ffp-model=precise -ffp-contract=off -fno-math-errno -fno-builtin -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Wall -Wno-unused-variable -c src/adaptive_depth.cpp -o adaptive_depth.o
+clang++-18 -m64 -fuse-ld=lld-18 -Wl,--gc-sections -std=c++17 -no-pie -Wl,--icf=all -Wl,-z,norelro -Wl,--version-script=runtime_exports.map -Wl,--as-needed -Wl,--build-id=none -Wl,-T,/workspace/nncp-experiments/experiments/work/release_exgf2_20261010/FINAL_build/.build/encoder_split.lds -flto -Wl,-Map=cmix.map bit-context.o bracket-context.o bracket.o byte-mixer.o byte-model.o combined-context.o context-hash.o context-manager.o decoder.o dictionary.o direct-hash.o direct.o encoder.o indirect-hash.o indirect.o interval-hash.o interval.o match.o grammar-match.o mixer-input.o mixer.o nonstationary.o fxcmv1.o ppmd.o predictor.o preprocessor.o r1_reorder_transform.o run-map.o runner.o sigmoid.o sparse.o sse.o glibc_compat.o detmath.o fast_math_vec.o optimizer_vec.o dict_derive.o bit_head.o tf1_engine.o weights_io.o weights_io_compressed.o kernels.o model.o arena_build.o attn.o glue.o kda.o qmat_dense.o qmat_sparse.o model_opt.o tf1_z3.o tf1_prompt.o tf1_gate.o word_label.o adaptive_depth.o  -s -o cmix
+rm -f *.o
+mv cmix cmix_aux
+205067 bytes -> 57502 bytes in 39.60 s.
+115870 bytes -> 43781 bytes in 28.21 s.
+comp9 3995122 B sha256 952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67

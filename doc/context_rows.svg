@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 816" width="960" height="816" role="img" aria-labelledby="t d">
+<title id="t">Rows fed to the transformer behind a title</title>
+<desc id="d">Page 88,249 of the coder stream, Alkane. Behind its title the transformer is fed three kinds of rows, each taken from an earlier page of the stream: the titles of three redirect pages as synonyms, the text around six earlier links to the page as link context, and the texts of four earlier links as aliases.</desc>
+<rect x="0.5" y="0.5" width="959" height="815" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">Rows fed to the transformer behind a title</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">Page 88,249 of the coder stream, Alkane. The rows come from earlier pages of the stream that redirect or link to it.</text>
+<text x="24" y="90" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Earlier page of the stream</text>
+<rect x="338" y="79" width="12" height="12" fill="#c9c7bd"/>
+<text x="357" y="90" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Page 88,249 of the stream, an article</text>
+<rect x="338" y="104" width="598" height="26" fill="#f3f2ee" rx="5"/>
+<text x="350" y="121.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">fed, not coded: page number, page id, contributor and date</text>
+<text x="924" y="121.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">31 tokens</text>
+<text x="350" y="154" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">title</text>
+<rect x="399" y="137" width="65.4" height="24" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="408" y="154" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" font-weight="600">Alkane</text>
+<text x="924" y="154" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">predicted and coded, 4 bytes in the stream</text>
+<rect x="338" y="168" width="598" height="450" fill="#f3f2ee" rx="5"/>
+<text x="350" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" font-weight="600">fed to the transformer, not coded</text>
+<text x="924" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">282 tokens</text>
+<text x="350" y="209" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">synonyms</text>
+<text x="450" y="209" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">titles of redirects to this page; at most 4 titles, 64 tokens</text>
+<text x="924" y="209" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">21 tokens</text>
+<rect x="24" y="222" width="12" height="12" fill="#eb6834"/>
+<text x="43" y="232.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 6,818</text>
+<text x="128" y="232.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Saturated hydrocarbon</text>
+<line x1="304" y1="228" x2="345" y2="228" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 228 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="232.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">Saturated hydrocarbon</text>
+<text x="924" y="232.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">9</text>
+<rect x="24" y="246" width="12" height="12" fill="#eb6834"/>
+<text x="43" y="256.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 33,628</text>
+<text x="128" y="256.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Alkanes</text>
+<line x1="304" y1="252" x2="345" y2="252" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 252 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="256.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">Alkanes</text>
+<text x="924" y="256.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">5</text>
+<rect x="24" y="270" width="12" height="12" fill="#eb6834"/>
+<text x="43" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 62,175</text>
+<text x="128" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Organic radical</text>
+<line x1="304" y1="276" x2="345" y2="276" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 276 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="280.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">Organic radical</text>
+<text x="924" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">7</text>
+<text x="350" y="311" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">link context</text>
+<text x="450" y="311" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">text around links that begin with the title; at most 256 tokens</text>
+<text x="924" y="311" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">243 tokens</text>
+<rect x="24" y="324" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="334.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 87,796</text>
+<text x="128" y="334.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Air pollution</text>
+<line x1="304" y1="330" x2="345" y2="330" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 330 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="334.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">... [hexane] (C&lt;sub&gt;6&lt;/sub&gt;H&lt;sub&gt;14&lt;/sub&gt;). ''see <tspan font-weight="600">[Alkane]</tspan>''.</text>
+<text x="924" y="334.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">64</text>
+<rect x="24" y="348" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="358.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,048</text>
+<text x="128" y="358.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Propane</text>
+<line x1="304" y1="354" x2="345" y2="354" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 354 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="358.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">*<tspan font-weight="600">[Alkane]</tspan>s</text>
+<text x="924" y="358.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">8</text>
+<rect x="24" y="372" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="382.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,052</text>
+<text x="128" y="382.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Methane</text>
+<line x1="304" y1="378" x2="345" y2="378" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 378 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="382.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">*<tspan font-weight="600">[Alkane]</tspan>, a type of [hydrocarbon] of which methane is simplest member.</text>
+<text x="924" y="382.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">39</text>
+<rect x="24" y="396" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="406.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,150</text>
+<text x="128" y="406.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Alkyl</text>
+<line x1="304" y1="402" x2="345" y2="402" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 402 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="406.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">*<tspan font-weight="600">[Alkane]</tspan></text>
+<text x="924" y="406.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">7</text>
+<rect x="24" y="420" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="430.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,172</text>
+<text x="128" y="430.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Nucleophilic substitution</text>
+<line x1="304" y1="426" x2="345" y2="426" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 426 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="430.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">:: [Alkyl halide|R-X] &amp;&amp;rarr; <tspan font-weight="600">[Alkane|R-H]</tspan> using [Lithium aluminium ...</text>
+<text x="924" y="430.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">64</text>
+<rect x="24" y="444" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="454.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,242</text>
+<text x="128" y="454.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Alkene</text>
+<line x1="304" y1="450" x2="345" y2="450" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 450 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="454.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">* [hydrocarbon]s with increasing [bond order]:<tspan font-weight="600">[Alkane]</tspan>s, alkenes ...</text>
+<text x="924" y="454.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">43</text>
+<text x="364" y="477" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">an empty line between pieces (2 tokens each), then the page separator (8 tokens)</text>
+<text x="350" y="507" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">aliases</text>
+<text x="450" y="507" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">texts of earlier links to this page; at most 64 tokens</text>
+<text x="924" y="507" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">18 tokens</text>
+<rect x="24" y="520" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="530.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 87,069</text>
+<text x="128" y="530.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Random coil</text>
+<line x1="304" y1="526" x2="345" y2="526" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 526 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="530.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b" font-weight="600">tetrahedral</text>
+<text x="468" y="530.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">the text of the link</text>
+<text x="592" y="530.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">[alkane#Molecular geometry|<tspan font-weight="600" fill="#0b0b0b">tetrahedral</tspan>]</text>
+<text x="924" y="530.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">4</text>
+<rect x="24" y="544" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="554.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 87,478</text>
+<text x="128" y="554.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Lycopene</text>
+<line x1="304" y1="550" x2="345" y2="550" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 550 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="554.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b" font-weight="600">saturate</text>
+<text x="468" y="554.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">the text of the link</text>
+<text x="592" y="554.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">[Alkane|<tspan font-weight="600" fill="#0b0b0b">saturate</tspan>]</text>
+<text x="924" y="554.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">4</text>
+<rect x="24" y="568" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="578.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,172</text>
+<text x="128" y="578.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Nucleophilic substitution</text>
+<line x1="304" y1="574" x2="345" y2="574" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 574 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="578.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b" font-weight="600">R-H</text>
+<text x="468" y="578.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">the text of the link</text>
+<text x="592" y="578.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">[Alkane|<tspan font-weight="600" fill="#0b0b0b">R-H</tspan>]</text>
+<text x="924" y="578.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">6</text>
+<rect x="24" y="592" width="12" height="12" fill="#c9c7bd"/>
+<text x="43" y="602.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page 88,240</text>
+<text x="128" y="602.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Alkyne</text>
+<line x1="304" y1="598" x2="345" y2="598" stroke="#8a8980" stroke-width="1.2"/>
+<path d="M352 598 l-7 -3.5 v7 z" fill="#8a8980"/>
+<text x="364" y="602.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b" font-weight="600">alkanes</text>
+<text x="468" y="602.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">the text of the link</text>
+<text x="592" y="602.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">[alkane|<tspan font-weight="600" fill="#0b0b0b">alkanes</tspan>]</text>
+<text x="924" y="602.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">4</text>
+<text x="350" y="642" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">text</text>
+<rect x="399" y="625" width="262.9" height="24" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="408" y="642" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">{mergefrom|List of alkanes} ...</text>
+<text x="924" y="642" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">predicted and coded</text>
+<line x1="24" y1="660" x2="936" y2="660" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="668" width="12" height="12" fill="#eb6834"/>
+<text x="43" y="678" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">a page of the redirect block, the first 71,148 pages of the stream</text>
+<rect x="490" y="668" width="12" height="12" fill="#c9c7bd"/>
+<text x="509" y="678" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">an article</text>
+<text x="24" y="701" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Only pages in front of page 88,249 in the stream can be sources. The decompressor has decoded them and builds the same rows.</text>
+<text x="24" y="719" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Synonyms stand in stream order. Aliases: redirect titles not yet fed as synonyms, then the link texts, the most frequent first.</text>
+<text x="24" y="737" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Link context: a link counts if it begins with the title as the page spells it; a link written [alkane], in lower case, does not.</text>
+<text x="24" y="755" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Of these links the latest that fit are taken, at most 8, oldest first; each piece is cut in its paragraph to 64 tokens.</text>
+<text x="24" y="773" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Titles and link texts are kept in a table in memory. The link context is read back from a temporary copy of the stream coded so far.</text>
+<text x="24" y="791" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">These rows go to the transformer only. It sees the bytes of the preprocessed stream; they are shown here as text, long rows shortened (...).</text>
+</svg>

@@ -1,0 +1,44 @@
+{
+  "archive": {
+    "bytes": 91778237,
+    "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/FINAL/archive9",
+    "sha256": "a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c"
+  },
+  "arm": "FINAL",
+  "comp9": {
+    "bytes": 3995122,
+    "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/FINAL/comp9",
+    "sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+  },
+  "encoder": {
+    "boot_id": "225f7e92-517d-4f1b-b70c-1b4826c05277",
+    "pid": 4099127,
+    "startticks": 202524190
+  },
+  "full_roundtrip_verified": false,
+  "log": {
+    "bytes": 40034,
+    "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/FINAL/e.log",
+    "sha256": "89dd9ded7e2686f2967cd6074ec2359cbc995e944b0f73beb90e83b58e22b9c7"
+  },
+  "producer": {
+    "boot_id": "225f7e92-517d-4f1b-b70c-1b4826c05277",
+    "pid": 4099121,
+    "startticks": 202524187
+  },
+  "schema": "NEIF_NATIVE_ENCODE_COMPLETION_V1",
+  "source_manifest_sha256": "bfa52ad2915ddab6550e31ef8a0a38ceb1eaaeab4c3918586a0e0e9ef76e248d",
+  "status": "passed",
+  "timing": {
+    "archive_bytes": 91778237,
+    "archive_sha256": "a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c",
+    "comp9_sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67",
+    "maxrss_mib": 10204.5,
+    "payload_bytes": 87764097,
+    "returncode": 0,
+    "system_seconds": 12422.59,
+    "user_seconds": 206994.02,
+    "wall_seconds": 220071.89
+  },
+  "utc": "2026-10-10T10:05:30.188389+00:00"
+}

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 508" width="960" height="508" role="img" aria-labelledby="t d">
+<title id="t">Rows fed to the transformer in front of a title</title>
+<desc id="d">Two pages of the coder stream, one of the redirect block and one article, each with the rows that are fed to the transformer in front of the title and with the title that is then predicted and coded.</desc>
+<rect x="0.5" y="0.5" width="959" height="507" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">Rows fed to the transformer in front of a title</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">Two pages of the coder stream. The rows give the transformer the page before it has to predict the first byte of the title.</text>
+<rect x="24" y="81" width="12" height="12" fill="#eb6834"/>
+<text x="43" y="92" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Page 6,818 of the stream, in the redirect block</text>
+<text x="24" y="111" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">a run of redirect pages is one document: the context continues</text>
+<rect x="24" y="126" width="438" height="172" fill="#f3f2ee" rx="5"/>
+<text x="36" y="143" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" font-weight="600">fed to the transformer, not coded</text>
+<text x="450" y="143" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">38 tokens</text>
+<rect x="36" y="155" width="5" height="18" fill="#eb6834"/>
+<text x="50" y="169" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">redirect row</text>
+<text x="156" y="169" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">#rd</text>
+<rect x="36.5" y="183.5" width="4" height="17" fill="#fcfcfb" stroke="#6f6e69" stroke-width="1"/>
+<text x="50" y="197" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page number</text>
+<text x="156" y="197" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">6818</text>
+<rect x="191.6" y="183" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="204.05" y="196.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">4</text>
+<rect x="36" y="211" width="5" height="18" fill="#2a78d6"/>
+<text x="50" y="225" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page id</text>
+<text x="156" y="225" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">29059</text>
+<rect x="199.5" y="211" width="38.7" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="218.85" y="224.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">5-6</text>
+<rect x="36" y="239" width="5" height="18" fill="#2a78d6"/>
+<text x="50" y="253" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">contributor</text>
+<text x="156" y="253" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">Conversion script</text>
+<rect x="36" y="267" width="5" height="18" fill="#2a78d6"/>
+<text x="50" y="281" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">date</text>
+<text x="156" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">2002</text>
+<rect x="191.6" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="204.05" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">4</text>
+<text x="222.5" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">-02</text>
+<rect x="250.2" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="262.65" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">2</text>
+<text x="281.1" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">-25</text>
+<rect x="308.8" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="321.25" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">2</text>
+<line x1="24" y1="303" x2="462" y2="303" stroke="#0b0b0b" stroke-width="1.4"/>
+<text x="36" y="322" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" font-weight="600">predicted and coded</text>
+<text x="450" y="322" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">8 bytes in the stream</text>
+<text x="50" y="349" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">title</text>
+<rect x="147" y="332" width="183.9" height="24" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="156" y="349" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" font-weight="600">Saturated hydrocarbon</text>
+<rect x="498" y="81" width="12" height="12" fill="#c9c7bd"/>
+<text x="517" y="92" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Page 88,249 of the stream, an article</text>
+<text x="498" y="111" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">a new document: the context of the transformer is empty</text>
+<rect x="498" y="126" width="438" height="172" fill="#f3f2ee" rx="5"/>
+<text x="510" y="143" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" font-weight="600">fed to the transformer, not coded</text>
+<text x="924" y="143" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">31 tokens</text>
+<text x="524" y="169" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" font-style="italic">no redirect row</text>
+<rect x="510.5" y="183.5" width="4" height="17" fill="#fcfcfb" stroke="#6f6e69" stroke-width="1"/>
+<text x="524" y="197" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page number</text>
+<text x="630" y="197" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">88249</text>
+<rect x="673.5" y="183" width="38.7" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="692.85" y="196.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">5-6</text>
+<rect x="510" y="211" width="5" height="18" fill="#2a78d6"/>
+<text x="524" y="225" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page id</text>
+<text x="630" y="225" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">639</text>
+<rect x="657.7" y="211" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="670.15" y="224.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">3</text>
+<rect x="510" y="239" width="5" height="18" fill="#2a78d6"/>
+<text x="524" y="253" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">contributor</text>
+<text x="630" y="253" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">Chobot</text>
+<rect x="510" y="267" width="5" height="18" fill="#2a78d6"/>
+<text x="524" y="281" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">date</text>
+<text x="630" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">2006</text>
+<rect x="665.6" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="678.05" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">4</text>
+<text x="696.5" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">-03</text>
+<rect x="724.2" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="736.65" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">2</text>
+<text x="755.1" y="281" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b">-01</text>
+<rect x="782.8" y="267" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="795.25" y="280.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">2</text>
+<line x1="498" y1="303" x2="936" y2="303" stroke="#0b0b0b" stroke-width="1.4"/>
+<text x="510" y="322" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" font-weight="600">predicted and coded</text>
+<text x="924" y="322" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69" text-anchor="end">4 bytes in the stream</text>
+<text x="524" y="349" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">title</text>
+<rect x="621" y="332" width="65.4" height="24" fill="#e4eefb" rx="3" stroke="#86b6ef" stroke-width="1"/>
+<text x="630" y="349" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#0b0b0b" font-weight="600">Alkane</text>
+<line x1="24" y1="372" x2="936" y2="372" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="379" width="5" height="18" fill="#2a78d6"/>
+<text x="38" y="392" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page id, contributor and date: fields of the page in enwik9, known from the metadata block at the head of the stream</text>
+<rect x="24" y="398" width="5" height="18" fill="#eb6834"/>
+<text x="38" y="411" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">redirect row: the page is one of the first 71,148 pages, the redirect block</text>
+<rect x="24.5" y="417.5" width="4" height="17" fill="#fcfcfb" stroke="#6f6e69" stroke-width="1"/>
+<text x="38" y="430" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">page number: a count of the pages, kept by compressor and decompressor</text>
+<rect x="24" y="435" width="24.9" height="18" fill="#fcfcfb" rx="9" stroke="#c3c2b7" stroke-width="1"/>
+<text x="36.45" y="448.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e" text-anchor="middle">4</text>
+<text x="58.9" y="449" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">one extra token after each run of digits: the class of its length, here 4 digits. Every row ends with a line feed.</text>
+<text x="24" y="472" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">The output of the last fed row is the prediction for the first byte of the title. The transformer was trained on this stream with the same rows.</text>
+<text x="24" y="489" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">It sees the bytes of the preprocessed stream (dictionary codes, marks for capital letters); they are shown here as text.</text>
+</svg>

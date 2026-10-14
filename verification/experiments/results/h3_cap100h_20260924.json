@@ -1,0 +1,2043 @@
+{
+ "status": "complete",
+ "started_utc": "2026-09-24T18:34:43Z",
+ "plan_sha256": "b95f1f60950d3175b4809cbafa7ec38210553667ff5b1a56e629ec445de4914e",
+ "steps": [
+  {
+   "name": "prefix_baseline",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_baseline"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_c4_sidecoder_20260923/source_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 59.01,
+   "peak_rss_kib": 181768,
+   "user_s": 46.59,
+   "system_s": 8.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_baseline.log"
+  },
+  {
+   "name": "prefix_FWD3",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_FWD3"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD3_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:35:42Z",
+   "returncode": 0,
+   "seconds": 23.51,
+   "peak_rss_kib": 179264,
+   "user_s": 19.75,
+   "system_s": 3.35,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_FWD3.log"
+  },
+  {
+   "name": "LT256x1U_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dlstm-cells=256",
+    "-Dlstm-update-limit=0",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_ltl_20260923/src_LT256x1U_bench",
+   "cpu": 3,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 88.03,
+   "peak_rss_kib": 339172,
+   "user_s": 36.86,
+   "system_s": 4.84,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_build.log"
+  },
+  {
+   "name": "FWD3_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD3_bench",
+   "cpu": 2,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 88.53,
+   "peak_rss_kib": 340104,
+   "user_s": 36.98,
+   "system_s": 4.86,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_build.log"
+  },
+  {
+   "name": "LT256x1U_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small",
+   "cpu": 3,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:11Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 14384,
+   "user_s": 0.01,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_small_prepare.log"
+  },
+  {
+   "name": "FWD3_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small",
+   "cpu": 2,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:12Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 16428,
+   "user_s": 0.02,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_small_prepare.log"
+  },
+  {
+   "name": "HS3_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100g_20260924/src_HS3_bench",
+   "cpu": 7,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 90.52,
+   "peak_rss_kib": 340920,
+   "user_s": 39.55,
+   "system_s": 4.97,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_build.log"
+  },
+  {
+   "name": "LS_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dlstm-cells=256",
+    "-Dlstm-update-limit=0",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100e_20260924/src_LS_bench",
+   "cpu": 6,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 91.03,
+   "peak_rss_kib": 343028,
+   "user_s": 75.57,
+   "system_s": 11.71,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_build.log"
+  },
+  {
+   "name": "HS2_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100d_20260924/src_HS2_bench",
+   "cpu": 5,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 91.03,
+   "peak_rss_kib": 342472,
+   "user_s": 42.09,
+   "system_s": 5.14,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_build.log"
+  },
+  {
+   "name": "HS3_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small",
+   "cpu": 7,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:14Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 18492,
+   "user_s": 0.01,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_small_prepare.log"
+  },
+  {
+   "name": "HS2_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small",
+   "cpu": 5,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:14Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 22572,
+   "user_s": 0.01,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_small_prepare.log"
+  },
+  {
+   "name": "LS_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small",
+   "cpu": 6,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:14Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 22572,
+   "user_s": 0.02,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_small_prepare.log"
+  },
+  {
+   "name": "WL2_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dwordlbl-ctx=16",
+    "-Dwordlbl-lambda=0.85",
+    "-Dwordlbl-eta0=0.0225",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_wl2_20260923/src_WL2_bench",
+   "cpu": 4,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:34:43Z",
+   "returncode": 0,
+   "seconds": 92.02,
+   "peak_rss_kib": 338552,
+   "user_s": 40.87,
+   "system_s": 5.13,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_build.log"
+  },
+  {
+   "name": "WL2_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small",
+   "cpu": 4,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:36:15Z",
+   "returncode": 0,
+   "seconds": 0.5,
+   "peak_rss_kib": 24616,
+   "user_s": 0.02,
+   "system_s": 0.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_small_prepare.log"
+  },
+  {
+   "name": "prefix_LT256x1U",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_LT256x1U"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_ltl_20260923/src_LT256x1U_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:36:06Z",
+   "returncode": 0,
+   "seconds": 23.51,
+   "peak_rss_kib": 180064,
+   "user_s": 19.89,
+   "system_s": 3.32,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_LT256x1U.log"
+  },
+  {
+   "name": "prefix_WL2",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_WL2"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_wl2_20260923/src_WL2_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:36:29Z",
+   "returncode": 0,
+   "seconds": 23.51,
+   "peak_rss_kib": 180164,
+   "user_s": 19.67,
+   "system_s": 3.36,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_WL2.log"
+  },
+  {
+   "name": "prefix_HS2",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_HS2"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100d_20260924/src_HS2_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:36:53Z",
+   "returncode": 0,
+   "seconds": 23.51,
+   "peak_rss_kib": 179468,
+   "user_s": 19.95,
+   "system_s": 3.24,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_HS2.log"
+  },
+  {
+   "name": "prefix_LS",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_LS"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100e_20260924/src_LS_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:37:16Z",
+   "returncode": 0,
+   "seconds": 24.01,
+   "peak_rss_kib": 179952,
+   "user_s": 20.13,
+   "system_s": 3.39,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_LS.log"
+  },
+  {
+   "name": "prefix_HS3",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_HS3"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100g_20260924/src_HS3_c4",
+   "cpu": 8,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T18:37:40Z",
+   "returncode": 0,
+   "seconds": 23.51,
+   "peak_rss_kib": 179372,
+   "user_s": 19.86,
+   "system_s": 3.31,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/prefix_HS3.log"
+  },
+  {
+   "name": "FWD3_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small",
+   "cpu": 2,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:12Z",
+   "returncode": 0,
+   "seconds": 255.61,
+   "peak_rss_kib": 8348220,
+   "user_s": 245.07,
+   "system_s": 10.01,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_small_encode.log"
+  },
+  {
+   "name": "LT256x1U_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small",
+   "cpu": 3,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:12Z",
+   "returncode": 0,
+   "seconds": 449.66,
+   "peak_rss_kib": 8360784,
+   "user_s": 438.55,
+   "system_s": 10.63,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_small_encode.log"
+  },
+  {
+   "name": "FWD3_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small",
+   "cpu": 2,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:40:28Z",
+   "returncode": 0,
+   "seconds": 246.07,
+   "peak_rss_kib": 8348356,
+   "user_s": 235.49,
+   "system_s": 10.3,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_small_decode.log"
+  },
+  {
+   "name": "FWD3_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large",
+   "cpu": 2,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:44:34Z",
+   "returncode": 0,
+   "seconds": 1.5,
+   "peak_rss_kib": 321392,
+   "user_s": 1.19,
+   "system_s": 0.26,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_large_prepare.log"
+  },
+  {
+   "name": "HS3_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small",
+   "cpu": 7,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:14Z",
+   "returncode": 0,
+   "seconds": 509.66,
+   "peak_rss_kib": 8314704,
+   "user_s": 496.64,
+   "system_s": 12.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_small_encode.log"
+  },
+  {
+   "name": "WL2_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small",
+   "cpu": 4,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:16Z",
+   "returncode": 0,
+   "seconds": 511.67,
+   "peak_rss_kib": 8313248,
+   "user_s": 498.33,
+   "system_s": 12.79,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_small_encode.log"
+  },
+  {
+   "name": "HS2_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small",
+   "cpu": 5,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:15Z",
+   "returncode": 0,
+   "seconds": 514.67,
+   "peak_rss_kib": 8314476,
+   "user_s": 501.77,
+   "system_s": 12.35,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_small_encode.log"
+  },
+  {
+   "name": "LS_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small",
+   "cpu": 6,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:36:15Z",
+   "returncode": 0,
+   "seconds": 730.22,
+   "peak_rss_kib": 8328228,
+   "user_s": 716.21,
+   "system_s": 13.8,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_small_encode.log"
+  },
+  {
+   "name": "LT256x1U_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small",
+   "cpu": 3,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:43:41Z",
+   "returncode": 0,
+   "seconds": 443.1,
+   "peak_rss_kib": 8360808,
+   "user_s": 431.82,
+   "system_s": 11.09,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_small_decode.log"
+  },
+  {
+   "name": "LT256x1U_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large",
+   "cpu": 3,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:51:04Z",
+   "returncode": 0,
+   "seconds": 1.51,
+   "peak_rss_kib": 321420,
+   "user_s": 1.13,
+   "system_s": 0.26,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_large_prepare.log"
+  },
+  {
+   "name": "WL2_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small",
+   "cpu": 4,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:44:47Z",
+   "returncode": 0,
+   "seconds": 506.11,
+   "peak_rss_kib": 8313368,
+   "user_s": 492.67,
+   "system_s": 12.98,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_small_decode.log"
+  },
+  {
+   "name": "WL2_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large",
+   "cpu": 4,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:53:13Z",
+   "returncode": 0,
+   "seconds": 2.01,
+   "peak_rss_kib": 321456,
+   "user_s": 1.42,
+   "system_s": 0.28,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_large_prepare.log"
+  },
+  {
+   "name": "HS3_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small",
+   "cpu": 7,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:44:44Z",
+   "returncode": 0,
+   "seconds": 527.62,
+   "peak_rss_kib": 8314544,
+   "user_s": 514.09,
+   "system_s": 13.39,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_small_decode.log"
+  },
+  {
+   "name": "HS2_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small",
+   "cpu": 5,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:44:49Z",
+   "returncode": 0,
+   "seconds": 522.62,
+   "peak_rss_kib": 8314484,
+   "user_s": 509.47,
+   "system_s": 12.63,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_small_decode.log"
+  },
+  {
+   "name": "HS3_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large",
+   "cpu": 7,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:53:31Z",
+   "returncode": 0,
+   "seconds": 2.01,
+   "peak_rss_kib": 321392,
+   "user_s": 1.26,
+   "system_s": 0.24,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_large_prepare.log"
+  },
+  {
+   "name": "HS2_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large",
+   "cpu": 5,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T18:53:32Z",
+   "returncode": 0,
+   "seconds": 1.51,
+   "peak_rss_kib": 321404,
+   "user_s": 1.22,
+   "system_s": 0.26,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_large_prepare.log"
+  },
+  {
+   "name": "LS_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small",
+   "cpu": 6,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 2400,
+   "started_utc": "2026-09-24T18:48:25Z",
+   "returncode": 0,
+   "seconds": 763.19,
+   "peak_rss_kib": 8328048,
+   "user_s": 747.77,
+   "system_s": 14.96,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_small_decode.log"
+  },
+  {
+   "name": "LS_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100_20260923/fixtures/enwik9_prefix_100000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large",
+   "cpu": 6,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T19:01:08Z",
+   "returncode": 0,
+   "seconds": 2.01,
+   "peak_rss_kib": 321400,
+   "user_s": 1.39,
+   "system_s": 0.28,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_large_prepare.log"
+  },
+  {
+   "name": "FWD3_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large",
+   "cpu": 2,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T18:44:35Z",
+   "returncode": 0,
+   "seconds": 25673.62,
+   "peak_rss_kib": 8958088,
+   "user_s": 23764.08,
+   "system_s": 1906.21,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_large_encode.log"
+  },
+  {
+   "name": "LT256x1U_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large",
+   "cpu": 3,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T18:51:06Z",
+   "returncode": 0,
+   "seconds": 51940.08,
+   "peak_rss_kib": 8970696,
+   "user_s": 49797.0,
+   "system_s": 2138.22,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_large_encode.log"
+  },
+  {
+   "name": "WL2_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large",
+   "cpu": 4,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T18:53:15Z",
+   "returncode": 0,
+   "seconds": 54481.57,
+   "peak_rss_kib": 8922896,
+   "user_s": 52005.13,
+   "system_s": 2457.86,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_large_encode.log"
+  },
+  {
+   "name": "FWD3_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large",
+   "cpu": 2,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T01:52:29Z",
+   "returncode": 0,
+   "seconds": 32890.04,
+   "peak_rss_kib": 8958020,
+   "user_s": 30785.49,
+   "system_s": 2098.45,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/FWD3_large_decode.log"
+  },
+  {
+   "name": "HS3_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large",
+   "cpu": 7,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T18:53:33Z",
+   "returncode": 0,
+   "seconds": 59660.88,
+   "peak_rss_kib": 8924120,
+   "user_s": 57065.05,
+   "system_s": 2573.9,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_large_encode.log"
+  },
+  {
+   "name": "HS2_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large",
+   "cpu": 5,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T18:53:33Z",
+   "returncode": 0,
+   "seconds": 60431.4,
+   "peak_rss_kib": 8924056,
+   "user_s": 57845.9,
+   "system_s": 2565.45,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_large_encode.log"
+  },
+  {
+   "name": "HS2_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large",
+   "cpu": 5,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T11:40:45Z",
+   "returncode": -15,
+   "seconds": 4376.62,
+   "peak_rss_kib": 8513100,
+   "user_s": 4293.53,
+   "system_s": 81.78,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS2_large_decode.log"
+  },
+  {
+   "name": "LS_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large",
+   "cpu": 6,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-24T19:01:10Z",
+   "returncode": 0,
+   "seconds": 82770.26,
+   "peak_rss_kib": 8937940,
+   "user_s": 80169.52,
+   "system_s": 2573.7,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_large_encode.log"
+  },
+  {
+   "name": "LS_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large",
+   "cpu": 6,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T18:00:40Z",
+   "returncode": -15,
+   "seconds": 11.51,
+   "peak_rss_kib": 4788904,
+   "user_s": 6.25,
+   "system_s": 5.07,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LS_large_decode.log"
+  },
+  {
+   "name": "LT256x1U_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large",
+   "cpu": 3,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T09:16:46Z",
+   "returncode": 0,
+   "seconds": 35186.7,
+   "peak_rss_kib": 8970628,
+   "user_s": 33360.59,
+   "system_s": 1821.51,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/LT256x1U_large_decode.log"
+  },
+  {
+   "name": "WL2_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large",
+   "cpu": 4,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T10:01:17Z",
+   "returncode": 0,
+   "seconds": 34479.34,
+   "peak_rss_kib": 8923448,
+   "user_s": 32472.99,
+   "system_s": 1996.55,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/WL2_large_decode.log"
+  },
+  {
+   "name": "HS3_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large",
+   "cpu": 7,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 172800,
+   "started_utc": "2026-09-25T11:27:54Z",
+   "returncode": 0,
+   "seconds": 33224.67,
+   "peak_rss_kib": 8924504,
+   "user_s": 31350.04,
+   "system_s": 1866.47,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/logs/HS3_large_decode.log"
+  }
+ ],
+ "gates": {
+  "prefix_baseline_reproduced": {
+   "passed": true,
+   "evidence": {
+    "rebuilt": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_baseline/armc_prefix",
+     "bytes": 161012,
+     "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+    }
+   },
+   "utc": "2026-09-24T18:35:42Z"
+  },
+  "LT256x1U_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:11Z"
+  },
+  "FWD3_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:12Z"
+  },
+  "LT256x1U_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:12Z"
+  },
+  "FWD3_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:12Z"
+  },
+  "HS3_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:14Z"
+  },
+  "HS2_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:14Z"
+  },
+  "LS_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:14Z"
+  },
+  "HS3_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:14Z"
+  },
+  "HS2_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:15Z"
+  },
+  "LS_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:15Z"
+  },
+  "WL2_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:15Z"
+  },
+  "WL2_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:36:16Z"
+  },
+  "FWD3_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:44:34Z"
+  },
+  "FWD3_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:44:34Z"
+  },
+  "FWD3_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:44:35Z"
+  },
+  "LT256x1U_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:51:04Z"
+  },
+  "LT256x1U_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:51:04Z"
+  },
+  "LT256x1U_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:51:06Z"
+  },
+  "WL2_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:13Z"
+  },
+  "WL2_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:13Z"
+  },
+  "WL2_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:15Z"
+  },
+  "HS3_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:31Z"
+  },
+  "HS3_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:31Z"
+  },
+  "HS2_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:32Z"
+  },
+  "HS2_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:32Z"
+  },
+  "HS3_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:33Z"
+  },
+  "HS2_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T18:53:33Z"
+  },
+  "LS_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T19:01:08Z"
+  },
+  "LS_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T19:01:08Z"
+  },
+  "LS_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T19:01:10Z"
+  },
+  "FWD3_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T11:00:39Z"
+  },
+  "LT256x1U_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T19:03:13Z"
+  },
+  "WL2_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T19:35:56Z"
+  },
+  "HS3_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-25T20:41:39Z"
+  }
+ },
+ "lanes": {
+  "prefix": {
+   "baseline": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_baseline/armc_prefix",
+    "bytes": 161012,
+    "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+   },
+   "FWD3": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_FWD3/armc_prefix",
+    "bytes": 163724,
+    "sha256": "8f2f5936f23bebd6ab485c7e69659924a27541e0a4376b9a4c2c8ff2dfa95b81"
+   },
+   "LT256x1U": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_LT256x1U/armc_prefix",
+    "bytes": 165388,
+    "sha256": "26235915da0b1c94d52f263b6df970f83403ec8986b66b70a9f8d8ba60d0070e"
+   },
+   "WL2": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_WL2/armc_prefix",
+    "bytes": 161052,
+    "sha256": "9e90cb7c0e0f5fa4b5ecc17cba13a55879964498e0a5e2d80d4775aa760c6306"
+   },
+   "HS2": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_HS2/armc_prefix",
+    "bytes": 164980,
+    "sha256": "3f4f4afa2aa6adb4bc9aa5d1da7df753bc853f10945dc80a35ac03967eff686b"
+   },
+   "LS": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_LS/armc_prefix",
+    "bytes": 169332,
+    "sha256": "bfd75eedea05bff06598b14df481ee8da2576697fa348a9338f10bd3ef5e655d"
+   },
+   "HS3": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/armc_HS3/armc_prefix",
+    "bytes": 164308,
+    "sha256": "0f47ae5b0774bc4164f4d4144dcd05793d422636eba5c05c1937d241edd89d48"
+   }
+  },
+  "rows": {
+   "LT256x1U": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+     "bytes": 5589160,
+     "sha256": "4d29125cb918a5700393f1d500fd26bb4bbbe2533f2e4a77b29c943f36a88976"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/payload",
+      "bytes": 130608,
+      "sha256": "2b47e0658580936d80cd85024b2d5b1aa4c0a9aa39b04c37b1586d67d6db65d1"
+     },
+     "encode_seconds": 449.66,
+     "encode_peak_rss_kib": 8360784,
+     "fresh_decode_exact": true,
+     "decode_seconds": 443.1,
+     "delta_vs_c0": 0
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/payload",
+      "bytes": 12170659,
+      "sha256": "b396bc2e2bac4926bb4b00d4637012eb55499e28ac0979eebf3c1b419e578967"
+     },
+     "encode_seconds": 51940.08,
+     "encode_peak_rss_kib": 8970696,
+     "fresh_decode_exact": true,
+     "decode_seconds": 35186.7,
+     "delta_vs_control": -7308,
+     "rel_delta_vs_control": -0.0006001
+    }
+   },
+   "FWD3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+     "bytes": 5618360,
+     "sha256": "8db5975b898550afef26ac558aa87c8b8f769d918cd4e69589f3eeada43a62b6"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/payload",
+      "bytes": 130472,
+      "sha256": "9045124d0fb44ec4492c7ac84b5a3a005a85bef8eb38b8a1f0346580beefa51d"
+     },
+     "encode_seconds": 255.61,
+     "encode_peak_rss_kib": 8348220,
+     "fresh_decode_exact": true,
+     "decode_seconds": 246.07,
+     "delta_vs_c0": -136
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/payload",
+      "bytes": 12166319,
+      "sha256": "b1f8446a46c1294f87e19834cc396e4ef98c05e2569a29e82ab7af877871c456"
+     },
+     "encode_seconds": 25673.62,
+     "encode_peak_rss_kib": 8958088,
+     "fresh_decode_exact": true,
+     "decode_seconds": 32890.04,
+     "delta_vs_control": -11648,
+     "rel_delta_vs_control": -0.00095648
+    }
+   },
+   "HS3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+     "bytes": 5636096,
+     "sha256": "96d427a261bffe9f02f8e0cd0f997a90921e58d124d73cc59af0f12bea80be06"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/payload",
+      "bytes": 130443,
+      "sha256": "81d07ddfba146e2d0c6580a7dc4448913da9ac70e9804a8ac5af0285f3694248"
+     },
+     "encode_seconds": 509.66,
+     "encode_peak_rss_kib": 8314704,
+     "fresh_decode_exact": true,
+     "decode_seconds": 527.62,
+     "delta_vs_c0": -165
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/payload",
+      "bytes": 12164420,
+      "sha256": "32e0a67ff2c7423837c0260a476e6e60ba77350b9de0e8b1f7b14ce01b06e33d"
+     },
+     "encode_seconds": 59660.88,
+     "encode_peak_rss_kib": 8924120,
+     "fresh_decode_exact": true,
+     "decode_seconds": 33224.67,
+     "delta_vs_control": -13547,
+     "rel_delta_vs_control": -0.00111242
+    }
+   },
+   "HS2": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+     "bytes": 5644512,
+     "sha256": "31e835d5a6610a075a092b89877c99c65582cb2276b32bc4a0e77e736c65bea1"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/payload",
+      "bytes": 130403,
+      "sha256": "6a4795db6f329c63eab231cfe3fdff8fdc0575318c07331537e5335a6ffbfab7"
+     },
+     "encode_seconds": 514.67,
+     "encode_peak_rss_kib": 8314476,
+     "fresh_decode_exact": true,
+     "decode_seconds": 522.62,
+     "delta_vs_c0": -205
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/payload",
+      "bytes": 12164395,
+      "sha256": "cc2f970f1af1890c6e5150291aa1e3dae8b1a56a9cc5ab6b614015fa2d84bc99"
+     },
+     "encode_seconds": 60431.4,
+     "encode_peak_rss_kib": 8924056
+    }
+   },
+   "LS": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+     "bytes": 5651096,
+     "sha256": "548e1436bd2a869fec6bf2d3031c62b3572ac489e1211cc194e9777f6a789d94"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/payload",
+      "bytes": 130403,
+      "sha256": "cd6cdbbff9b55ff2f60dee9ee03ea936cb0a79aaf433eb2dcf05a02ffeed0a2a"
+     },
+     "encode_seconds": 730.22,
+     "encode_peak_rss_kib": 8328228,
+     "fresh_decode_exact": true,
+     "decode_seconds": 763.19,
+     "delta_vs_c0": -205
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/payload",
+      "bytes": 12159230,
+      "sha256": "e99bb884fb2ac3eead13a952fbcec2dcb77bdcbff30b3e559a2c36a1aeccd023"
+     },
+     "encode_seconds": 82770.26,
+     "encode_peak_rss_kib": 8937940
+    }
+   },
+   "WL2": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+     "bytes": 5592952,
+     "sha256": "755702d0919dc4dc0157e87f897bf4b507dc1dbb2ada4c61990cf9d51f5a904a"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/payload",
+      "bytes": 130607,
+      "sha256": "22acbad7fd1b20835ec525bd1daf04c89d64142a0f2c60771ed29bc0f20cb8d0"
+     },
+     "encode_seconds": 511.67,
+     "encode_peak_rss_kib": 8313248,
+     "fresh_decode_exact": true,
+     "decode_seconds": 506.11,
+     "delta_vs_c0": -1
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/payload",
+      "bytes": 12176598,
+      "sha256": "63dcc46a79271867c4807b73161b0dc0dc8e3c72d33a93217f4cfba0bed9f622"
+     },
+     "encode_seconds": 54481.57,
+     "encode_peak_rss_kib": 8922896,
+     "fresh_decode_exact": true,
+     "decode_seconds": 34479.34,
+     "delta_vs_control": -1369,
+     "rel_delta_vs_control": -0.00011242
+    }
+   }
+  }
+ },
+ "result": {
+  "rows": {
+   "LT256x1U": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LT256x1U/bin/runner_lex",
+     "bytes": 5589160,
+     "sha256": "4d29125cb918a5700393f1d500fd26bb4bbbe2533f2e4a77b29c943f36a88976"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/small/payload",
+      "bytes": 130608,
+      "sha256": "2b47e0658580936d80cd85024b2d5b1aa4c0a9aa39b04c37b1586d67d6db65d1"
+     },
+     "encode_seconds": 449.66,
+     "encode_peak_rss_kib": 8360784,
+     "fresh_decode_exact": true,
+     "decode_seconds": 443.1,
+     "delta_vs_c0": 0
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LT256x1U/large/payload",
+      "bytes": 12170659,
+      "sha256": "b396bc2e2bac4926bb4b00d4637012eb55499e28ac0979eebf3c1b419e578967"
+     },
+     "encode_seconds": 51940.08,
+     "encode_peak_rss_kib": 8970696,
+     "fresh_decode_exact": true,
+     "decode_seconds": 35186.7,
+     "delta_vs_control": -7308,
+     "rel_delta_vs_control": -0.0006001
+    }
+   },
+   "FWD3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_FWD3/bin/runner_lex",
+     "bytes": 5618360,
+     "sha256": "8db5975b898550afef26ac558aa87c8b8f769d918cd4e69589f3eeada43a62b6"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/small/payload",
+      "bytes": 130472,
+      "sha256": "9045124d0fb44ec4492c7ac84b5a3a005a85bef8eb38b8a1f0346580beefa51d"
+     },
+     "encode_seconds": 255.61,
+     "encode_peak_rss_kib": 8348220,
+     "fresh_decode_exact": true,
+     "decode_seconds": 246.07,
+     "delta_vs_c0": -136
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/FWD3/large/payload",
+      "bytes": 12166319,
+      "sha256": "b1f8446a46c1294f87e19834cc396e4ef98c05e2569a29e82ab7af877871c456"
+     },
+     "encode_seconds": 25673.62,
+     "encode_peak_rss_kib": 8958088,
+     "fresh_decode_exact": true,
+     "decode_seconds": 32890.04,
+     "delta_vs_control": -11648,
+     "rel_delta_vs_control": -0.00095648
+    }
+   },
+   "HS3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS3/bin/runner_lex",
+     "bytes": 5636096,
+     "sha256": "96d427a261bffe9f02f8e0cd0f997a90921e58d124d73cc59af0f12bea80be06"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/small/payload",
+      "bytes": 130443,
+      "sha256": "81d07ddfba146e2d0c6580a7dc4448913da9ac70e9804a8ac5af0285f3694248"
+     },
+     "encode_seconds": 509.66,
+     "encode_peak_rss_kib": 8314704,
+     "fresh_decode_exact": true,
+     "decode_seconds": 527.62,
+     "delta_vs_c0": -165
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS3/large/payload",
+      "bytes": 12164420,
+      "sha256": "32e0a67ff2c7423837c0260a476e6e60ba77350b9de0e8b1f7b14ce01b06e33d"
+     },
+     "encode_seconds": 59660.88,
+     "encode_peak_rss_kib": 8924120,
+     "fresh_decode_exact": true,
+     "decode_seconds": 33224.67,
+     "delta_vs_control": -13547,
+     "rel_delta_vs_control": -0.00111242
+    }
+   },
+   "HS2": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_HS2/bin/runner_lex",
+     "bytes": 5644512,
+     "sha256": "31e835d5a6610a075a092b89877c99c65582cb2276b32bc4a0e77e736c65bea1"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/small/payload",
+      "bytes": 130403,
+      "sha256": "6a4795db6f329c63eab231cfe3fdff8fdc0575318c07331537e5335a6ffbfab7"
+     },
+     "encode_seconds": 514.67,
+     "encode_peak_rss_kib": 8314476,
+     "fresh_decode_exact": true,
+     "decode_seconds": 522.62,
+     "delta_vs_c0": -205
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/payload",
+      "bytes": 12164395,
+      "sha256": "cc2f970f1af1890c6e5150291aa1e3dae8b1a56a9cc5ab6b614015fa2d84bc99"
+     },
+     "encode_seconds": 60431.4,
+     "encode_peak_rss_kib": 8924056
+    }
+   },
+   "LS": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_LS/bin/runner_lex",
+     "bytes": 5651096,
+     "sha256": "548e1436bd2a869fec6bf2d3031c62b3572ac489e1211cc194e9777f6a789d94"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/small/payload",
+      "bytes": 130403,
+      "sha256": "cd6cdbbff9b55ff2f60dee9ee03ea936cb0a79aaf433eb2dcf05a02ffeed0a2a"
+     },
+     "encode_seconds": 730.22,
+     "encode_peak_rss_kib": 8328228,
+     "fresh_decode_exact": true,
+     "decode_seconds": 763.19,
+     "delta_vs_c0": -205
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/payload",
+      "bytes": 12159230,
+      "sha256": "e99bb884fb2ac3eead13a952fbcec2dcb77bdcbff30b3e559a2c36a1aeccd023"
+     },
+     "encode_seconds": 82770.26,
+     "encode_peak_rss_kib": 8937940
+    }
+   },
+   "WL2": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/bench_WL2/bin/runner_lex",
+     "bytes": 5592952,
+     "sha256": "755702d0919dc4dc0157e87f897bf4b507dc1dbb2ada4c61990cf9d51f5a904a"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/small/payload",
+      "bytes": 130607,
+      "sha256": "22acbad7fd1b20835ec525bd1daf04c89d64142a0f2c60771ed29bc0f20cb8d0"
+     },
+     "encode_seconds": 511.67,
+     "encode_peak_rss_kib": 8313248,
+     "fresh_decode_exact": true,
+     "decode_seconds": 506.11,
+     "delta_vs_c0": -1
+    },
+    "small_differs_from_c0": true,
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/WL2/large/payload",
+      "bytes": 12176598,
+      "sha256": "63dcc46a79271867c4807b73161b0dc0dc8e3c72d33a93217f4cfba0bed9f622"
+     },
+     "encode_seconds": 54481.57,
+     "encode_peak_rss_kib": 8922896,
+     "fresh_decode_exact": true,
+     "decode_seconds": 34479.34,
+     "delta_vs_control": -1369,
+     "rel_delta_vs_control": -0.00011242
+    }
+   }
+  },
+  "lane_errors": {
+   "HS2": "GateFailure: HS2_large_decode exited -15",
+   "LS": "GateFailure: LS_large_decode exited -15"
+  },
+  "removed_temp_files": [
+   "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/HS2/large/ppm.63156.temp",
+   "/workspace/nncp-experiments/experiments/work/h3_cap100h_20260924/runs/LS/large/ppm.103321.temp"
+  ],
+  "control": {
+   "bytes": 12177967,
+   "sha256": "a361c32a6a58d8a3005ce54e4c84aa70466ff598846a8aaebcab2ac8e9bbc47c",
+   "source": "external control /workspace/nncp-experiments/experiments/work/h3_cap100b_r2_20260924/status.json arm C0"
+  },
+  "verdicts": {
+   "FWD3": {
+    "live": null,
+    "small_lossless": true,
+    "large_delta_vs_control": -11648,
+    "large_better_and_lossless": true,
+    "delta_prefix": 2712
+   },
+   "LT256x1U": {
+    "live": null,
+    "small_lossless": true,
+    "large_delta_vs_control": -7308,
+    "large_better_and_lossless": true,
+    "delta_prefix": 4376
+   },
+   "WL2": {
+    "live": null,
+    "small_lossless": true,
+    "large_delta_vs_control": -1369,
+    "large_better_and_lossless": true,
+    "delta_prefix": 40
+   },
+   "HS2": {
+    "live": null,
+    "small_lossless": true,
+    "delta_prefix": 3968
+   },
+   "LS": {
+    "live": null,
+    "small_lossless": true,
+    "delta_prefix": 8320
+   },
+   "HS3": {
+    "live": null,
+    "small_lossless": true,
+    "large_delta_vs_control": -13547,
+    "large_better_and_lossless": true,
+    "delta_prefix": 3296
+   }
+  },
+  "note": "large-window decider; small window = liveness + losslessness only; no full-file claim; arms vs the CAP100B-R2 in-job C0 (external control, old box). Cross-machine determinism: each arm's 1 MB payload must equal old_box_small_payloads[arm]; runtimes CONTENDED"
+ },
+ "finished_utc": "2026-09-25T20:41:40Z",
+ "wall_seconds": 94016.8
+}

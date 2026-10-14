@@ -1,0 +1,65 @@
+{
+  "boot_id": "225f7e92-517d-4f1b-b70c-1b4826c05277",
+  "cleanup_verified": true,
+  "error": "RuntimeError('decode failed: {\\'command\\': [\\'/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B/archive9\\'], \\'cwd\\': \\'/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B\\', \\'started_utc\\': \\'2026-10-09T09:18:19.217124+00:00\\', \\'cleanup_verified\\': True, \\'identity\\': {\\'pid\\': 980940, \\'ppid\\': 980931, \\'start_ticks\\': \\'215610539\\'}, \\'wait4\\': {\\'pid\\': 980940, \\'returncode\\': -15, \\'raw_wait_status\\': 15, \\'user_seconds\\': 165125.424244, \\'system_seconds\\': 1112.153088, \\'peak_rss_bytes\\': 10474655744, \\'method\\': \\'wait4 primary PID; Linux includes waited native children; RSS is a per-process maximum\\'}, \\'reaped\\': [{\\'pid\\': 980940, \\'returncode\\': -15, \\'raw_wait_status\\': 15, \\'user_seconds\\': 165125.424244, \\'system_seconds\\': 1112.153088, \\'peak_rss_bytes\\': 10474655744, \\'method\\': \\'wait4 primary PID; Linux includes waited native children; RSS is a per-process maximum\\'}], \\'returncode\\': -15, \\'finished_utc\\': \\'2026-10-11T07:51:35.390715+00:00\\', \\'wall_seconds\\': 167596.1736068623, \\'error\\': \\'RuntimeError(\"resource guard: [\\\\\\'working-set admission ceiling or reserve\\\\\\']\")\\'}')",
+  "finished_utc": "2026-10-11T07:51:35.400697+00:00",
+  "gpu_used": false,
+  "hard_deadline_utc": "2026-10-12T09:18:18.534602+00:00",
+  "lossless_verified": false,
+  "owner": {
+    "pid": 980931,
+    "ppid": 980930,
+    "start_ticks": "215610462"
+  },
+  "peak_sampled_rss_bytes": 10496929792,
+  "peak_sampled_working_set_bytes": 161250500608,
+  "plan": {
+    "bytes": 9129,
+    "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B/plan.json",
+    "sha256": "826882cd81bea03f4f3999964978085f7e9919f77441f3c68719258186cb8531"
+  },
+  "schema": "NEIF_NATIVE_FULL_DECODE_V1",
+  "started_utc": "2026-10-09T09:18:18.534486+00:00",
+  "status": "failed_full_native_decode_cmp",
+  "steps": [
+    {
+      "cleanup_verified": true,
+      "command": [
+        "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B/archive9"
+      ],
+      "cwd": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B",
+      "error": "RuntimeError(\"resource guard: ['working-set admission ceiling or reserve']\")",
+      "finished_utc": "2026-10-11T07:51:35.390715+00:00",
+      "identity": {
+        "pid": 980940,
+        "ppid": 980931,
+        "start_ticks": "215610539"
+      },
+      "name": "decode",
+      "reaped": [
+        {
+          "method": "wait4 primary PID; Linux includes waited native children; RSS is a per-process maximum",
+          "peak_rss_bytes": 10474655744,
+          "pid": 980940,
+          "raw_wait_status": 15,
+          "returncode": -15,
+          "system_seconds": 1112.153088,
+          "user_seconds": 165125.424244
+        }
+      ],
+      "returncode": -15,
+      "started_utc": "2026-10-09T09:18:19.217124+00:00",
+      "wait4": {
+        "method": "wait4 primary PID; Linux includes waited native children; RSS is a per-process maximum",
+        "peak_rss_bytes": 10474655744,
+        "pid": 980940,
+        "raw_wait_status": 15,
+        "returncode": -15,
+        "system_seconds": 1112.153088,
+        "user_seconds": 165125.424244
+      },
+      "wall_seconds": 167596.1736068623
+    }
+  ],
+  "wall_seconds": 167596.88501102896
+}

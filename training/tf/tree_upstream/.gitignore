@@ -1,0 +1,15 @@
+scripts/
+cmix
+remap
+pgo_data/
+progress.log
+run/
+changes.v2
+logs
+/data/
+cpp_infer/data/
+.venv/
+__pycache__/
+*.pyc
+.env
+wandb/

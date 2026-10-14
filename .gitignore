@@ -1,0 +1,14 @@
+/.build/
+/comp9
+/archive9
+/enwik9
+/enwik9_uncompressed
+/cmix
+/cmix_aux
+/cmix.unpacked
+/cmix.map
+/pak_pack/
+/run/
+*.o
+*.pyc
+__pycache__/

@@ -1,0 +1,749 @@
+{
+ "status": "complete",
+ "started_utc": "2026-09-24T05:52:51Z",
+ "plan_sha256": "8940fd63ee27e9c530df83e0f181be7b69aeb22a6414c840b9c47cd0f000392b",
+ "steps": [
+  {
+   "name": "prefix_baseline",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_baseline"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_c4_sidecoder_20260923/source_c4",
+   "cpu": 176,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T05:52:51Z",
+   "returncode": 0,
+   "seconds": 87.53,
+   "peak_rss_kib": 183216,
+   "user_s": 61.58,
+   "system_s": 10.39,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/prefix_baseline.log"
+  },
+  {
+   "name": "FWD3_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD3_bench",
+   "cpu": 174,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T05:52:51Z",
+   "returncode": 0,
+   "seconds": 97.54,
+   "peak_rss_kib": 340604,
+   "user_s": 53.76,
+   "system_s": 6.2,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_build.log"
+  },
+  {
+   "name": "FWD3_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small",
+   "cpu": 174,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T05:54:28Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 13976,
+   "user_s": 0.02,
+   "system_s": 0.02,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_small_prepare.log"
+  },
+  {
+   "name": "FWD10_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD10_bench",
+   "cpu": 175,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T05:52:51Z",
+   "returncode": 0,
+   "seconds": 111.04,
+   "peak_rss_kib": 340320,
+   "user_s": 96.46,
+   "system_s": 13.87,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_build.log"
+  },
+  {
+   "name": "FWD10_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small",
+   "cpu": 175,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T05:54:42Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 16040,
+   "user_s": 0.02,
+   "system_s": 0.02,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_small_prepare.log"
+  },
+  {
+   "name": "prefix_FWD3",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_FWD3"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD3_c4",
+   "cpu": 176,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T05:54:18Z",
+   "returncode": 0,
+   "seconds": 60.02,
+   "peak_rss_kib": 181416,
+   "user_s": 25.61,
+   "system_s": 3.79,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/prefix_FWD3.log"
+  },
+  {
+   "name": "prefix_FWD10",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_FWD10"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/src_FWD10_c4",
+   "cpu": 176,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T05:55:18Z",
+   "returncode": 0,
+   "seconds": 30.01,
+   "peak_rss_kib": 180992,
+   "user_s": 25.54,
+   "system_s": 3.87,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/prefix_FWD10.log"
+  },
+  {
+   "name": "FWD3_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small",
+   "cpu": 174,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T05:54:29Z",
+   "returncode": 0,
+   "seconds": 298.12,
+   "peak_rss_kib": 8349120,
+   "user_s": 284.29,
+   "system_s": 13.38,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_small_encode.log"
+  },
+  {
+   "name": "FWD10_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small",
+   "cpu": 175,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T05:54:42Z",
+   "returncode": 0,
+   "seconds": 316.09,
+   "peak_rss_kib": 8349136,
+   "user_s": 302.84,
+   "system_s": 12.95,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_small_encode.log"
+  },
+  {
+   "name": "FWD3_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small",
+   "cpu": 174,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T05:59:27Z",
+   "returncode": 0,
+   "seconds": 304.12,
+   "peak_rss_kib": 8348920,
+   "user_s": 290.3,
+   "system_s": 13.43,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_small_decode.log"
+  },
+  {
+   "name": "FWD3_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_20mb_20260922/fixtures/enwik9_prefix_20000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large",
+   "cpu": 174,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T06:04:31Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 69836,
+   "user_s": 0.29,
+   "system_s": 0.1,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_large_prepare.log"
+  },
+  {
+   "name": "FWD10_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small",
+   "cpu": 175,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T05:59:58Z",
+   "returncode": 0,
+   "seconds": 303.09,
+   "peak_rss_kib": 8348904,
+   "user_s": 289.46,
+   "system_s": 13.18,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_small_decode.log"
+  },
+  {
+   "name": "FWD10_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_20mb_20260922/fixtures/enwik9_prefix_20000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large",
+   "cpu": 175,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T06:05:01Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 69852,
+   "user_s": 0.27,
+   "system_s": 0.09,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_large_prepare.log"
+  },
+  {
+   "name": "FWD3_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large",
+   "cpu": 174,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T06:04:31Z",
+   "returncode": 0,
+   "seconds": 5765.62,
+   "peak_rss_kib": 8675200,
+   "user_s": 5484.03,
+   "system_s": 277.87,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_large_encode.log"
+  },
+  {
+   "name": "FWD10_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large",
+   "cpu": 175,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T06:05:02Z",
+   "returncode": 0,
+   "seconds": 5785.59,
+   "peak_rss_kib": 8674800,
+   "user_s": 5506.62,
+   "system_s": 275.59,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_large_encode.log"
+  },
+  {
+   "name": "FWD10_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large",
+   "cpu": 175,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T07:41:28Z",
+   "returncode": 0,
+   "seconds": 5597.72,
+   "peak_rss_kib": 8675180,
+   "user_s": 5318.1,
+   "system_s": 268.54,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD10_large_decode.log"
+  },
+  {
+   "name": "FWD3_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large",
+   "cpu": 174,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T07:40:37Z",
+   "returncode": 0,
+   "seconds": 5662.23,
+   "peak_rss_kib": 8675204,
+   "user_s": 5384.54,
+   "system_s": 266.57,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/logs/FWD3_large_decode.log"
+  }
+ ],
+ "gates": {
+  "prefix_baseline_reproduced": {
+   "passed": true,
+   "evidence": {
+    "rebuilt": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_baseline/armc_prefix",
+     "bytes": 161012,
+     "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+    }
+   },
+   "utc": "2026-09-24T05:54:18Z"
+  },
+  "FWD3_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T05:54:28Z"
+  },
+  "FWD3_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T05:54:29Z"
+  },
+  "FWD10_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T05:54:42Z"
+  },
+  "FWD10_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T05:54:42Z"
+  },
+  "FWD3_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:04:31Z"
+  },
+  "FWD3_live": {
+   "passed": true,
+   "evidence": {
+    "payload": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/payload",
+     "bytes": 130472,
+     "sha256": "9045124d0fb44ec4492c7ac84b5a3a005a85bef8eb38b8a1f0346580beefa51d"
+    }
+   },
+   "utc": "2026-09-24T06:04:31Z"
+  },
+  "FWD3_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:04:31Z"
+  },
+  "FWD3_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:04:31Z"
+  },
+  "FWD10_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:05:01Z"
+  },
+  "FWD10_live": {
+   "passed": true,
+   "evidence": {
+    "payload": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/payload",
+     "bytes": 130508,
+     "sha256": "b8ea777e2b69a12c8311d358bffc2589004ac53e99de7e1aa3e318fd6e257aa7"
+    }
+   },
+   "utc": "2026-09-24T06:05:01Z"
+  },
+  "FWD10_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:05:01Z"
+  },
+  "FWD10_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T06:05:02Z"
+  },
+  "FWD10_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T09:14:45Z"
+  },
+  "FWD3_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T09:14:59Z"
+  }
+ },
+ "lanes": {
+  "prefix": {
+   "baseline": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_baseline/armc_prefix",
+    "bytes": 161012,
+    "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+   },
+   "FWD3": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_FWD3/armc_prefix",
+    "bytes": 163724,
+    "sha256": "8f2f5936f23bebd6ab485c7e69659924a27541e0a4376b9a4c2c8ff2dfa95b81"
+   },
+   "FWD10": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/armc_FWD10/armc_prefix",
+    "bytes": 163740,
+    "sha256": "fb60eab0d827a861f7879069b2aa6805d4382de33f884a8172ec3a7470a1b1f0"
+   }
+  },
+  "rows": {
+   "FWD3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+     "bytes": 5618352,
+     "sha256": "04abdb031604835ff0fae3b6766ddce7bf1991a3dea9c846b4c0edaa462b8d26"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/payload",
+      "bytes": 130472,
+      "sha256": "9045124d0fb44ec4492c7ac84b5a3a005a85bef8eb38b8a1f0346580beefa51d"
+     },
+     "encode_seconds": 298.12,
+     "encode_peak_rss_kib": 8349120,
+     "fresh_decode_exact": true,
+     "decode_seconds": 304.12,
+     "delta_vs_c0": -136
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/payload",
+      "bytes": 2536950,
+      "sha256": "eb092ef7483bf678734eaf8dccf90ffc96cb77d2d19ca1e7a6ed2017ca1e7588"
+     },
+     "encode_seconds": 5765.62,
+     "encode_peak_rss_kib": 8675200,
+     "fresh_decode_exact": true,
+     "decode_seconds": 5662.23,
+     "delta_vs_control": -2459,
+     "rel_delta_vs_control": -0.00096834
+    }
+   },
+   "FWD10": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+     "bytes": 5618368,
+     "sha256": "03aad73a11d5cb8a80c5d282405a4fa2d7ed7c46eb6033a4f695aeab4bfbd792"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/payload",
+      "bytes": 130508,
+      "sha256": "b8ea777e2b69a12c8311d358bffc2589004ac53e99de7e1aa3e318fd6e257aa7"
+     },
+     "encode_seconds": 316.09,
+     "encode_peak_rss_kib": 8349136,
+     "fresh_decode_exact": true,
+     "decode_seconds": 303.09,
+     "delta_vs_c0": -100
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/payload",
+      "bytes": 2537255,
+      "sha256": "713e21dfe0881d8f62e161ac36e4dc60819a69bf766977b4e1192f19e451e1f6"
+     },
+     "encode_seconds": 5785.59,
+     "encode_peak_rss_kib": 8674800,
+     "fresh_decode_exact": true,
+     "decode_seconds": 5597.72,
+     "delta_vs_control": -2154,
+     "rel_delta_vs_control": -0.00084823
+    }
+   }
+  }
+ },
+ "result": {
+  "rows": {
+   "FWD3": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD3/bin/runner_lex",
+     "bytes": 5618352,
+     "sha256": "04abdb031604835ff0fae3b6766ddce7bf1991a3dea9c846b4c0edaa462b8d26"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/small/payload",
+      "bytes": 130472,
+      "sha256": "9045124d0fb44ec4492c7ac84b5a3a005a85bef8eb38b8a1f0346580beefa51d"
+     },
+     "encode_seconds": 298.12,
+     "encode_peak_rss_kib": 8349120,
+     "fresh_decode_exact": true,
+     "decode_seconds": 304.12,
+     "delta_vs_c0": -136
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD3/large/payload",
+      "bytes": 2536950,
+      "sha256": "eb092ef7483bf678734eaf8dccf90ffc96cb77d2d19ca1e7a6ed2017ca1e7588"
+     },
+     "encode_seconds": 5765.62,
+     "encode_peak_rss_kib": 8675200,
+     "fresh_decode_exact": true,
+     "decode_seconds": 5662.23,
+     "delta_vs_control": -2459,
+     "rel_delta_vs_control": -0.00096834
+    }
+   },
+   "FWD10": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/bench_FWD10/bin/runner_lex",
+     "bytes": 5618368,
+     "sha256": "03aad73a11d5cb8a80c5d282405a4fa2d7ed7c46eb6033a4f695aeab4bfbd792"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/small/payload",
+      "bytes": 130508,
+      "sha256": "b8ea777e2b69a12c8311d358bffc2589004ac53e99de7e1aa3e318fd6e257aa7"
+     },
+     "encode_seconds": 316.09,
+     "encode_peak_rss_kib": 8349136,
+     "fresh_decode_exact": true,
+     "decode_seconds": 303.09,
+     "delta_vs_c0": -100
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwdual_20260924/runs/FWD10/large/payload",
+      "bytes": 2537255,
+      "sha256": "713e21dfe0881d8f62e161ac36e4dc60819a69bf766977b4e1192f19e451e1f6"
+     },
+     "encode_seconds": 5785.59,
+     "encode_peak_rss_kib": 8674800,
+     "fresh_decode_exact": true,
+     "decode_seconds": 5597.72,
+     "delta_vs_control": -2154,
+     "rel_delta_vs_control": -0.00084823
+    }
+   }
+  },
+  "lane_errors": {},
+  "removed_temp_files": [],
+  "control": {
+   "bytes": 2539409,
+   "sha256": "4e388fb9dc035cf54db3db077fd48e5c131b738de5aea8684a0810f5c62958ba",
+   "source": "results/h3_cm3_20mb_audit_20260922.json control",
+   "binary_sha256": "1acb87933034317a0e5f9b6c89e705d18172912df09fb30fe168400dcd81921e",
+   "reproduction_check": "H3-FLAG-PPM25-W20-01 (plan d83fcca6) re-encodes this control with binary 1acb8793; if it does not reproduce, this comparison is void"
+  },
+  "verdicts": {
+   "FWD3": {
+    "live": true,
+    "small_lossless": true,
+    "large_delta_vs_control": -2459,
+    "large_better_and_lossless": true,
+    "delta_prefix": 2712
+   },
+   "FWD10": {
+    "live": true,
+    "small_lossless": true,
+    "large_delta_vs_control": -2154,
+    "large_better_and_lossless": true,
+    "delta_prefix": 2728
+   }
+  },
+  "note": "large-window decider; small window = liveness + losslessness only; no full-file claim; source-only arms; complete-compressor comparison vs the pinned 20 MB control; runtimes CONTENDED"
+ },
+ "finished_utc": "2026-09-24T09:15:00Z",
+ "wall_seconds": 12129.6
+}

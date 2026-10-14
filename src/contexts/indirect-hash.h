@@ -1,0 +1,27 @@
+#ifndef INDIRECT_HASH_H
+#define INDIRECT_HASH_H
+
+#include "context.h"
+#include "../fast_div.h"
+
+#include <vector>
+
+class IndirectHash : public Context {
+ public:
+  static constexpr int kKind = Context::kIndirectHash;
+  int Kind() const override { return kKind; }
+  IndirectHash(const unsigned int& bit_context, unsigned int order1,
+      unsigned int hash_size1, unsigned int order2, unsigned int hash_size2);
+  void Update();
+  bool IsEqual(Context* c) const;
+
+ private:
+  const unsigned int& byte_;
+  unsigned long long context1_;
+  unsigned int hash_size1_, hash_size2_, size1_;
+  unsigned long long size_mask_ = 0, size1_mask_ = 0;
+  std::vector<unsigned long long> hashes_;
+};
+
+#endif
+

@@ -1,0 +1,409 @@
+{
+ "status": "complete",
+ "started_utc": "2026-09-24T08:33:44Z",
+ "plan_sha256": "1edc8b6894fcb63950e0e4c9b39bec6606b7aa4bcf8646f4129193a269ea7309",
+ "steps": [
+  {
+   "name": "prefix_baseline",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/armc_baseline"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_c4_sidecoder_20260923/source_c4",
+   "cpu": 30,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T08:33:44Z",
+   "returncode": 0,
+   "seconds": 157.55,
+   "peak_rss_kib": 185728,
+   "user_s": 64.92,
+   "system_s": 10.67,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/prefix_baseline.log"
+  },
+  {
+   "name": "FWRH_build",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_native_qualification_20260920/toolchains/zig/zig-0.15.1/zig",
+    "build",
+    "trace-runner",
+    "-j2",
+    "--prefix",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH",
+    "-Dvendored-libm=true",
+    "-Didr=true",
+    "-Dppm-order=20",
+    "-Dppmd-mmap=true",
+    "-Dcmc2-hash64=true",
+    "-Dlto=true",
+    "-Dcmfast=true",
+    "-Dmix-lr-scale=0.7",
+    "-Dmxa-uperr-scale=1.0",
+    "-Dsta6-mdc=30",
+    "-Dm0lr-comp8=false",
+    "-Dfxcm-auxctx-fix=true",
+    "-Dcoldram=true",
+    "-Dcoldram-pool-only=true",
+    "-Dcmc2-hot2=7",
+    "-Dmixer-decay-floor=0.14",
+    "-Ds7order=true",
+    "-Dmixer-e2e=true",
+    "-Dmixer-e2e-norm=true",
+    "-Dadaptive-depth=true",
+    "-Dfieldcodec-tsswap=true",
+    "-Dphda9-nullpred=true",
+    "-Dcm3-ts-rate=18",
+    "-Dapm-wupd=4",
+    "-Dwordlbl=true",
+    "-Dsse-ffl6=4",
+    "-Dderivdict=true",
+    "-Dtransformer=true",
+    "-Dtransformer-prior-form=0",
+    "-Dtf-packed=true",
+    "-Dextshed=true",
+    "-Dtransformer-lstm-dead=true",
+    "-Dtf-weights-v3=true",
+    "-Dtf-load-opt=oz",
+    "-Dship-evict-bytes=1500",
+    "-Dtransformer-attn=1",
+    "-Dglibc=true",
+    "-Dtest-no-r1=true",
+    "-Dppmd-evict-bytes=1500",
+    "-Dcmc-grow=0",
+    "-Dcm3-ts-runidx=1",
+    "-Dtransformer-weights=tfweights.fx2tfwc4"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/src_FWRH_bench",
+   "cpu": 30,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T08:33:44Z",
+   "returncode": 0,
+   "seconds": 212.07,
+   "peak_rss_kib": 340792,
+   "user_s": 102.27,
+   "system_s": 14.39,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_build.log"
+  },
+  {
+   "name": "FWRH_small_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_runidx_20260921/fixtures/enwik9_prefix_1000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small",
+   "cpu": 30,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T08:37:16Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 14040,
+   "user_s": 0.02,
+   "system_s": 0.02,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_small_prepare.log"
+  },
+  {
+   "name": "prefix_FWRH",
+   "argv": [
+    "/bin/bash",
+    "tools/build_armc_prefix.sh",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/armc_FWRH"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/src_FWRH_c4",
+   "cpu": 30,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 1500,
+   "started_utc": "2026-09-24T08:36:21Z",
+   "returncode": 0,
+   "seconds": 78.03,
+   "peak_rss_kib": 180920,
+   "user_s": 27.86,
+   "system_s": 3.43,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/prefix_FWRH.log"
+  },
+  {
+   "name": "FWRH_small_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small",
+   "cpu": 30,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T08:37:16Z",
+   "returncode": 0,
+   "seconds": 261.08,
+   "peak_rss_kib": 8348940,
+   "user_s": 237.43,
+   "system_s": 11.94,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_small_encode.log"
+  },
+  {
+   "name": "FWRH_small_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small",
+   "cpu": 30,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 3600,
+   "started_utc": "2026-09-24T08:41:37Z",
+   "returncode": 0,
+   "seconds": 251.07,
+   "peak_rss_kib": 8348928,
+   "user_s": 238.88,
+   "system_s": 11.88,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_small_decode.log"
+  },
+  {
+   "name": "FWRH_large_prepare",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "--prepare",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_cm3_20mb_20260922/fixtures/enwik9_prefix_20000000.bin",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/ready",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/temp"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large",
+   "cpu": 30,
+   "rlimit_as_bytes": 17179869184,
+   "timeout_s": 900,
+   "started_utc": "2026-09-24T08:45:49Z",
+   "returncode": 0,
+   "seconds": 0.51,
+   "peak_rss_kib": 69832,
+   "user_s": 0.28,
+   "system_s": 0.09,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_large_prepare.log"
+  },
+  {
+   "name": "FWRH_large_encode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "--codetemp",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/temp",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/payload"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large",
+   "cpu": 30,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T08:45:49Z",
+   "returncode": 0,
+   "seconds": 5236.92,
+   "peak_rss_kib": 8675400,
+   "user_s": 4958.44,
+   "system_s": 267.72,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_large_encode.log"
+  },
+  {
+   "name": "FWRH_large_decode",
+   "argv": [
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+    "-D",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/models/fxcm26/goldens/english.dic",
+    "/workspace/nncp-experiments/experiments/work/h3_v3_colctx_20260923/source/src/prepr/new_article_order_asset",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/payload",
+    "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/decoded"
+   ],
+   "cwd": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large",
+   "cpu": 30,
+   "rlimit_as_bytes": 25769803776,
+   "timeout_s": 21600,
+   "started_utc": "2026-09-24T10:13:06Z",
+   "returncode": 0,
+   "seconds": 6062.19,
+   "peak_rss_kib": 8675252,
+   "user_s": 5769.8,
+   "system_s": 290.69,
+   "killed": null,
+   "log": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/logs/FWRH_large_decode.log"
+  }
+ ],
+ "gates": {
+  "prefix_baseline_reproduced": {
+   "passed": true,
+   "evidence": {
+    "rebuilt": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/armc_baseline/armc_prefix",
+     "bytes": 161012,
+     "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+    }
+   },
+   "utc": "2026-09-24T08:36:21Z"
+  },
+  "FWRH_small_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T08:37:16Z"
+  },
+  "FWRH_small_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T08:37:16Z"
+  },
+  "FWRH_small_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T08:45:49Z"
+  },
+  "FWRH_live": {
+   "passed": true,
+   "evidence": {
+    "payload": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/payload",
+     "bytes": 130442,
+     "sha256": "572710aeefdaf378bcebc3c2350c2e0a543e00fc88372df05f453149d793c5d8"
+    }
+   },
+   "utc": "2026-09-24T08:45:49Z"
+  },
+  "FWRH_large_weights": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T08:45:49Z"
+  },
+  "FWRH_large_ready": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T08:45:49Z"
+  },
+  "FWRH_large_fresh_decode": {
+   "passed": true,
+   "evidence": {},
+   "utc": "2026-09-24T11:54:08Z"
+  }
+ },
+ "lanes": {
+  "prefix": {
+   "baseline": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/armc_baseline/armc_prefix",
+    "bytes": 161012,
+    "sha256": "cb40eef3d91cffa32aece51d5cab170ff8bbd7266791d9f0f7a3c24028bd8075"
+   },
+   "FWRH": {
+    "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/armc_FWRH/armc_prefix",
+    "bytes": 164348,
+    "sha256": "1e17307904bceba3cb12c0dbd84bc28bb9995929dc332fec44dcdfa8498862fb"
+   }
+  },
+  "rows": {
+   "FWRH": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+     "bytes": 5626600,
+     "sha256": "59a8932861f6c4ed5475d95a802196ad73f9c72181663d1299665a14691ed47f"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/payload",
+      "bytes": 130442,
+      "sha256": "572710aeefdaf378bcebc3c2350c2e0a543e00fc88372df05f453149d793c5d8"
+     },
+     "encode_seconds": 261.08,
+     "encode_peak_rss_kib": 8348940,
+     "fresh_decode_exact": true,
+     "decode_seconds": 251.07,
+     "delta_vs_c0": -166
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/payload",
+      "bytes": 2536794,
+      "sha256": "4b879baa0941917615ae3d8cac6b5eb36c010fb099a5207621f57e0f2ccd7d24"
+     },
+     "encode_seconds": 5236.92,
+     "encode_peak_rss_kib": 8675400,
+     "fresh_decode_exact": true,
+     "decode_seconds": 6062.19,
+     "delta_vs_control": -2615,
+     "rel_delta_vs_control": -0.00102977
+    }
+   }
+  }
+ },
+ "result": {
+  "rows": {
+   "FWRH": {
+    "binary": {
+     "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/bench_FWRH/bin/runner_lex",
+     "bytes": 5626600,
+     "sha256": "59a8932861f6c4ed5475d95a802196ad73f9c72181663d1299665a14691ed47f"
+    },
+    "small": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/small/payload",
+      "bytes": 130442,
+      "sha256": "572710aeefdaf378bcebc3c2350c2e0a543e00fc88372df05f453149d793c5d8"
+     },
+     "encode_seconds": 261.08,
+     "encode_peak_rss_kib": 8348940,
+     "fresh_decode_exact": true,
+     "decode_seconds": 251.07,
+     "delta_vs_c0": -166
+    },
+    "large": {
+     "payload": {
+      "path": "/workspace/nncp-experiments/experiments/work/h3_fwrh_20260924/runs/FWRH/large/payload",
+      "bytes": 2536794,
+      "sha256": "4b879baa0941917615ae3d8cac6b5eb36c010fb099a5207621f57e0f2ccd7d24"
+     },
+     "encode_seconds": 5236.92,
+     "encode_peak_rss_kib": 8675400,
+     "fresh_decode_exact": true,
+     "decode_seconds": 6062.19,
+     "delta_vs_control": -2615,
+     "rel_delta_vs_control": -0.00102977
+    }
+   }
+  },
+  "lane_errors": {},
+  "removed_temp_files": [],
+  "control": {
+   "bytes": 2539409,
+   "sha256": "4e388fb9dc035cf54db3db077fd48e5c131b738de5aea8684a0810f5c62958ba",
+   "source": "results/h3_cm3_20mb_audit_20260922.json control",
+   "binary_sha256": "1acb87933034317a0e5f9b6c89e705d18172912df09fb30fe168400dcd81921e",
+   "reproduction_check": "H3-FLAG-PPM25-W20-01 (plan d83fcca6) re-encodes this control with binary 1acb8793; if it does not reproduce, this comparison is void"
+  },
+  "verdicts": {
+   "FWRH": {
+    "live": true,
+    "small_lossless": true,
+    "large_delta_vs_control": -2615,
+    "large_better_and_lossless": true,
+    "delta_prefix": 3336
+   }
+  },
+  "note": "large-window decider; small window = liveness + losslessness only; no full-file claim; complete-compressor comparison vs the pinned 20 MB control; the arm reference is FWD3 2,536,950 (H3-FWDUAL-01); runtimes CONTENDED"
+ },
+ "finished_utc": "2026-09-24T11:54:08Z",
+ "wall_seconds": 12024.7
+}

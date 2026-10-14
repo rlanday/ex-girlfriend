@@ -1,0 +1,55 @@
+{
+  "schema": "EX_GIRLFRIEND_1_0_VERIFICATION_V1",
+  "observed_utc": "2026-10-14T08:01:56.455590+00:00",
+  "candidate": "original FINAL",
+  "release_name": "Ex-Girlfriend 1.0",
+  "upstream_commit": "1c9ea5ed57ec9718bcb681d20b79e81a60b7a728",
+  "full_fresh_decode_cmp": "PASS",
+  "independent_output_sha256_match": "PASS",
+  "decode_completed_utc": "2026-10-14T07:01:24Z",
+  "artifacts": {
+    "archive9": {
+      "bytes": 91778237,
+      "sha256": "a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c"
+    },
+    "comp9": {
+      "bytes": 3995122,
+      "sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+    },
+    "enwik9": {
+      "bytes": 1000000000,
+      "sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc"
+    },
+    "enwik9_uncompressed": {
+      "bytes": 1000000000,
+      "sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc"
+    }
+  },
+  "encode": {
+    "exit_code": 0,
+    "wall_seconds": 220071.89,
+    "user_seconds": 206994.02,
+    "sys_seconds": 12422.59,
+    "peak_rss_mib": 10204.5
+  },
+  "decode": {
+    "exit_code": 0,
+    "wall_seconds": 241636.66,
+    "user_seconds": 227764.75,
+    "sys_seconds": 13807.27,
+    "peak_rss_mib": 10194.0
+  },
+  "machine": "AMD Ryzen Threadripper 3970X (Zen 2), Linux x86-64; one pinned core on shared host",
+  "stock_neif_archive_bytes": 91913343,
+  "saving_bytes": 135106,
+  "saving_percent": 0.1469928038630909,
+  "source_rebuild": {
+    "status": "PASS",
+    "evidence": "retained October 10 release-tree rebuild; inspected October 12 and October 14",
+    "comp9_sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+  },
+  "limits": [
+    "Wall times include shared-host contention; no controlled per-feature full-corpus speed ratio.",
+    "Static x86-64-v3 portability review passed; no separate Intel full decode has been performed."
+  ]
+}

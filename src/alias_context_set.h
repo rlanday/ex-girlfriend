@@ -1,0 +1,9 @@
+#ifndef ALIAS_CONTEXT_SET_H_
+#define ALIAS_CONTEXT_SET_H_
+
+#define ALIAS_OPEN_LEN 9
+#define ALIAS_OPEN_INIT { 0x0a, 0x20, 0x20, 0x20, 0x20, 0x4c, 0xdf, 0x9b, 0x4e }
+#define ALIAS_CLOSE_LEN 5
+#define ALIAS_CLOSE_INIT { 0x4c, 0x2f, 0xdf, 0x9b, 0x4e }
+
+#endif

@@ -1,0 +1,132 @@
+{
+  "B": {
+    "archive": {
+      "bytes": 91867264,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/B/archive9",
+      "sha256": "e8f56cd370bb2f80a28568cde485c20e2ce9d1a4d5ba976a9bb7fa74de380e69"
+    },
+    "comp9": {
+      "bytes": 3993453,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/B/comp9",
+      "sha256": "e6371c953f21f3b9ade2b5daa4c745be8e6a43f54abadd2e320fd1ed2b216317"
+    },
+    "encode_log": {
+      "bytes": 40032,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full/B/e.log",
+      "sha256": "42a1c7cd1b41d318c10e5bbe102e3c7e79d269e8ab5db1a6b5b03c46abecdb5a"
+    },
+    "native_encode_seconds": 193800.2,
+    "native_exit_code": 0,
+    "payload_bytes": 87854686,
+    "peak_rss_mib": 9983.4,
+    "preprocessed_bytes": 888096401,
+    "system_seconds": 2778.09,
+    "user_seconds": 191007.7,
+    "wall_seconds": 193814.01
+  },
+  "accounting": "Archive saving is payload plus packaged-overhead saving. Standalone comp9 delta is separate and must not be added again.",
+  "claim_scope": "Full enwik9 packaged encode size; fresh full decode/cmp is running and lossless verification remains pending. No published record claim.",
+  "difference_B_minus_stock": {
+    "archive_bytes": -46079,
+    "archive_percent": -0.050133091122583906,
+    "comp9_bytes": -7236,
+    "packaged_overhead_bytes": -4562,
+    "payload_bytes": -41517
+  },
+  "fresh_decode": {
+    "controller_identity": {
+      "pid": 980931,
+      "ppid": 980930,
+      "start_ticks": "215610462"
+    },
+    "latest_guard": {
+      "admission": false,
+      "disk_free_bytes": 114219749376,
+      "errors": [],
+      "memory": {
+        "accounting": "working_set_raw_minus_inactive_file",
+        "controller_version": 1,
+        "current_bytes": 123996315648,
+        "current_path": "/sys/fs/cgroup/memory/memory.usage_in_bytes",
+        "floor_bytes": 26843545600,
+        "guard_usage_bytes": 47679492096,
+        "headroom_bytes": 211622866944,
+        "inactive_file_bytes": 76316823552,
+        "inactive_file_key": "total_inactive_file",
+        "maximum_bytes": 259302359040,
+        "maximum_path": "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+        "raw_after_bytes": 123996315648,
+        "raw_before_bytes": 123996315648,
+        "raw_current_bytes": 123996315648,
+        "raw_headroom_bytes": 135306043392,
+        "raw_reserve_breached": false,
+        "reserve_breached": false,
+        "sampling": "max(raw before stat, raw after stat) minus inactive file; non-atomic",
+        "stat_diagnostics_bytes": {
+          "total_active_file": 12003176448,
+          "total_dirty": 294809600,
+          "total_rss": 25155997696,
+          "total_unevictable": 0,
+          "total_writeback": 0
+        },
+        "stat_path": "/sys/fs/cgroup/memory/memory.stat",
+        "working_set_bytes": 47679492096,
+        "working_set_headroom_bytes": 211622866944
+      },
+      "own_rss_bytes": 6786052096,
+      "utc": "2026-10-09T09:20:20.165851+00:00"
+    },
+    "lossless_verified": false,
+    "plan": {
+      "bytes": 9129,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B/plan.json",
+      "sha256": "826882cd81bea03f4f3999964978085f7e9919f77441f3c68719258186cb8531"
+    },
+    "started": {
+      "bytes": 675,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_port_20261006/full_d/B/started.json",
+      "sha256": "8fb3dc244941cc6199d8e64346f5b11be54020d74e562fbfa43fd87c616a2e1c"
+    },
+    "started_utc": "2026-10-09T09:18:18.534486+00:00",
+    "terminal_receipt_exists": false
+  },
+  "observed_utc": "2026-10-09T09:20:28.031138+00:00",
+  "producer_completion": {
+    "bytes": 1558,
+    "path": "/workspace/nncp-experiments/experiments/work/neif_native_after_encode_20261008/B_r2/encode_completed.json",
+    "sha256": "bb8ed8123221ed0b5898fe4765398a3054ddf244e5b09f37757147b23d784cde"
+  },
+  "schema": "NEIF_B_FULL_ENCODE_RESULT_V1",
+  "source_artifacts_modified": false,
+  "status": "completed_full_encode_fresh_decode_running",
+  "stock": {
+    "archive": {
+      "bytes": 91913343,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_repro_20261006/full_e9/archive9",
+      "sha256": "30eaf239168bd4efb4c57af09002b968308d7614d0cca619540e971fc38f4f18"
+    },
+    "comp9": {
+      "bytes": 4000689,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_repro_20261006/full_e9/comp9",
+      "sha256": "8b07d85f0a374b55688fd08d1a464222f766efbb5bfefc2bc94d6abb201133d7"
+    },
+    "encode_log": {
+      "bytes": 39978,
+      "path": "/workspace/nncp-experiments/experiments/work/h3_neif_repro_20261006/full_e9/e.log",
+      "sha256": "052a223354ce5109538d64aa60e17959a9ea646bd635f50bd297a4181cf86b0e"
+    },
+    "native_encode_seconds": 188485.45,
+    "native_exit_code": 0,
+    "payload_bytes": 87896203,
+    "peak_rss_mib": 9984.4,
+    "preprocessed_bytes": 888096401,
+    "system_seconds": 2830.51,
+    "user_seconds": 185620.46,
+    "wall_seconds": 188498.85
+  },
+  "watcher_handoff": {
+    "bytes": 2282,
+    "path": "/workspace/nncp-experiments/experiments/work/neif_native_after_encode_20261008/B_r2/result.json",
+    "sha256": "ffb1aec9772d7138fd2bef779fa357a9585772b29442ee0494627f7c67545835"
+  }
+}

@@ -1,0 +1,6 @@
+/* The executable exports nothing of its own.  stdout and stderr stay in the
+   dynamic symbol table anyway: they are library objects (copy relocations
+   that glibc keeps layout-stable on purpose), not definitions of ours. */
+{
+  local: *;
+};
