@@ -8,12 +8,73 @@ The verified self-extracting archive is **91,778,237 bytes**, including the
 decoder, model weights and required assets. It is **135,106 bytes smaller
 (0.146993%)** than cmix-neif 1.0's 91,913,343-byte archive.
 
-**Private review candidate, October 14, 2026.** This repository and its draft
-release have not been published or submitted. The verified release artifact
-is identified as **FINAL** in the experiment evidence. The [LTCB table](https://mattmahoney.net/dc/text.html)
+The verified **1.0 release** is identified as **FINAL** in the experiment
+evidence. The [LTCB table](https://mattmahoney.net/dc/text.html)
 checked on October 14 still lists cmix-neif first; our result would improve
 that published size, subject to the benchmark maintainer's verification.
-This is an LTCB submission candidate, not a claim to a Hutter Prize award.
+This release targets LTCB; it does not claim a Hutter Prize award.
+
+## Build and run
+
+Download the verified [**archive9** (91,778,237 bytes)](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/archive9),
+[compressor `comp9`](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/comp9),
+[source tarball](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/ex-girlfriend-1.0-source.tar.gz)
+and [SHA256SUMS](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/SHA256SUMS)
+from the [v1.0 release](https://github.com/rlanday/ex-girlfriend/releases/tag/v1.0).
+Binary artifacts are kept out of Git history.
+
+Use **x86-64 Linux with AVX2/FMA (x86-64-v3)**. Allow at least **25 GB of free
+working space** and memory above the measured ~10 GiB process RSS for the
+operating system and other applications. PPMd also uses a sparse paging file;
+filesystem cache is not included in RSS. Compression and decompression use
+one CPU core and no GPU. See the measured times below before starting a full run.
+
+### Decode the supplied archive
+
+Save `archive9` in a new, writable directory. It is self-extracting and includes
+its decoder, weights and dictionary; no build or external model files are needed.
+From that directory:
+
+```sh
+printf '%s  %s\n' \
+  a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c archive9 \
+  | sha256sum -c -
+chmod +x archive9
+./archive9
+printf '%s  %s\n' \
+  159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc enwik9_uncompressed \
+  | sha256sum -c -
+```
+
+The output is `enwik9_uncompressed`, exactly 1,000,000,000 bytes. If you have
+the original dataset, also run `cmp /absolute/path/to/enwik9 enwik9_uncompressed`.
+The decoder needs no Python environment or network access.
+
+### Build the compressor and encode
+
+The release tree has been rebuilt to **byte-identical `comp9`** with Ubuntu
+clang/LLVM/lld **18.1.3-1ubuntu1** and GNU binutils **2.42**. Matching the toolchain,
+libraries and bundled inputs matters; successful compilation with different
+versions does not establish reproducibility. [BUILD.md](docs/BUILD.md) gives
+the dependency setup, exact package references and complete verification steps.
+
+After installing those dependencies, unpack the source tarball and build in a
+new output directory. The build itself is offline and unprivileged:
+
+```sh
+tar -xzf ex-girlfriend-1.0-source.tar.gz
+mkdir ex-girlfriend-build
+cd ex-girlfriend-build
+bash ../ex-girlfriend-1.0/build.sh
+printf '%s  %s\n' \
+  952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67 comp9 \
+  | sha256sum -c -
+./comp9 -e /absolute/path/to/enwik9 archive9
+```
+
+The prebuilt `comp9` download can also be used with the same checksum and encode
+command after `chmod +x comp9`. Check the resulting `archive9` against the hash
+above, then decode it in a separate fresh directory and compare the restored file.
 
 ## Verified result and computational cost
 
@@ -648,36 +709,6 @@ developing this release, so none is claimed.
 This sub-0.15% LTCB margin does not establish the Hutter Prize's required improvement
 or hardware eligibility.
 
-## Build and run
-
-Use x86-64 Linux with AVX2/FMA (x86-64-v3). Exact reconstruction was checked
-with Ubuntu clang/LLVM/lld **18.1.3-1ubuntu1** and GNU binutils **2.42**.
-The inherited [install script](install.sh) specifies the tool packages and
-Ubuntu snapshot; inspect it before using it, since it installs system packages.
-After those dependencies are present, the build itself is offline and
-unprivileged. See [BUILD.md](docs/BUILD.md) for the complete procedure and
-verification commands. In brief, from an empty output directory:
-
-```sh
-bash /path/to/ex-girlfriend-source/build.sh
-sha256sum comp9
-# Must be 952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67
-./comp9 -e /path/to/enwik9 archive9
-```
-
-For the published-format self-extracting archive, copy only `archive9` to a
-fresh writable directory, mark it executable, and run `./archive9` with no
-arguments. It writes `enwik9_uncompressed`; compare that complete file with
-the original enwik9. No external weights, dictionary, GPU, Python environment
-or network access is needed to run the artifact. Allow at least **25 GB of
-free working space** and room above the measured ~10 GiB process RSS for the
-operating system; the inherited PPMd also uses a sparse paging file. Filesystem
-cache and other applications are not included in the reported RSS.
-
-The binary assets are attached to the **private draft v1.0 release**, rather
-than stored in Git history. Until review and publication are complete, their
-eventual public download links are not available to others.
-
 ## License and modification notice
 
 The combined program and our modifications are distributed under
@@ -691,14 +722,10 @@ Modification dates: **September 24–October 10, 2026** for the project techniqu
 and neif port; **October 14, 2026** for this release documentation and evidence.
 See [EX-GIRLFRIEND.md](EX-GIRLFRIEND.md) for the changed-file inventory.
 
-**Inherited open provenance point for review:** upstream's
-[ATTRIBUTION.md, section 7](training/ATTRIBUTION.md#7-open-points) expressly
-leaves unresolved the licensing interpretation of Ivanov's CUDA-libdevice
-sine/cosine transcription. It is present in the native compressed-weight
-loader, not only optional training tools. We retain it unchanged and preserve
-the disclosure; selecting GPL-3.0-only does not independently resolve that
-question. Other inherited provenance gaps are also recorded there. This
-private preparation does not assert that those open points have been cleared.
-
-The [submission email](docs/SUBMISSION_EMAIL.md) is a draft for Ryan's review.
-It has not been sent.
+**Inherited provenance.** The native compressed-weight loader includes
+Ivanov's transcription of CUDA-libdevice sine/cosine routines, inherited
+unchanged from cmix-neif. Upstream's
+[ATTRIBUTION.md, section 7](training/ATTRIBUTION.md#7-open-points) documents an
+unresolved licensing question concerning that transcription, along with other
+inherited provenance gaps. This release preserves those disclosures and the
+original notices.
