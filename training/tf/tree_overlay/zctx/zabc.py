@@ -16,8 +16,8 @@ against the same reference.
       a projection with 32 inputs (cost in S 32 x d_model).
 
   z1c cluster number instead of the raw article number.  The training stream
-      is in the base article order of this entry (training/data/README.md
-      section 3; its .new_article_order has md5 2eb1a3a2, the residual file
+      is in the base article order of cmix-neif-1.0 (training/data/README.md
+      of that entry, section 3; its .new_article_order has md5 2eb1a3a2, the residual file
       of that order).  That order derives from the article order of fx2-cmix,
       built by
       clustering (Byron Knoll's pipeline: embedding, 1-D t-SNE, k-means;

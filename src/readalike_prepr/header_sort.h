@@ -1,6 +1,8 @@
 
 #ifndef HEADER_SORT_H_
 #define HEADER_SORT_H_
+#include "../meld.h"
+#include "../enc_only.h"
 
 #include "../ts_progress.h"
 
@@ -78,11 +80,12 @@ static long long idnum_num(const char *p, int len) {
   return neg ? -v : v;
 }
 
-static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
+template <int enc>
+static DIR_INLINE size_t header_sort_apply(const char *in, size_t n, char *out) {
   const char *end = in + n;
   size_t cap = 4096, cnt = 0;
   hsort_rec *r = (hsort_rec*)malloc(cap * sizeof(hsort_rec));
-  if (!r) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+  if (!r) { msg_stop(138); exit(1); }
   size_t o = 0;
 
   if (enc) {
@@ -91,13 +94,13 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
     while (i < n) {
       int len = phda9_line_len(in + i, end);
       if (!hsort_is_head(in + i, len)) {
-        fprintf(stderr, "header sort: no record start at %lu\n", (unsigned long)i);
+        __builtin_unreachable();
         exit(1);
       }
       if (cnt == cap) {
         cap *= 2;
         r = (hsort_rec*)realloc(r, cap * sizeof(hsort_rec));
-        if (!r) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+        if (!r) { msg_stop(138); exit(1); }
       }
       hsort_rec *c = &r[cnt];
       c->idx = (int)cnt; c->a0 = i; c->rev = 0;
@@ -110,11 +113,11 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
           if (hsort_is_contrib(in + p, l2) ||
               (l2 > 10 && memcmp(in + p, "timestamp>", 10) == 0)) bstart = p;
           else if (l2 > 3 && memcmp(in + p, "id>", 3) == 0)
-            c->rev = strtoll(in + p + 3, 0, 10);
+            c->rev = strtol(in + p + 3, 0, 10);
         }
         p += (size_t)l2;
       }
-      if (!bstart) { fprintf(stderr, "header sort: record without part B\n"); exit(1); }
+      if (!bstart) { __builtin_unreachable(); exit(1); }
       c->a1 = bstart; c->b0 = bstart; c->b1 = p;
       ++cnt; i = p;
     }
@@ -130,7 +133,7 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
         else if (l > 3 && memcmp(in + q, "id>", 3) == 0)        rv = hsort_val(in + q, l, 3, &rl);
         q += (size_t)l;
       }
-      if (!dv || !rv) { fprintf(stderr, "header sort: incomplete record\n"); exit(1); }
+      if (!dv || !rv) { __builtin_unreachable(); exit(1); }
       hsort_put(out, &o, dv, dl);
       out[o++] = '\t';
       hsort_put(out, &o, rv, rl);
@@ -139,13 +142,13 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
     }
     // part B in revision id order
     hsort_rec *s = (hsort_rec*)malloc(cnt * sizeof(hsort_rec));
-    if (!s) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+    if (!s) { msg_stop(138); exit(1); }
     memcpy(s, r, cnt * sizeof(hsort_rec));
     qsort(s, cnt, sizeof(hsort_rec), hsort_cmp);
     for (size_t k = 1; k < cnt; ++k)
       if (s[k].rev == s[k-1].rev) {
-        fprintf(stderr, "header sort: duplicate revid %lld\n",
-                s[k].rev);
+        __builtin_unreachable()
+;
         exit(1);
       }
     name_index_t ut;                              // name -> uid, encoder side
@@ -162,13 +165,13 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
         else if (l > 3 && memcmp(in + q, "id>", 3) == 0)        ui = hsort_val(in + q, l, 3, &ul);
         q += (size_t)l;
       }
-      if (!ts || !nm) { fprintf(stderr, "header sort: incomplete B record\n"); exit(1); }
+      if (!ts || !nm) { __builtin_unreachable(); exit(1); }
       hsort_put(out, &o, ts, tl);
       out[o++] = '\t';
       hsort_put(out, &o, nm, nl2);
       {
         if (ui && (ul <= 0 || memchr(ui, '\t', (size_t)ul))) {
-          fprintf(stderr, "user ids: empty uid or uid with tab\n");
+          __builtin_unreachable();
           exit(1);
         }
         int e = name_index_find(&ut, nm, nl2);
@@ -181,7 +184,7 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
           }
         } else if (e >= 0) {
           if (ul != 0 || nl2 <= 0 || memchr(nm, '\t', (size_t)nl2)) {
-            fprintf(stderr, "user ids: collision record not of the form timestamp<tab>address\n");
+            __builtin_unreachable();
             exit(1);
           }
           ++ue_marke;
@@ -196,25 +199,25 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
   } else {
     size_t lines = 0;
     for (size_t q = 0; q < n; ) { q += (size_t)phda9_line_len(in + q, end); ++lines; }
-    if (lines & 1) { fprintf(stderr, "header sort: odd line count\n"); exit(1); }
+    if (lines & 1) { __builtin_unreachable(); exit(1); }
     cnt = lines / 2;
     if (cnt > cap) {
       cap = cnt;
       r = (hsort_rec*)realloc(r, cap * sizeof(hsort_rec));
-      if (!r) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+      if (!r) { msg_stop(138); exit(1); }
     }
     size_t q = 0;
     for (size_t k = 0; k < cnt; ++k) {                       // read part A
       int l = phda9_line_len(in + q, end);
       const char *t = (const char*)memchr(in + q, '\t', (size_t)l);
-      if (!t) { fprintf(stderr, "header sort: A record without separator\n"); exit(1); }
+      if (!t) { __builtin_unreachable(); exit(1); }
       r[k].idx = (int)k; r[k].a0 = q; r[k].a1 = q + (size_t)l;
-      r[k].rev = strtoll(t + 1, 0, 10);
+      r[k].rev = strtol(t + 1, 0, 10);
       q += (size_t)l;
     }
     size_t *bo = (size_t*)malloc(cnt * sizeof(size_t));
     size_t *bl = (size_t*)malloc(cnt * sizeof(size_t));
-    if (!bo || !bl) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+    if (!bo || !bl) { msg_stop(138); exit(1); }
     for (size_t k = 0; k < cnt; ++k) {                       // read part B
       int l = phda9_line_len(in + q, end);
       bo[k] = q; bl[k] = (size_t)l; q += (size_t)l;
@@ -223,11 +226,11 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
     name_index_init(&ut, (int)cnt, n);
     int *ue_art = (int*)malloc(cnt * sizeof(int));
     int *ue_b = (int*)malloc(cnt * sizeof(int));  // page -> part-B record
-    if (!ue_art || !ue_b) { fprintf(stderr, "user ids: out of memory\n"); exit(1); }
+    if (!ue_art || !ue_b) { msg_stop(148); exit(1); }
     for (size_t k = 0; k < cnt; ++k) {
       const char *bp = in + bo[k]; const char *le = bp + bl[k] - 1;   // the '\n'
       const char *u1 = (const char*)memchr(bp, '\t', bl[k]);
-      if (!u1) { fprintf(stderr, "header sort: B record without separator\n"); exit(1); }
+      if (!u1) { __builtin_unreachable(); exit(1); }
       const char *u2 = (const char*)memchr(u1 + 1, '\t', (size_t)(le - u1 - 1));
       const char *nm = u1 + 1; int nl2 = (int)((u2 ? u2 : le) - nm);
       int e = name_index_find(&ut, nm, nl2);
@@ -241,7 +244,7 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
       }
     }
     hsort_rec *sr = (hsort_rec*)malloc(cnt * sizeof(hsort_rec));
-    if (!sr) { fprintf(stderr, "header sort: out of memory\n"); exit(1); }
+    if (!sr) { msg_stop(138); exit(1); }
     memcpy(sr, r, cnt * sizeof(hsort_rec));
     qsort(sr, cnt, sizeof(hsort_rec), hsort_cmp);
     for (size_t k = 0; k < cnt; ++k) { r[sr[k].idx].b0 = bo[k]; r[sr[k].idx].b1 = bo[k] + bl[k]; }
@@ -268,7 +271,7 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
       const char *bp = in + r[k].b0; int blen = (int)(r[k].b1 - r[k].b0);
       const char *u1 = (const char*)memchr(bp, '\t', (size_t)blen);
       const char *u2 = u1 ? (const char*)memchr(u1 + 1, '\t', (size_t)(bp + blen - u1 - 1)) : 0;
-      if (!u1) { fprintf(stderr, "header sort: B record without separator\n"); exit(1); }
+      if (!u1) { __builtin_unreachable(); exit(1); }
       const char *nend = u2 ? u2 : bp + blen - 1;
       char tsbuf[64]; int tsl;
       tsl = (int)(u1 - bp);
@@ -298,6 +301,11 @@ static size_t header_sort_apply(const char *in, size_t n, char *out, int enc) {
   }
   free(r);
   return o;
+}
+
+// The encoder direction (compression path only), see enc_only.h.
+static ENC_ONLY size_t header_sort_enc(const char *in, size_t n, char *out) {
+  return header_sort_apply<1>(in, n, out);
 }
 
 #endif

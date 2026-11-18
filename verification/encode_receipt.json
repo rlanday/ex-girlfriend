@@ -1,0 +1,18 @@
+{
+  "status": "completed_encode_pending_fresh_roundtrip",
+  "archive": {
+    "path": "<encode dir>/archive9",
+    "bytes": 88983124,
+    "sha256": "0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3"
+  },
+  "compressor": {
+    "path": "<encode dir>/comp9",
+    "bytes": 4057131,
+    "sha256": "8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a"
+  },
+  "producer_exit_code": 0,
+  "utc": "2026-11-14T09:23:23.667685+00:00",
+  "follower_verdicts": {
+    "FOLLOWER_OK": "2026-11-14T09:22:38Z FOLLOWER_OK sha256=c35d3073eeba70f22a2e08a50202b53eb95466e3e9f1f2702f6f9b3f96fd8718 stream_bytes=501062281 payload_consumed=85039910 payload_on_disk=85039910 zeros_past_end=3 encoder_alive=0 payload_path_replaced=1 waits=0 waited_s=0\n"
+  }
+}

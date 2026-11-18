@@ -31,3 +31,24 @@ int __isoc23_sscanf(const char* s, const char* fmt, ...) {
   return r;
 }
 }
+
+// The five std::__throw_* the image calls end in a
+// trap here instead of being imported from libstdc++.  They are reached only
+// on a broken invariant (length beyond max_size, failed allocation, .at()
+// out of range); the build has no exceptions, so libstdc++ would end in
+// abort as well.  The version script keeps them local (no export).
+namespace std {
+[[noreturn]] void __throw_length_error(const char*) { __builtin_trap(); }
+[[noreturn]] void __throw_bad_array_new_length() { __builtin_trap(); }
+[[noreturn]] void __throw_bad_alloc() { __builtin_trap(); }
+[[noreturn]] void __throw_logic_error(const char*) { __builtin_trap(); }
+[[noreturn]] void __throw_out_of_range_fmt(const char*, ...) { __builtin_trap(); }
+}  // namespace std
+
+// Plain new/delete straight to malloc/free,
+// one indirection and two imports less.  Not in builds whose allocator object
+// defines them itself.
+extern "C" void* malloc(decltype(sizeof 0));
+extern "C" void free(void*);
+void* operator new(decltype(sizeof 0) n) { return malloc(n); }
+void operator delete(void* p) noexcept { free(p); }

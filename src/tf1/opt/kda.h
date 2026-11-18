@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/kda.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // Optimized fused KDA (Kimi linear attention) per-token per-layer step.
 // Math follows cpp_infer/KIMI_SEMANTICS.md exactly (validated in test_kda):
 //
@@ -69,8 +69,7 @@ struct KdaDebug {
 //    (the two scalar factors are pre-multiplied - a documented ~1 ulp
 //    local rounding change vs naive); pass2 does decay+update+output.
 enum class KdaSweep : int { ONEFIVE = 0, TWOPASS = 1 };
-void kda_set_sweep(KdaSweep v);
-KdaSweep kda_get_sweep();
+// Fixed to ONEFIVE in kda.cpp.
 
 // Software-prefetch scheme for the state streams (perf only, no numerical
 // effect):
@@ -83,8 +82,7 @@ KdaSweep kda_get_sweep();
 //       of the layer's head states under the staged nonlinearity passes
 //       (~9 B/c metering), so every sweep runs on an L2-warm state
 //   6 = like 5 with the t1 hint (measured equal to 5)
-void kda_set_pf_mode(int m);
-int kda_get_pf_mode();
+// Fixed to 5 in kda.cpp.
 
 // Per-phase tick accumulators (lfence;rdtsc ticks - convert with the
 // caller's TSC->core-cycle ratio). Enabled only when a profile pointer is
@@ -117,7 +115,7 @@ void kda_layer_step(const KdaWeights& w, KdaState& st, const float* q_in,
 // during pass1 (may be null).
 void kda_sweep_head(float* S, const float* decay, const float* kn,
                     const float* v, float beta, const float* qs, float* o,
-                    const float* pf_next, KdaSweep variant);
+                    const float* pf_next);
 
 }  // namespace opt
 }  // namespace fx2

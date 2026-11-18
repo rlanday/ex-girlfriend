@@ -1,93 +1,115 @@
 # MANIFEST of training/, one line per file.
 # Columns: path | origin | sha256 | size in bytes | purpose
-# Origin: 'this entry', or the upstream project a file comes from; 'not
-# published' for REF rows that exist only in the project archive.
+# Origin: 'this entry', or the project a file comes from.
 # Rows whose path starts with 'REF:' are NOT in this package: they are large
-# artefacts, named by location and, where recorded, checksum.
+# artefacts, named by checksum (sha256; a prefix where only that is recorded).
 path	origin	sha256	size	purpose
-ATTRIBUTION.md	this entry	cace844a2fb39b75855f3b5fff5a3a6ae14abb5be87d3d6fe9cedddebe46c1bb	35846	authorship, licences, upstream URLs and commits
-README.md	this entry	eed58a9080b72322970114bd4e7f1e728eae81fefbb8794fc32b70c01460593b	33331	master guide
-bitl/FORMAT.md	this entry	03b84e1213e438398646714c3bc76cc2e5723a4fc414b8967036d9bcbfdd3a55	4352	BITLSTM training tools
-bitl/README.md	this entry	20ede83a6c9337b73f779e3ef6354a7c33dcce4c272ce06cdf69d26122d4882f	9331	BITLSTM training tools
-bitl/record/F2L_BITS	this entry	93b543419d5ee5f1c3be8e3ea157c822909d59095ca863c2ec6e8145db2c871a	10	record of the BITLSTM training of the shipped weights
-bitl/record/F2L_fp32.nblb	this entry	5447ed151f0503d7019ee23467d954842d128cf7e1cd4a3464c883155a022eb6	14748	f32 weights of the BITLSTM after pass 32; input of the bfloat16 conversion
-bitl/record/README.md	this entry	572f81685543959fff52b2375242c56c90c7822ed11c0128910680ba3d3bdea5	1089	record of the BITLSTM training of the shipped weights
-bitl/record/SHA256SUMS	this entry	a2c76be1601551a1e07805612db672de2ab27eebf802bdbcf554067db1f276d8	232	record of the BITLSTM training of the shipped weights
-bitl/record/mark.txt	this entry	dde432adecaa9ec258b5725df8334d302115427c7f87678d7b2e59804fb712af	511	record of the BITLSTM training of the shipped weights
-bitl/record/training.txt	this entry	35c7b21aac457d8af2e0f6c63165c5c4146c368820d3ff2e794bfdae7815b382	1819	record of the BITLSTM training of the shipped weights
-bitl/tools/blobstat.py	this entry	1ac5e15b9dcc564782d87c137688d144ae8f19586ff6e8812aea8ed3e5860016	1375	BITLSTM training tools
-bitl/tools/cut_trace.sh	this entry	2ab9a4461b6f2ae7eac422d0e9c0b7d507e0a2bd15d587b2c4382649654370f6	4165	BITLSTM training tools
-bitl/tools/nblb.py	this entry	b3030300e2558ef8a5acef531ed97afa13f7fadb7ba6283902eb7637a17de72a	3137	BITLSTM training tools
-bitl/tools/trace_geom.py	this entry	cc0733c380cce32dc3cd0bc39cce1645c74183ccd6b0c3428327b612e03fc0c1	592	BITLSTM training tools
-bitl/tools/train_blob.sh	this entry	e49456962799d278b036a302203b3a1dc5d97b446269a27d0c44753a0a403e36	4058	BITLSTM training tools
-bitl/trace/FEATURES_trace.txt	this entry	777ed78372016794d57e392570160b3dd652fecd316f620928294fc0c78d4050	4205	trace run of the BITLSTM (development tree)
-bitl/trace/run_trace.sh	this entry	3627062bdafa13d43e78b95458649c426aa67224f1b980c7cfd0262c38f05b9b	5084	trace run of the BITLSTM (development tree)
-bitl/trainer/bit_head.cpp	this entry; kernels and model form from cmix-obias (D. Freelan)	536dd3eb8744fa39f05f65a8a6c33006e3e0f9e91778a30d8685229ff19b962f	54352	replay trainer of the BITLSTM
-bitl/trainer/bit_head.h	this entry; kernels and model form from cmix-obias (D. Freelan)	905dd4d0148ae1ba627633075bcc457f977ebe4bffc20c474321154cbc414b30	5539	replay trainer of the BITLSTM
-bitl/trainer/build.sh	this entry; kernels and model form from cmix-obias (D. Freelan)	409a9071f784b436dad9c572f9e15a43d485d9989895ecec21f3854b5a0981f6	949	replay trainer of the BITLSTM
-bitl/trainer/isa_floor.h	this entry; kernels and model form from cmix-obias (D. Freelan)	0063ae6aec169f850069e0b520312cee3c3386c0723e3019df3b3696ec55d226	473	replay trainer of the BITLSTM
-bitl/trainer/replay_trainer.cpp	this entry; kernels and model form from cmix-obias (D. Freelan)	06ded2dc28e52c578295040460b9ed564c01af92f9ad7115562608e610519b24	17124	replay trainer of the BITLSTM
-data/README.md	this entry	da65c7314922d038517bc00642a79c3633ad6fc06c4f8931a6be16371ce4de0d	17035	dictionary, hints, article order, PGO profile
-data/tools/build_hints4.py	this entry	2f152b8091e814ffbe790a034879c1a44399079272a6c7fb27b8ac0117b65869	5761	hint package builder, older 6-block format (paths set by hand)
-data/tools/build_variant.sh	this entry	71c7fb0e865588817c8d34b38a3e9b66c282953781b475a46900f1925e3e04d2	17372	the build driver that binds dict/hints/order/PGO by checksum
-data/tools/check_order_run.sh	this entry	1052fde010c2f06124235e37fa88dc04cdc5fd754020776141bbdd5cb0e78b00	11465	mandatory pre/post acceptance of an article order
-data/tools/combine.py	this entry	b43a866892dc70e19084aaee1f14653890f00595eca11d8148f9ab1de6a5a8a1	1274	dictionary word-set combination by cost-map gain
-data/tools/count_words.py	this entry	00c37f1a4af70fb9a85a05ed83e7a8204f9a833a37b462527d857fe02f1ea18f	2232	word count table over enwik9, input of the hint builder
-tf/1_dump/README.md	this entry	91aeea6d461fb302046def338150d052558395ccc8abf9e33705cc4f4db49239	8757	stage (b): the tools of the stream, dump and prior runs, run lines, outputs and checksums
-tf/1_dump/build_dump_tools.sh	this entry	6bc559345d754b971af1fc2c00f8fbc0f25ed1e5801a54f94666e5468c4645e3	1964	builds the stream, dump and prior tools from a copy of the entry's source with trainmodes.patch
-tf/1_dump/dumpleser.py	this entry	d6393122efc788b103f0b9394958d027e8fa55159bef46306c3372f5f48dcf90	4711	reference reader of the dump records
-tf/1_dump/features_dump.txt	this entry	18ede96e515f806b65dc089e3f22811077822c106136fa0162318453121b00e2	3012	record: build line of the original dump run (development tree, verbatim)
-tf/1_dump/features_priors.txt	this entry	eeb5bc43a209a1ba0b1bb8998042cbcac3362ba319e962f24a0fb5b436af4e21	3056	record: build line of the original prior run (development tree, verbatim)
-tf/1_dump/features_stream.txt	this entry	96c811ba22c7648593965c2bdfe799850b51aaef4c3ffd77c7ce247df0762d44	3047	record: build line of the original stream run (development tree, verbatim)
-tf/1_dump/trainmodes.patch	this entry	5dc9dbeed312fc521ea44621575b3ab87c878764e7c0d2c2eb9c8ba234e9be2c	25481	adds the stream, dump and prior modes to a copy of src/ (no change without -DTRAIN_MODE)
-tf/2_package/build_package.sh	this entry	9f15744f3d2f6fbde33e87ba42bbe63b11dde7325fc4ee6c64300873c22367bf	24848	recipe of the training package: the commands of the run that built it, with the tools of tf/1_dump
-tf/2_package/dump_check.py	this entry	bb98d700dc54dcf271f4f426b7a824538e17d00b4247205d4f7a0501f69b47bc	3302	training package: build step or acceptance check
-tf/2_package/dumpv2.py	this entry	8592016e3914272c1f0b783f960446a3ce557b7220ea1202764097ed0d825c93	12440	dump reader with the target rule (copied into the tree by patch_paket11.py)
-tf/2_package/loader_probe.py	this entry	cfc105503fafa4b45067698eebe3dc8a1a2e8f7e0c5d0f00380b6ad6a4cc5aaa	4246	training package: build step or acceptance check
-tf/2_package/loader_vs_dump.py	this entry	488fd25f82ce2a3a1baab5fa62b3196f949405c551921e8e8d492679c0f99cf9	5730	training package: build step or acceptance check
-tf/2_package/mk_pkgdump.py	this entry	3d169e220287bfb906428741168fbd91f9d7e70291d18b2ef0531f89b172aa95	15228	package builder: rows, documents, closing tokens from the dump
-tf/2_package/package_checks.py	this entry	36c543ff33720e2545ee9c0e41b998b6ab25482606ba2ae0d64efe68636deaee	18727	training package: build step or acceptance check
-tf/2_package/page_anchors.py	this entry	c02afb6cda2be408652ccf67783f0987c33cd7e289ea206b4a02870d85c3e351	3492	training package: build step or acceptance check
-tf/2_package/pages.py	this entry	bc2d75a3f0836ab66a6006a7b85abd1e6dd677fa1bbe823d1f8f6f784a1eba24	2388	training package: build step or acceptance check
-tf/2_package/patch_paket11.py	this entry	00cf4880286863ffe09fee5ec0806a04c46ef07b868505b460db41eaf980a431	22336	idempotent edits of the overlay files, copies the three helpers
-tf/2_package/ppmd_bytes.py	this entry	dd24928005607d43cf39d212af1ef8255c2631a922579b7c7375c5bf59b4700d	2317	training package: build step or acceptance check
-tf/2_package/prior0_diff.py	this entry	9358d4817b48f74bb653899b540b07da0cd59a377bf7ff12560abfbf76a91fae	4327	training package: build step or acceptance check
+ATTRIBUTION.md	this entry	c4313830fbc0e4a6f6f6e1a5c61c14323e61a18b04148049bee394ae4757e808	11404	authorship, licences, upstream URLs and commits
+README.md	this entry	89dfce6e23145d0b2793e85cb7dfe9a234e1df0fe321e0c125b3ec2afd356cce	29001	master guide
+bitl/README.md	this entry	e02bf9b899dce14055a45e31e4388f49df0fa724a72e8c2b0e27c78a2e0a78b8	6083	BITLSTM: trace, zones, training, header
+bitl/record/SHA256SUMS	this entry	d012abc9ef826725289eaad97763980cc5bd794824ca8e94d110c838fc6bd1e1	230	checksums of the three weight sets
+bitl/record/meta.nblb	this entry	729cbf956bc0e6eb6dbce9f36b6ed47299521643f5be0a2a3aafe4df3e60da1f	22426	BITLSTM weight set as compiled into the program (NBLB v2, bfloat16)
+bitl/record/replay_text1.txt	this entry	88439b995c8c214382ea49b4e13c579edbd175bd08bed777fa6fd94ea66cb7df	855	record: replay of the candidate weight sets of a text zone
+bitl/record/replay_text2.txt	this entry	5792a94d0b1dd21e158444a47cc5b6873f47b3635a82e1f49253c8b5c9006c56	861	record: replay of the candidate weight sets of a text zone
+bitl/record/text1.nblb	this entry	f839bd1c33bb6601a5596b30809f2b34e455d38acbb9badc0c85274b724ef100	22426	BITLSTM weight set as compiled into the program (NBLB v2, bfloat16)
+bitl/record/text2.nblb	this entry	e2e1cbe7dc9d751d16c2e53833a969225ae9199c61a19f7019b16fcb0397f1ac	22426	BITLSTM weight set as compiled into the program (NBLB v2, bfloat16)
+bitl/record/training.txt	this entry	2cf33954544f273ee6aaef0b49c1fc529f58e02f6fe31358f3e98eb19f75c1d1	3859	record of the BITLSTM training: zones, commands, results
+bitl/tools/bg_kern.py	this entry; model form after cmix-obias (D. Freelan)	1b077268d563e4a87784ee7110617234214f8e613094c92e89ba7a80facc8f79	26700	PyTorch replica of the BITLSTM model and its Adam step
+bitl/tools/bz_nblb.py	this entry	18403b8145b0306b5a8e798fd4bb77b94c08eb3f310341e3f218e6c3fd0ba9ad	6099	BITLSTM training tool
+bitl/tools/cm_cut.py	this entry	1aac716ae3bba5ab86b10c814e70e35e07480e3941fdf649096746e1bcd395b8	2792	BITLSTM training tool
+bitl/tools/cm_kern.py	this entry	40e018cd231c9d6d839aabb8cf9db430de14c668433d802801cfc046f4500efd	4127	BITLSTM training tool
+bitl/tools/cm_qft.py	this entry	09aa5ce5521a22c6a9e07b63d526c39d82100985969f13808955e6615e717556	5984	BITLSTM training tool
+bitl/tools/cm_train.py	this entry	fb521dcb4e07a287fbed5168dccd5a89805f512e584e3a9af0eaab4302b32770	6061	BITLSTM training tool
+bitl/tools/cm_weiten.py	this entry	c0d18b17590dcee29ad4bdfa060e4419469f6582d90a68c4fadcfb037a5f4a87	2015	BITLSTM training tool
+bitl/tools/tb_check.py	this entry	de36d75b605bf36e4fe2b09a8f413727c5e22aa76e0d3d799e73300aaa803f4f	2495	BITLSTM training tool
+bitl/tools/tb_cut.py	this entry	de746c7487640d65ac3124432cf590fad4c8e49a20e1ac506ea4962ceda3b71f	10274	BITLSTM training tool
+bitl/tools/tb_eval.py	this entry	d60c73cddeab3f34399a7e9ee9b100ac00fc6b333e28b57eef9ef416710d1c52	2216	BITLSTM training tool
+bitl/tools/tb_kern.py	this entry	39d66c099798d69008511e534163e22933d7b4dc4a5602b37e3e7963bf0dd99e	6664	BITLSTM training tool
+bitl/tools/tb_qft.py	this entry	d6039c34bbb529cfaf7308aebe0f84edd31a9eb254cde7e32e16a0ed26b5047d	6610	BITLSTM training tool
+bitl/tools/tb_train.py	this entry	455a8f915cd61c886c474f8e5ae945ce8f83549cbef1b9eaa394d818652aa7df	8670	BITLSTM training tool
+bitl/tools/tb_zone1.py	this entry	d6ce2d27d0c566b712de7c730bf23debb2e6e098f469864662043181347a3cde	4861	BITLSTM training tool
+bitl/tools/weights_header.py	this entry	08ee97be701efd33cc76cc72e719b2cbc8b9468cd863f085ee793baac9679c0d	7576	writes src/bit_head_weights.h from the three weight sets
+bitl/trace/features_trace.txt	this entry	2d439808df84ba9455502e403d03373ad7ab9ce4fda21336f50d81d557931ca4	2297	record: build line of the trace run (development tree, verbatim)
+tf/1_dump/README.md	this entry	7d8a229e358a32f6b37bbf022b4aa4e11e6792bc2957fd4a924894066242407a	12646	stage (b): the run modes, the coder-side runs, outputs and checksums, the check against the development tree
+tf/1_dump/build_dump_tools.sh	this entry	33e43662217ba0f7cbbfd3b82ebe3eff282339fcd260100999895c4ad33eb489	5921	builds the stream, dump, prior, bed and trace tools from the source of the entry with trainmodes.patch (--tree: from the development tree)
+tf/1_dump/dumpleser.py	this entry	57948d49539bcb8a64095c9d6eaaa506763fdea30d47b38e745d78721eb2a092	4718	reference reader of the dump records
+tf/1_dump/features_dump.txt	this entry	2577b83c0861c50fadd87d5af22f1345c15de9f1139b035743c56778b6100a40	2468	record: build line of a coder-side tool or the coder line of the entry (development tree, verbatim)
+tf/1_dump/features_end.txt	this entry	e22c7c8d16474bb001f69c32f00780a1ed9e186602b6d19cb30e322674131aaf	1710	record: build line of a coder-side tool or the coder line of the entry (development tree, verbatim)
+tf/1_dump/features_priors.txt	this entry	5721d0397fb3fa556464db27c40ccec5545bfcf0f287f5e3b5a91e8c0adb60df	2457	record: build line of a coder-side tool or the coder line of the entry (development tree, verbatim)
+tf/1_dump/features_stream.txt	this entry	d91df2fe4d86503ef0c2d18c5b7fe03ecbc3c4d1a1ae07b750162f602d099afe	2481	record: build line of a coder-side tool or the coder line of the entry (development tree, verbatim)
+tf/1_dump/forced_title_prefixes.h	this entry	237eb2a3cb5b1f5ddb1b670bb8120a41991d835e12bccccb5f2ae6ec311519b9	823	forced title prefixes of the stream form for the ENTRY form of build_package.sh
+tf/1_dump/stream_form.txt	this entry	aada6260cd316db90b08d3643c1e239e4205d65edfe3c20df8dd2c9b005775e3	556	values of the stream form for the ENTRY form of build_package.sh (page anchor, slot end mark, arms, geometry)
+tf/1_dump/trainmodes.patch	this entry; generated from the development tree	8108e5c56ed3005da97dd191482beaca8d23d24843bd54e24dbaf66a72b28972	391504	the run modes on the source of the entry (TRAIN_MODE 1 to 5)
+tf/2_package/abnahme_paket.py	this entry	c3abd8f125a575f2a09d2938a1653e8377edd8aa39dd56e1bf65c909a4858d74	9643	training package: build step or acceptance check
+tf/2_package/build_package.sh	this entry	ac392f346346bd331d60ab03821e6ff87ea1e3d16567df513fda6a4d8041b29f	62302	recipe of the training package: stages (a) to (c) in one call
+tf/2_package/dump_check.py	this entry	4313703b5a9a58ba41537fe601d305d84a4929021ac564020be19ef5eed35776	7258	training package: build step or acceptance check
+tf/2_package/dumpv2.py	this entry	4e1b1e0e63dff0f6a88cfa9a6751248cdd8ff1ec64d3c4043303e961df4a7a59	12406	dump reader with the target rule (copied into the tree by patch_paket11.py)
+tf/2_package/loader_probe.py	this entry	79bb06831050785256e8881ad957c792e5e245f2786a92a00256c2136708cfdd	6078	training package: build step or acceptance check
+tf/2_package/loader_vs_dump.py	this entry	cc08faf6b9a8ba18910befdf815f87e2a9c1a5eebaaf07072c3dd13c55fcfac9	6069	training package: build step or acceptance check
+tf/2_package/manifest_arms.sh	this entry	5e0ff750c8954e4c16303c45f7d15a1a16f8ff638259adb54561b60913ad0e38	3462	training package: build step or acceptance check
+tf/2_package/mk_pkgdump.py	this entry	3d169e220287bfb906428741168fbd91f9d7e70291d18b2ef0531f89b172aa95	15228	training package: build step or acceptance check
+tf/2_package/package_checks.py	this entry	05d77f7e4064d512897fdbf477f5f2417d27638d52f3c9c9e860b36874410ddb	32740	training package: build step or acceptance check
+tf/2_package/page_anchors.py	this entry	febb9365783c7f78c76264235fcaf43f2faf1e1d7dbb3a9457ab0373e9f39500	7936	training package: build step or acceptance check
+tf/2_package/pages.py	this entry	52211e0d3cbaaaf1ce2330f83ab95cdcde6d27c78c1200dde215e14810c0e989	4397	training package: build step or acceptance check
+tf/2_package/paket_manifest.py	this entry	0177ff213bf909ca2d2ae9a11dd7d9ed09a53a54710a808ddd058aa15523fa14	7697	training package: build step or acceptance check
+tf/2_package/patch_paket11.py	this entry	0d89dcf71d1945e8f34cf9e1fc5cb25b22e4f9c5df1184f89dd0e0eae18b3a41	23338	idempotent edits of the overlay files, copies the three helpers
+tf/2_package/ppmd_bytes.py	this entry	ce4f5465e613c1c5def8cfa0383447fed1b85af3e4a3ddc21d3fff05cd6cc5b6	2341	training package: build step or acceptance check
+tf/2_package/prior0_check.py	this entry	f3a292ff63478695b1444b33f261ddcd744af89d23023b27f5ecd2b4a69b9037	1676	compares the prior table of the source with the training package
 tf/2_package/prior_mask.py	this entry	d876d04af0d08c9aff88f2f682667c003aa6010995ea1c637aa0aadb1abb1b7c	3941	training package: build step or acceptance check
+tf/2_package/quittungen.tsv	this entry	9a6b6809f9372a85349c183a1b37f696ba07bbfd8ced7daeeee4c67a617615f3	1417	accepted differences between the tool lines and the coder line, bound to their places
 tf/2_package/title_lengths.py	this entry	5e08bb77a90b47844126a10988305581806edf8f3bd3644052e6a69147c486b1	1865	training package: build step or acceptance check
+tf/2_package/trainer_preflight.py	this entry	a9f21e77f9e76ab5f29301024581c0154a0e584c57214f6e8f84dc5598ba05d5	2161	training package: build step or acceptance check
 tf/2_package/trim.py	this entry	cb19d2c550f198ba5b0ccc1c9279a2726b6ca9e44ca3ec23337931cdf71dde04	1284	training package: build step or acceptance check
-tf/2_package/trim_inplace.py	this entry	6ffcb7f86e0476c6ffb5104879d32840b6ae2b671570fb1135831e12e95bd6c9	3815	training package: build step or acceptance check
+tf/2_package/trim_inplace.py	this entry	a837f62de407708865497bfed66e00a549e4e24cf8c587791b26398b9c015d9a	4759	training package: build step or acceptance check
+tf/2_package/trim_quelle.py	this entry	18647ae88713207b34dfd92cf05b36c0aad3034857e0ff26f217f657f6963708	2810	training package: build step or acceptance check
 tf/2_package/vocab-bitmap.u8	this entry	d257fd4a869ca4f61d67bb487f4276517a4d81540098f76828403b298b29a70c	32	the frozen 208-value byte set, 32 B, popcount 208
 tf/2_package/warmstart.py	this entry	8f477cd798654e6ab559b02e48af2f2b1df3a6b360908a199f1cd8294fd836b4	9441	form-aware warm start (copied into the tree by patch_paket11.py)
-tf/2_package/zpdump.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	df42676f98ab15a60e26ab8bcb2a72d17ac93b465e300e3b2a6e8dea0f516e5d	15928	dump loader of the trainer (copied into the tree by patch_paket11.py)
-tf/3_train/README.md	this entry	78e5979e758ef9d3068804c3a617ee675baf29eba7dfb4a8a1aa30d0b86ae669	10156	training chain: phase script, host setup or repair
-tf/3_train/chain/01_anchor_w2048.env	this entry	344546f2e2b91229cec52b5fd5a3c1362cb9ccb1c55096371fc9bd7ef3b6ba6a	1127	environment of one run of the training chain
-tf/3_train/chain/02_w1024.env	this entry	5a3cd45fd759277cd5b8a15fcc28a3e0ae22ea688799e5225f0dd164c3a432d0	954	environment of one run of the training chain
-tf/3_train/chain/03_w1536.env	this entry	2114259c8136c99fe128d34e1aa71c0545f08b208fe24ac9c08ecc03efbbddcf	972	environment of one run of the training chain
-tf/3_train/chain/04_w1536_second.env	this entry	bafc638b785cda2bd15a22e36c2b3010bb7a0cd9ab18b9214a1cff2f459a201c	934	environment of one run of the training chain
-tf/3_train/chain/05_w2048.env	this entry	071da264a42c420d2f1b1dfa5acba4c4aab4606382578035fd0737cf46104d18	1220	environment of one run of the training chain
-tf/3_train/chain/06_w2560.env	this entry	56f63cb9e08aaf29602c9a5715a63d1ab10a7da8d0799492b454915c2b173f72	1037	environment of one run of the training chain
-tf/3_train/chain/07_w2048.env	this entry	2db60d0c89d7a450f7bc261d112c9a645c32d8b2219dfd385ea330ea9071e75c	1001	environment of one run of the training chain
-tf/3_train/chain/08_w2048.env	this entry	7952dcde95311d267765107c9b0d6eaadad764ce7397139670c4aa2424d49e51	914	environment of one run of the training chain
-tf/3_train/chain/08b_w2048_resume.env	this entry	a6ccba3800a04759b428ab83a06e58724a802145cb6e364c6d8f303c507d8a00	1235	environment of one run of the training chain
-tf/3_train/chain/09_qat.env	this entry	1d99434d3fee6ebbb50285462d94f58fc4145870b50fd19257292331425776d2	1083	environment of one run of the training chain
-tf/3_train/chain/10_fp32.env	this entry	16b51db39845a054960e96618f481c59bc0963e716f0601b07991512f3d53dd9	1032	environment of one run of the training chain
-tf/3_train/chain/CHAIN.tsv	this entry	e890a4135fe017fad35c00961d945f770b60c86ad4f93f2967046dd5169ebbc4	3087	environment of one run of the training chain
-tf/3_train/epoche_opt.sh	this entry	d91a122b85116e22d03ae6cdb2a08744194be51d7db89f8b4a23a62dda48d232	543	training chain: phase script, host setup or repair
-tf/3_train/fix_subnormal_rows.py	this entry	1dab5e8e5ab842b3f6b7257a4e2a2aa6ef1a132a245378b90959dbfad91c206c	1963	training chain: phase script, host setup or repair
-tf/3_train/fp32_arm.sh	this entry	c12c74ada6889434626980d4509b7e51d2b7d3d034db324cfc14a0573d8e9ee7	1282	training chain: phase script, host setup or repair
-tf/3_train/geo_zusatz.py	this entry	d5261c2efacbc31ae675c981bd7898518645105503c54157d2c16557b9d76d0b	3011	training chain: phase script, host setup or repair
-tf/3_train/kette_arm.sh	this entry	1c11c1746d0c5c193d7a16ec84af9dae3089119cb3e86fdca8e431acf2346e21	2459	training chain: phase script, host setup or repair
-tf/3_train/prioren_server.py	this entry	be1ba9b6fa32b07294445d7c25a598afcc8a364cea655054429127ea4ae7b556	5084	training chain: phase script, host setup or repair
-tf/3_train/probe_row_max.py	this entry	1784927bb91928dcf78e1ea7226726f3ea8d2d98ff872964c7d6de274b2452bb	1457	training chain: phase script, host setup or repair
-tf/3_train/qat_arm.sh	this entry	11dcf703bff96f755ecdd820018c2e8b26890717c279d2bfecc9d049b1ef96a5	1912	training chain: phase script, host setup or repair
-tf/3_train/setup_host.sh	this entry	4ae08a00ab4ee21172bfcdbddbb15999273dec5360e23d7ce88a4a248c5ac9b6	16077	training chain: phase script, host setup or repair
-tf/3_train/wiederanlauf.sh	this entry	80a4e6e37229c76a1a41268e6f43a3d69bb434f52ecdaf0ec03b6d422a71d856	3186	training chain: phase script, host setup or repair
-tf/4_export/convert_container_v4.py	this entry	b5263160a18e126dd7ba672eb193650659e554b23e5e5ae846b0bc00469d3553	8038	zeroes the rows of collapsed attention channels, writes format v4
-tf/4_export/export.sh	this entry	5a16a1e9a030f67bc5614d50fccd895569eb65c2b3658b682a7a87530df03e29	4292	stage (e): reference weight file to the shipped container, CPU
-tf/4_export/prune_dead_neurons.py	this entry	a0f5bc01704610f4e492f9b3688ecdcf88d3177257a54e5859d9886b1b88fb88	15502	removes the structurally dead MLP neurons (70 of 12,288 in the shipped weights)
-tf/4_export/weights-poc8m_w2048.bin.json	this entry	93fa6f75b582a2ccd629d2bb6be0f22c399004ae9c532f5e19ad220a25674692	3481	export manifest of the shipped weights (geometry, arms, prior0 sha256, window)
-tf/4_export/weights_compress_v3.py	this entry, fork of fx2-cmix-transformer (V. Ivanov)	9cfb3b1f1c39cc700ef569865e409d53b4849547f3d1b0f42f91476a79afa468	50786	Ivanov's container tool with the added formats v3 and v4 (v4 is shipped)
-tf/4_export/wpack2_bf16.py	this entry	978ddad673d1ea4b7edcce7542f898d46a5bd73687b60d692d55b889f6ef4f64	5010	bf16 rounding of the raw fp32 tensors
+tf/2_package/zone_cut.py	this entry	68db12caf41ed94c59f292be86ac9525a6a4b98aa9e2452be70d25221e9385f2	3817	training package: build step or acceptance check
+tf/2_package/zpdump.py	this entry; derived from fx2-cmix-transformer pysrc/data.py	df42676f98ab15a60e26ab8bcb2a72d17ac93b465e300e3b2a6e8dea0f516e5d	15928	dump loader (copied into the tree by patch_paket11.py)
+tf/3_train/README.md	this entry	20849c188af9025a7a45828e029c7b2b64429a3e3af17e4e3a20d95484f16dbf	2759	stages (d) and (e): files and commands
+tf/3_train/chain/00_start_arch.json	this entry	9f6e823f673a8e750b067742698264938188476c850673f2e869bb15479d113d	553	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/01_b1_bf16.json	this entry	0e6dbc1191721aee565591b6fc057cf5f4e0555c3eb3de17f770cd892f962663	820	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/02_b2_bf16.json	this entry	69dbe80d92dcc4e6e5c4ac53c7cf78f5051f582aa9667c6a82a01a116869d3fc	953	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/03_b3_bf16_epochs_1_to_29.json	this entry	5c9584fdc293a83ee9cb847ff49da124efd8e32a559f3a00d0f21b7587e22969	953	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/03_b3_bf16_epochs_30_to_400.json	this entry	378f2a690158c6ecc47da29430b9be5cb4788b42652c59d32839ca7100afa000	988	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/04_fisher.json	this entry	505f239db64f21056138f255c385e0dbab557bd8179a0ab508b648082e1e9acf	689	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/05_qat_init.json	this entry	00dc852dbdd3fca22c8c9d7b484c65303f8f46f3b5bddc914e34d72aa17dfd86	1476	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/06_qat.json	this entry	3b7b0c15bdff9c20e7dea490e7a96ba3afdf6455b4b36f9fc97ff474fd693649	1451	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/07_fp32.json	this entry	8718eded63f958dfa6d81b385d17bb780228dc7dc54a4474a09ba2c3c9bd7135	769	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/08_export.json	this entry	245db40a2aa8b54978e4e81cc73b2578534194eede11ac5a00a90fde4f30ea2c	609	executed configuration of a stage of the chain (host paths as <W>)
+tf/3_train/chain/results/b1.json	this entry	6c4e534f8595ad4ee28ff61ad99b2715058beaec0fcc68c004d1febd9b776f13	1302	record: result file of a stage of the chain
+tf/3_train/chain/results/b2.json	this entry	d829e277cfdb8e273b9c9203921b4d5a5ba3ce04aef2a4c80fc8402c077f2301	1441	record: result file of a stage of the chain
+tf/3_train/chain/results/b3.json	this entry	7f4b0749e327bb33cacf280a6383f0a2531c4cca3c2fab858f429d0c56edd750	1480	record: result file of a stage of the chain
+tf/3_train/chain/results/fisher_alloc_summary.json	this entry	2dc3d63334d4cfd0e3584ba9322e7aba770637b690461b579acac203ebd71085	429	record: result file of a stage of the chain
+tf/3_train/chain/results/fp32.json	this entry	86c83d62956b823be6ca1d7f5c87664863bd1b6c688b2c3872cf5260f2c33dbe	1175	record: result file of a stage of the chain
+tf/3_train/chain/results/qat.json	this entry	27727c827f69dff6bec8057ad05cc1473f43e6fbc6fa38fca18d3a6cc49e61b6	2322	record: result file of a stage of the chain
+tf/3_train/chain/results/start_conversion.json	this entry	5c776408b5c62ef24b42333408c37001d7e06eb0531d83b9c7a022ffc8f3c269	796	record: result file of a stage of the chain
+tf/3_train/container_to_tch.py	this entry	d0c9839ed71792b93e5cf7bddc1f5ab047d0016012992bfd94a1980f1afe1c45	11110	weight container to training state (start state)
+tf/3_train/export/export4/convert_container_v4.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0; base cmix-neif-1.0	84b6b43e8f72f7fd6fef1a49cd1364cb6c54550390f8fa5653b29878e1ec7ffb	8309	export: bf16 rounding, formats v3 and v4, dead neurons, collapsed rows
+tf/3_train/export/export4/convert_container_v5.py	this entry	da5193ef8ec083bc6af85daac7b23c68470681448a09ae7fc3bed327f571406f	4663	container format v4 to v5
+tf/3_train/export/export4/export.sh	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0; base cmix-neif-1.0	f8af87165f88ecb8c3e8802fafd043b178286cb010d2e3ae31122145f2e9f844	4727	export: bf16 rounding, formats v3 and v4, dead neurons, collapsed rows
+tf/3_train/export/export4/prune_dead_neurons.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0; base cmix-neif-1.0	1df81f5dfac270b4dd194e05a21be8532aa83272ca5607d479f5ab4e68694671	15771	export: bf16 rounding, formats v3 and v4, dead neurons, collapsed rows
+tf/3_train/export/export4/weights_compress_v3.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0; base cmix-neif-1.0	6b04dda7a37041aca57c1b7157ea6a3604f9d2ba2a5710885228206a4813df16	63573	export: bf16 rounding, formats v3 and v4, dead neurons, collapsed rows
+tf/3_train/export/export4/wpack2_bf16.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0; base cmix-neif-1.0	c0002095b8ff68dcae9c112dc3db767907798d874a132d3b006a150f876df6ad	5657	export: bf16 rounding, formats v3 and v4, dead neurons, collapsed rows
+tf/3_train/export/export_v3_ar.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	199b37ded84833d837ff37e04336628e103829f72ee33de35ef390a39baa23db	7565	checkpoint to reference weight file
+tf/3_train/export/np2/np2_container.py	this entry; Python transcription of tf1_np_codec.cpp on weights_compress_v3.py	ed29466cbc574d4d9990dd4c4c9c970cfebc6380d9a7d601a757ec05d7aa6f8e	30845	writer and reader of the container formats NP and NP2 in Python
+tf/3_train/export/np2/tf1_np_codec.cpp	this entry; encoder after fx2-cmix-transformer pysrc/weights_compress.py	1718b3f13b26b04c397be1ca3bf13797f11fba1a33d947e1a3fca268d35edf5e	42703	writer of the container formats NP and NP2 in C++ (built in the development tree)
+tf/3_train/mlp_lift.py	this entry	a0abb5233323c3bc020a14ef8918bf408012cc879e7aa6a59521df30cccd37ac	1364	lifts all-zero weight rows before the quantization-aware stage
+tf/3_train/reproduce.sh	this entry	9d12a40b49a2982ec2297f487b7728a3cb9eacf3ed9e24143db0c78b8ea004b0	7086	runs the training chain stage by stage with the executed configurations
+tf/3_train/tree/arch.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	9814172434d28ee6aa9ec33d6db2d9a0a4805ffa8d1901b30ad567cb37f2e388	16900	training script of the transformer
+tf/3_train/tree/attnres_hub.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	cf52631a1a88e1fa8a34cdf063208b5827500af97c159ecfea3fde2a54e4e391	9891	training script of the transformer
+tf/3_train/tree/attnres_v10.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	8beec19c4e6e150b1006111d82cd43a33f1f3366be0b0a36a190156ac4c91e0b	14948	training script of the transformer
+tf/3_train/tree/c1_rate_v2.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	955cc10f746d42b88b189383d67d1cd4597830c5c768ac7472046d7c96be05e9	17980	training script of the transformer
+tf/3_train/tree/exp.env	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	dc8d7e174f30f524f0c1dbbe1f061c6cbf03001e1740ce2e5dba2ece8ca05f73	823	training script of the transformer
+tf/3_train/tree/fakequant.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	bb7bf3fccaa75f68a1fe9cafd243dcff4daacd0fd78d2fcc435444eed197c1e9	10218	training script of the transformer
+tf/3_train/tree/fastmuon.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	2442a729888de214200f006db357333fa7b8b9e9c9ff2469a5a5922d59084d4e	4025	training script of the transformer
+tf/3_train/tree/fisher_alloc_a.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	a3408f7f5d11204e78f8f89be391498e49a58db415c2558ed9cca1453df9dd64	9240	training script of the transformer
+tf/3_train/tree/rx3.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	15b84c519563b784f4b1002b4bcbc2e64771167c5366b3580cbef3f1113a5c64	15324	training script of the transformer
+tf/3_train/tree/rx3a.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	14f66d30b6096511ec075032a4658dedf04edda60add4ca5a91de829f204dc22	15506	training script of the transformer
+tf/3_train/tree/rx7q.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	d359fee493d95de9c25a7624f613ec12e24a7b33838e475ea35bf7b91cfc46b0	33590	training script of the transformer
+tf/3_train/tree/rx7r.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	6a5fb1de54df8ecfbca440d06a5bb07df52d922f16ba86f121a84d7d2e7b2c39	43265	training script of the transformer
+tf/3_train/tree/safe_prefetch.py	this entry	63fc05484c466bfbcb515378c47881b6c8142eb73ebce43f6f1c09b78a65b961	1854	data-loader prefetch that raises a failure in the training loop
+tf/3_train/tree/speedpatch.py	cmix-neif-beehive (V. Malinovskii); changes of this entry marked # 2.0	dd937e21884be9fe601f786b67c06cbf38b1fb3f6bfba0f7677558c52010c8d1	6650	training script of the transformer
 tf/tree_overlay/paket11_warmstart.py	this entry	8f477cd798654e6ab559b02e48af2f2b1df3a6b360908a199f1cd8294fd836b4	9441	form-aware warm start of weights and optimizer state
 tf/tree_overlay/run/export_chain.sh	this entry	b33fc54f29c3e3644f3e1bdadf1deb9f7552e7d75a502bfdd3c3465019eb250b	2377	pod setup, smoke, export chain
 tf/tree_overlay/run/night.sh	this entry	80c0a470ccb387924e3ff3fa3ccef679078fc7859e5dde7b122f58b71e5ef9d2	2572	pod setup, smoke, export chain
@@ -98,7 +120,7 @@ tf/tree_overlay/tft/calibrate.py	this entry, derived from fx2-cmix-transformer (
 tf/tree_overlay/tft/config.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	76f3b1271ffb6fa705784e352c5fa7e190d9fa5d2daefbe0f46e797ca1db0e01	13565	geometry registry, dataset checks, runner, export with manifest
 tf/tree_overlay/tft/cooldown_poc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	c97853eddf9ea7e4a40bc66c8caa29f39ddaa0941b998f9e490edfa87d599960	533	geometry registry, dataset checks, runner, export with manifest
 tf/tree_overlay/tft/dataset.py	this entry	9e51b6bb41393493260b59d5f4b4afd9a3a1f4e5bb5578eeb196c7f8243d5e6d	12408	geometry registry, dataset checks, runner, export with manifest
-tf/tree_overlay/tft/export_weights_poc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	ff5331fc22970885e23a772d88a274f6f749f026e15e704d2827f21eda2f6b19	21483	geometry registry, dataset checks, runner, export with manifest
+tf/tree_overlay/tft/export_weights_poc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	c620dadc5a7410560f9a78d6fb6a4e34cc70f48e3229bcda8b90d16dee0b262a	22485	geometry registry, dataset checks, runner, export with manifest
 tf/tree_overlay/tft/param_count.py	this entry	6a682fa2170e0c915631015c88af2c470d3e5306c0a37ef3c09630c87b7dc090	25329	geometry registry, dataset checks, runner, export with manifest
 tf/tree_overlay/tft/quantize_poc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	a1abf1abe51a3a2d4b1df0d5aff593d20a2c04804bad74404e29b2e606fd9183	354	geometry registry, dataset checks, runner, export with manifest
 tf/tree_overlay/tft/runner.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	0974c86e38d3f1558e43172078aa4f235b003866f1547f9b916c015436a12a06	21689	geometry registry, dataset checks, runner, export with manifest
@@ -108,14 +130,14 @@ tf/tree_overlay/zctx/README.md	this entry	b062d9d43de2f33ed41ec431c6648166d5569e
 tf/tree_overlay/zctx/SPEC_Z3.md	this entry	3a62cdd2e1beb50bf611381d2ae0a0bff7cbb351fb83b0cf79da818121542612	8507	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/__init__.py	this entry	fd15ec2bd5dfe41af3164e1d6dd2b08a64c9fdaa63b574aad0d7d57ebd9435a8	143	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/dryrun_zctx.py	this entry	2ec511a18820c67ed8deccd0f6d4468024711f0308e0a3754d6b5bde726343b4	16628	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
-tf/tree_overlay/zctx/dumpv2.py	this entry	8592016e3914272c1f0b783f960446a3ce557b7220ea1202764097ed0d825c93	12440	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
+tf/tree_overlay/zctx/dumpv2.py	this entry	4e1b1e0e63dff0f6a88cfa9a6751248cdd8ff1ec64d3c4043303e961df4a7a59	12406	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/eval_zctx.py	this entry	2cb786040c85026d19b980b4861cc892dd6aaeb57ccf74fb1bc8f912d63f3a0c	6556	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/gate_dry.py	this entry	5178532994356cb4ad6a0de305d6344f9f9a5a556eb7945cae2e6684fc83942e	11324	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/gate_eval.py	this entry	a41127c4e6247f195d45de7842b0877d949010e349b5ca6ec44642f05e431ba2	6053	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/run_zctx.sh	this entry	3217ebd1cdbba6cf1e9a1f22dec2dc4cb9bf67076ff12f4ca80918df745187e9	3958	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/slice_lite.py	this entry	f72c53f03a36871347501de04676882be5f326ad3e114fde0c1b5397666d99af	1638	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/z3_extract.py	this entry	574b387a726c796052addd8c3694572d2dbb470b7411046564b63d675de16613	20328	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
-tf/tree_overlay/zctx/zabc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	5bb0edc9825f50b6640d0efe3dd7bbd22ce20b352266d644af9c86df9e39ee77	7276	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
+tf/tree_overlay/zctx/zabc.py	this entry, derived from fx2-cmix-transformer (V. Ivanov)	3dc8deb416245a6fcbfd8e11260e0720681bdf22c0ad59ea76d38ec749d7bfec	7294	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/zfeat.py	this entry	ccd69f21ea8bc99563b64ed609558424d436790cd09a323ff0b5edccd49fd966	7541	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/zgate.py	this entry	d0f36dc1bf05f7f93684f515f819d6afddbb2c9d288e2bf7adf993da0cf10126	22554	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
 tf/tree_overlay/zctx/zgrammar.py	this entry	39e4b17c27d0e98889d2bdc834c5eb2c6a8a8d48eacbbf25a6eec7c686339ebb	4923	training form: gate zones, prompts, sentinel, X2/match channels, packing, loaders
@@ -319,65 +341,22 @@ tf/tree_upstream/training_recipes/train_6m.py	fx2-cmix-transformer (V. Ivanov), 
 tf/tree_upstream/training_recipes/train_6m_v2.py	fx2-cmix-transformer (V. Ivanov), verbatim	86b148758f89734ddcbf766087027e3adf7ee526e379545f992a6af249e465b5	6178	upstream training tree: model, trainer, loader, optimizer, quantization, export, container v1/v2, C++ inference reference
 tf/tree_upstream/uv.lock	fx2-cmix-transformer (V. Ivanov), verbatim	b20f3eedccc07efd74bf11cc88607c5612e604575ac906c5d5f1d330804cbb0a	106243	upstream training tree: model, trainer, loader, optimizer, quantization, export, container v1/v2, C++ inference reference
 tf/tree_upstream/writeup.md	fx2-cmix-transformer (V. Ivanov), verbatim	84444b62bf27d1db709c0d35b512ee9b85823e9e668568f2cbcdc724acfab6a0	13164	upstream training tree: model, trainer, loader, optimizer, quantization, export, container v1/v2, C++ inference reference
-
-# ---- large artefacts, referenced not contained ----
-# The transformer chain (training/README.md section 5); checkpoints are the bf16 state at the end of each block
-REF:checkpoint/01_anchor.tch	not published	11f26e97dac824d70b2a9dfd5a367dad1795dab7e9a98f91517b811f43f34308	31507127	end of block 1, 80 bf16 epochs at window 2048, package A
-REF:checkpoint/02_w1024.tch	not published	d696edb8ddeb187ba87dd6acc0b2a568b1f1498995d7f85b5627cfb58391ff43	31507127	end of block 2, 120 epochs seen
-REF:checkpoint/03_w1536.tch	not published	e4026626e5ea81396710b0437444d037c38aa77894372ec918c078a97bab1c45	31507127	end of block 3, 240 epochs seen
-REF:checkpoint/04_w1536.tch	not published	bb420a689b9491f82d782e59ba152e89d851483643c10889b9305d21a7a000c0	31507127	end of block 4, 400 epochs seen
-REF:checkpoint/05_w2048.tch	not published	f83fc26de816f4e4f418986cc7d181f6c5ce3212f6a073973a78e4772a9d0efc	31507127	end of block 5, 600 epochs seen
-REF:checkpoint/06_w2560.tch	not published	c6113dcf6c3ed4c4315b37963baa2e8164f070835673540d6a0073776b7e29cb	31508223	block 6 after 30 epochs, 630 seen
-REF:checkpoint/07_w2048.tch	not published	02ef775c035f5900e25dbc99ef0677ad34746b2f6e7bf18e143c2c59d5e5cbe0	31507127	end of block 7, 800 epochs seen, package C
-REF:checkpoint/08_epoch123.tch	not published	7b0f1370b3978e202d492a4bc8bf414a669b8575c8f0b0fdc4e30ce90c2ab619	31508223	block 8 after 123 of 200 epochs (host lost), package D
-REF:checkpoint/08_end.tch	lost	ce2ce0c933dd3569 (short)	31507127	end of block 8, 1,000 epochs seen, before the repair; only the first 16 hex digits were recorded
-REF:checkpoint/08a_repaired.tch	not published	377e6a7feaf413d6d2dbc52dd3cf91f4415cd73608c8ada196d9f73e2819f1ab	31504447	end of block 8 after the repair of subnormal rows
-REF:checkpoint/09_qat.tch	not published	2a698b86c7430daa071fdc04617a654b83308f32218415c4f12949cb0fae967f	31783196	end of the 32 qat epochs
-REF:checkpoint/10_fp32.tch	not published	15b1d56b44af6300c8ab849bd86b0f97662c11982581c2cc4ef6fcedd7cbaf64	31786185	end of the 6 fp32 epochs, input of the export
-REF:export/weights-poc8m_w2048.bin	not published	614e2ea500fd5bbb006e3759d019d5d9d2f4a9677d47a7808d575fad7473a3ac	41624765	reference weight file of the shipped weights (FX2TFW01)
-REF:export/weights-poc8m_w2048.c2	not published	620855c00e4dd4453914aaa59067197a1fc358d0b10889e51f99ab6f6965a2ea	3853443	the same weights in container format v2, written by the export on the GPU host
-REF:export/weights-poc8m_w2048_v3bf16.c3	not published	8cff9bb1c695fafd6e4fb390e18108ed4c418f03e04761e527a755936c34653b	3737929	after bf16 rounding, format v3 (export.sh step 2)
-REF:export/weights-poc8m_w2048_pruned.c3	not published	aa1b266f1aa2d54dd86a4d013405639980ca67631e77123e351ed0380ee3130d	3726968	after removing 70 dead neurons (export.sh step 3)
-REF:SHIPPED/weight container	this entry (shipped outside training/)	ba982cd5da95c88c076d63b7767dad12e0c510ea3dd99adc0e213e707b45e719	3716667	the container this entry ships, format v4 (export.sh step 4), appended to both executables
-# Package D (training/README.md section 4) and its inputs
-REF:stream/coder-stream.bin	not published	8e0b264a777cb56a6be48c58002450c4711b1cebf3ffcb0129a32ef34273c3ba	552750198	the coder stream of this entry
-REF:stream/coder-stream.unpacked.bin	not published	e556d3f837c66c69e0a4f3a1e972b05bdb034633f6a8cadd6d91ef9c34135111	555771398	the same stream before the metadata block is packed; input of the dump and prior runs
-REF:dump/paket-zeilen.bin	not published	58fc6c74c09400192c28cf3608e6eeb0387ba4f40b4255d39dbc8ac5e0bf66a0	7117383324	the fed-row dump of the dump run, 593,115,277 records
-REF:package/D/zeilen.dump	not published	16ed38825c29d932cd7ae22d4e5be75cb3336e5e073f5cfe9a30100578366ade	7117383300	the rows of the package
-REF:package/D/doc-rows.int64	not published	543319de27af1aa7cb201a2f18130df09310df38da5c10ec3a34ffc1e0b523f7	1379504	document row index
-REF:package/D/doc-last-ziel.int32	not published	b1dd9dd10a2ec303fe618ceb6473d66763a897d6ccaad63361f45dfa8e1cc94a	689748	closing token of each document
-REF:package/D/article-boundaries.int32	not published	29e3ee62b1c28e868062271464d86e99ef6a25f57085da592ae9eb288808f7a3	689752	article offsets
-REF:package/D/title-lengths.int32	not published	e766647d3276e27f0cd45a0774981139f0f72d9abbc3066281eae10c14edafbb	689748	title length of each document
-REF:package/D/zonenmaske.u8	not published	4d876ca6092d4d360731f5c81fac140f5d7e68ef249f86c719ba054a74db46b4	547586001	zone mask behind the cut, all zero
-REF:package/D/dump-meta.json	not published	2fe060cca2746714bdd284109b152a5fc27ca5ac23abbb92bd909164b5b7089a	1007	form record of the package (arms, window, row layout)
-REF:package/D/kennzahlen.json	not published	15829e2a52d6063e4c0812de5a7140bd211a3c011e9c9e4673dd3cdb22d25744	1538	counts of the package
-REF:package/D/z3-prior0.float16	not published	591218150f09541909a980fca4c23fa044556bc1dcd2a5f592010103070deed6	416	prior0 of package D; the compressor carries the same table
-REF:package/D/ppmd-bytes.uint8	not published	bc419ee2f7bd4dddc6004851ab0c87623c6e59ef3fccb778a4d650e94c1ad9f9	547586001	token index per stream position behind the cut
-REF:package/D/ppmd-probs.float16	not published	3ee22a2618de7d9ac458ada84d92247a58676e32571df4c9dc52494de5768194	227795776416	PPMd prior per training token, 208 float16 per row, trimmed
-REF:package/D/pkgv12k.tar	not published	b3279ce258d2e5a28c8aa5d6ba82911bcae68763a5390d17ad4e21119d15401b	7668439040	the package files above except ppmd-bytes and ppmd-probs, as one tar sorted by name
-# Packages A, B and C of the earlier blocks
-REF:package/A/pkgv7.tar	not published	6cfc920168e49668e7af41e26f0c7222aaba673add625532e70162d84b906bb2	7670763520	package A (blocks 1 and 2): rows and tables
-REF:package/A/zeilen.dump	not published	cfa7cf3bbdfdba5dfc63bcae857f9852722fc92090303650f98d5b8ce18e2fbd	(see tar)	package A rows, 593,287,707
-REF:package/A/ppmd-probs.float16	not published	6e8bf0dfce29fea1c82ad7cb82c5459897e04a6c0f8314089784570880c91d95	227905453984	package A and B priors (B uses the same file)
-REF:package/A/ppmd-bytes.uint8	not published	0d8a0f96dc27ce1792810225e81e5bddc9a76ed348bf1e987034e16ccbdc7c4d	547849649	package A and B token indices
-REF:package/A/z3-prior0.float16	not published	b7e803299079ff9fb1d915b478959eaa0eba059a2c9f4fe00d5ee5bfbc1ea49e	416	prior0 of packages A and B
-REF:package/B/pkgv8.tar	not published	7b8ce9ad2fcdada81fbd071064f90696c14a0f67231d6082c01b40936cf253c9	7674818560	package B (blocks 3 to 6): rows and tables
-REF:package/B/zeilen.dump	not published	381c0061b7951540b0c241482cc942034591fde44bf2b2a460a248e1548fcb59	(see tar)	package B rows, 593,625,061
-REF:package/C/pkgv10.tar	not published	dcbcbd025267724a739b0c2e0de20a0d54b076636aaaae61d2a813dfbd489c49	7668889600	package C (block 7): rows and tables
-REF:package/C/zeilen.dump	not published	e4f0dc0967b77789ae65ebd60bd85a540959a7f7c968caf7c53d35d969c1d249	(see tar)	package C rows, 593,152,902
-REF:package/C/ppmd-probs.float16	deleted	ea66aa3e0b29babc17699ec8b4345849aa8a93d5d13f298eb5dacf7ec86cbb3f	227795776416	package C priors; the file no longer exists
-REF:package/C/ppmd-bytes.uint8	not published	2892fb42452b84e4dac2775b59487e96bb2e25a2ba7b10fea07c593fa7d0a805	547586001	package C token indices
-# The BITLSTM (bitl/README.md)
-REF:bitl/trace-prefix.spur	not published	e3704e814d1b2643a26aa9ce3711f77b51f2f69751252eacb1033b282d5355fb	25130230588	the per-bit trace up to the cut (bit 418,837,176)
-REF:bitl/trace-prefix.kanal	not published	01d426ac5aecf9e6a6b0f2100b1fff49eb11690c2321b21203f738f7d9d82bc8	14449882600	the per-byte channel of the trace up to the cut
-REF:bitl/weights_pass1.nblb	not published	30c72bbc20775b9a43fc40534428de387b9188177f4304c61a2c4b353c575be0	14748	fp32 weights after the first pass (a cheap check of a rebuilt trainer)
-REF:SHIPPED/BITLSTM weights	this entry (compiled into the program)	c72957f48c2ec81afa3aed2baae7acd964c17f96bb0406b8195818fc708a8e7d	7386	the bfloat16 weights of the last pass
-# Artefacts shipped outside training/ (data/README.md)
-REF:artefact/english.dic	this entry (shipped outside training/)	0ab9f2d2733003577b53b206791f382fd31b91eff9975041b2173bb5585c5535	520804	the dictionary, shipped as dictionary/english.dic
-REF:artefact/english.hints	this entry (shipped outside training/)	7c16cf40569ad5907585ae79fff48ffdf4b534c9286a3e9f9d54f29f2ac4613c	205067	the hint package, shipped as dictionary/english.hints
-REF:artefact/new_article_order	this entry (shipped outside training/)	c9f8b1001bfbc041a087eab65e5caa609eb87bb8ecf297cfcdbcdaffa7a1dd19	115870	the article-order residual, shipped as src/readalike_prepr/data/new_article_order
-REF:artefact/pgo/default.profdata	this entry (shipped outside training/)	93e87692209560cb7e2dfe60beddaa604805b5040b962bcba815547578d97b88	189296	the collected PGO profile; shipped as pgo_data/default.profdata with 212 function names rewritten (189,056 B, sha256 cc5733f77664c3214773846ce1d3fc7808953ad355cfde984a3781c697931ac6)
-REF:artefact/pgo/bed50.bin	not published	25a54b414008c0a5cd4b4fc66811c08b723126175be1a3b90882db1437b849f4	50000065	the bed of the PGO profile: the first 50,000,065 B of the preprocessed stream
-REF:tree/fx2-cmix-transformer/models	fx2-cmix-transformer (V. Ivanov)	(per-file, see the mirror)	71 MB	the upstream trained checkpoints; not shipped and not used by this entry
-REF:tree/fx2-cmix-transformer-0821	fx2-cmix-transformer (V. Ivanov)	(per-file, see the mirror)	7.4 MB	the later upstream snapshot 2026-08-21; its pysrc/ is byte-identical to tf/tree_upstream/; the inference engine of the compressor follows its cpp_infer/
-REF:tree/development-tree	not published	commits 786964b1 (stream, dump, priors), 99724e79 (BITLSTM trace, PGO profile), 4fd4c7d2 (BITLSTM trainer sources)	(tree)	the development tree of the compressor; its build variants ran the original coder-side runs (reproduced by tf/1_dump/trainmodes.patch), the BITLSTM trace and the PGO profile
+REF:coder stream	this entry	c35d3073eeba70f2	501062281	stage (a): coder stream of enwik9 (sha256 prefix)
+REF:zeilen.dump	this entry	f76f5e5df2a8c991256c75e0dbf63df7d4dc6a1cdcb71a9996179e088f583d9f	6525993408	stage (c): fed rows of the training package
+REF:ppmd-bytes.uint8	this entry	721ad4f3f8a0a7957598cbc62b8ef495e9c620652486123757975b73274568bd	488038367	stage (c): token per stream position
+REF:z3-prior0.float16	this entry	ceb297e328d9af5daa72f47b750267b1c1978e8d382d1d254692fe2dc31cbafc	416	stage (c): prior of inserted rows (= src/tf1/tf1_prior0_set_v14.h)
+REF:ppmd-probs.float16	this entry	dc71f3113288cb9aff95adb0cf4f10af353b11888618df7ff187b360f57cbb0a	203023960672	stage (c): PPMd priors, 416 B per token
+REF:pkg.tar	this entry	cdf0ea186edfa59d87f2fadbd2c61b038e9f88297bae5e686875c067d84bcb52	7026718720	stage (c): training package without the priors
+REF:start container	cmix-neif-beehive (V. Malinovskii)	141ee13c316811157bea167846b3f45472affff7adaa1b8b263e30621e490885	3649198	stage (d): weights of cmix-neif-beehive, start of the training
+REF:start_bf16.tch	this entry	18c3c66c0e9338414098c01ec6faebe1234f2c1c4479f836d3ab8ab0c4c69035	-	stage (d): bf16 start state
+REF:b1/model.tch	this entry	42502d8a2c177b69d095550b80d8fe973e287043d4ec1d084a1b8711bc575d28	-	stage (d): end of b1
+REF:b2/model.tch	this entry	ec4ca2639e9a4987401285ea01ebe7a9f551c0864c7c03f823e44874d9541cf9	-	stage (d): end of b2
+REF:b3/model.tch	this entry	21a2de8cf717c9e00721dcf3c13a1644df7ea5d5ad0cda28188f1b22e7d9066b	-	stage (d): end of b3
+REF:alloc_1.000.npz	this entry	eb17b7b6fca38b3e898149149a40fecc0fdd45fe01a210454a255c96ce2fcd26	-	stage (d): bit allocation
+REF:qat/model.tch	this entry	995b7aa5e2a00508cf4465e26b2daa6f6e6f34a025f1ed67ec57f681d9e7d99d	-	stage (d): end of the quantization-aware stage
+REF:fp32/model.tch	this entry	0f08724b7a2bb1892a9e433afc9add5a66d9fbde207668dfbbeb5d31d3288314	-	stage (d): end of the fp32 stage
+REF:weights-poc8m_w2048.bin	this entry	fa0ea606ff8fda91784b6b3ae1c875ed5e6ed5f4a39e87cbf91d45403361392c	43087894	stage (e): reference weight file
+REF:weights-poc8m_w2048_pruned_v4.c4	this entry	38b7c162f1882ca6aedfa8f7831bb55b52d37582a3892a340605cf0c979b54e8	3769904	stage (e): container format v4
+REF:v5.c5	this entry	11ef8fdfaf85fbc15d3845a82e54f3c843397b05b4cc03e7d7fa50fdfd61f82b	3767643	stage (e): container format v5
+REF:weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5	this entry	729694cba4969b7d833686ed3f597ff04d3b226da849d5f8004ec020a0ed9563	3744629	stage (e): the shipped container (format NP2), in the top-level directory of the entry
+REF:spur.bin	this entry	-	277855252272	stage (f): trace of the BITLSTM inputs, 1,694,239,343 records

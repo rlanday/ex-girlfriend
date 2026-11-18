@@ -3,7 +3,6 @@
 
 #include <vector>
 
-#include "../fast_math.h"
 #include "../simd_scan.h"
 #include "../logit_table.h"
 

@@ -1,3 +1,4 @@
+#include "../meld.h"
 #include "tf1_gate.h"
 
 #include "../cold_size.h"
@@ -6,23 +7,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Package form: the engine's stop (tf1_engine.cpp, linked anyway) prints the
+// same lines as G1Fail below (newline, code, newline) and exits with 1.
+namespace transformer {
+[[noreturn]] void Fail(const char* fmt, ...);
+}
+
 namespace tf_gate {
 
 CtxState ctx;
 
+// ---- the stamped grammar -------------------------------------------------
 static const unsigned char kAnker[8] =
     { 0x0b, 0x0b, 0x28, 0x1a, 0xaf, 0x68, 0x2a, 0x08 };
 
-[[noreturn]] COLD_SIZE_ATTR static void G1Fail(const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  fprintf(stderr, "\n");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  va_end(ap);
-  fflush(stderr);
-  exit(1);
-}
+// A loud stop of its own: `transformer::Fail` lives in tf1_engine.cpp, and the
+// tool build (`tf1_gate`) links this translation unit alone; pulling the
+// engine in for one error path would be the wrong trade in a binary that
+// counts double.  Same behaviour: message to stderr, exit 1, no return.
+#define G1Fail ::transformer::Fail
 
 const char* ZoneName(int z) {
   switch (z) {
@@ -47,15 +50,11 @@ COLD_SIZE_ATTR CoderGate::CoderGate(const Params& p)
 }
 
 COLD_SIZE_ATTR CoderGate::~CoderGate() {
-  if (dump_) {
-    if (!dbuf_.empty()) fwrite(dbuf_.data(), 1, dbuf_.size(), dump_);
-    fclose(dump_);
-  }
 }
 
 void CoderGate::SetZone(int z) {
   if (z != kZoneNone && !arm_[z]) z = kZoneNone;
-  if (z != kZoneNone && zone_ == kZoneNone) ++st_.zones[z];
+  if (z != kZoneNone && zone_ == kZoneNone) {}
   zone_ = z;
   ctx.zone = (unsigned int)z;
   ctx.masked = (z != kZoneNone) ? 1u : 0u;
@@ -64,14 +63,7 @@ void CoderGate::SetZone(int z) {
 void CoderGate::Observe(unsigned char token) {
   // book the token that was just processed
   ++st_.tokens;
-  if (zone_ != kZoneNone) ++st_.bytes[zone_];
-  if (dump_) {
-    dbuf_.push_back((unsigned char)zone_);
-    if (dbuf_.size() >= (1u << 16)) {
-      fwrite(dbuf_.data(), 1, dbuf_.size(), dump_);
-      dbuf_.clear();
-    }
-  }
+  if (zone_ != kZoneNone) {}
   G1Observe(token);
 }
 
@@ -80,11 +72,25 @@ void CoderGate::G1Observe(unsigned char token) {
     static const unsigned char kTabTok = transformer::kByteToIndex[0x09];
     bool mf_ausgang = false;
     if (!mf_auf_) { mf_auf_ = true; st_.mf_start = st_.tokens; }
+    {
+      static_assert(transformer::kByteToIndex[0x0B] >= 0, "the end mark 0x0B is in the byte set");
+      static const unsigned char kEndeTok = transformer::kByteToIndex[0x0B];
+      if (metablock::mk.ImTextanfang()) {
+        ++st_.ta_tokens;
+        const bool letzte = token == kEndeTok && metablock::mk.TaSchliesstLetzten(0x0B);
+        SetZone(letzte && arm_[kZoneHdrblock] ? kZoneHdrblock : kZoneNone);
+        return;
+      }
+      if (token == 0x08 && metablock::mk.SchliesstMit(0x0A)) {
+        SetZone(kZoneNone);
+        return;
+      }
+    }
     if (metablock::mk.Fertig()) {
       if (!mb_nach_) {
         mb_nach_ = true;
         if (token == 0x08)
-          G1Fail("line after the metablock is empty (token %llu)", st_.tokens);
+          G1Fail("E214 %llu", st_.tokens);
       } else if (token == 0x08) {
         mf_ausgang = true;
       }
@@ -102,7 +108,7 @@ void CoderGate::G1Observe(unsigned char token) {
     }
     if (!metablock::mk.Offen() &&
         st_.tokens > (unsigned long long)4096)
-      G1Fail("metablock not opened after %llu tokens", st_.tokens);
+      G1Fail("E215 %llu", st_.tokens);
     SetZone(mf_auf_ && arm_[kZoneHdrblock] ? kZoneHdrblock : kZoneNone);
     return;
   }
@@ -113,7 +119,7 @@ void CoderGate::G1Observe(unsigned char token) {
   //     stops the program.
   if (st_state_ == kHdr) {
     if (r_anker_.Push(token)) {
-      G1Fail("anchor at token %llu inside the metablock started at token %llu", st_.tokens, st_.hdr_start);
+      G1Fail("E216 %llu %llu", st_.tokens, st_.hdr_start);
     }
     SetZone(kZoneHdrblock);
     return;
@@ -124,7 +130,7 @@ void CoderGate::G1Observe(unsigned char token) {
   //     overrides whatever line the automaton thought it was in.  It ends on
   //     the line feed, so the title begins with the very next token.
   if (r_anker_.Push(token)) {
-    ++st_.heads;
+    ++ctx.pages;   // page count behind the metablock (zone switch of the BITLSTM)
     st_state_ = kTitle;
     g1_pure_ = true;
     g1_dig_ = 0;
@@ -142,7 +148,6 @@ void CoderGate::G1Observe(unsigned char token) {
         st_state_ = kG1Cand2;
         g1_pure_ = true;
         g1_dig_ = 0;
-        ++st_.hdr_kandidat;
       } else {
         st_state_ = kBody;
       }
@@ -204,12 +209,11 @@ void CoderGate::SetArms(const bool* arms, int cmtidx_form) {
   cmtidx_form_ = cmtidx_form;
   if (!mf_raus_ && arm_[kZoneHdrblock]) {
     zone_ = kZoneHdrblock;
-    ++st_.zones[kZoneHdrblock];
   }
 }
 
 void CoderGate::Report() const {
 }
 
-}
+}  // namespace tf_gate
 

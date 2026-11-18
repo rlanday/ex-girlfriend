@@ -1,7 +1,12 @@
 #ifndef ALIAS_TABLE_H_
 #define ALIAS_TABLE_H_
+#include "census_title.h"
+#include "u8_append.h"
+#include "meld.h"
+#include "cold_size.h"
 
 #include "redirect_table.h"
+#include "rule_view.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -11,19 +16,19 @@
 #include <vector>
 
 #include "alias_context_set.h"   // link bytes
-#include "alias_substring_dedup.h"
+#include "alias_substring_dedup.h"  // substring test (Teilstring)
 
 namespace alias_table {
 
 constexpr unsigned char kKap = 0x40;   // WRT mark: capital first letter
 constexpr int kTextMax = 600;          // longer link targets and texts are dropped
-constexpr int kTitelMax = 64;          // zgrammar.MAX_TITLE_TOKENS
-constexpr int kTitelMin = 3;           // zgrammar.MIN_TITLE_TOKENS
+constexpr int kTitelMax = 64;          // title tokens at most, as in the training data
+constexpr int kTitelMin = 3;           // title tokens at least, as in the training data
 constexpr int kHops = 12;              // up to twelve redirect hops
 constexpr long long kRing = 1 << 16;
 
 [[noreturn]] inline void Fail(const char* m) {
-  fprintf(stderr, "alias table: %s\n", m);
+  fprintf(stderr, "%s\n", m);
   fflush(nullptr);
   exit(1);
 }
@@ -53,7 +58,7 @@ inline uint64_t Hash(const unsigned char* p, int n) {
 }
 // Hash of the key form (cut at '#', '_' read as a blank).
 inline uint64_t SchluesselHash(const unsigned char* p, int n) {
-  std::vector<unsigned char> k(p, p + n);
+  std::vector<unsigned char> k; u8_append::Anh(k, p, p + n);
   return Hash(k.data(), TitleKey(k.data(), n, k.data()));
 }
 
@@ -75,14 +80,15 @@ struct Wahl {
 // ---- the table ------------------------------------------------------------
 class Tab {
  public:
-  Tab() : ring_(kRing, 0), blk_{std::vector<std::vector<unsigned char> >(kEimer),
-                                std::vector<std::vector<unsigned char> >(kEimer)} {
+  Tab() : ring_(kRing, 0) {
     for (int i = 0; i < 8; ++i) anker_wort_ = anker_wort_ << 8 | redirect_table::kAnker[i];
   }
 
-  void Byte(unsigned char b) {
+  void Pause() { zu_ = false; anker_ = false; }
+  COLD_SIZE_ATTR void Byte(unsigned char b) {
     ring_[(size_t)(pos_ & (kRing - 1))] = b;
     t_ = t_ << 8 | b;                         // the last eight bytes
+    if (b == 0x5b) o_lb_ = rule_view::Letzt();   // original position of this '['
     if (!open_.empty() || (unsigned char)(t_ >> 8) == 0x5b) Link(b);
     if (redirect_table::tab.Fertig()) Redirect();
     ++pos_;
@@ -93,14 +99,23 @@ class Tab {
       return;
     }
     if (in_titel_) {
-      if (tn_ < kTitelMax + 1) tb_[tn_] = b;
       ++tn_;
       if (b == 0x0a) {
         in_titel_ = false;
+        const unsigned char* tp = nullptr;
+        const int L = rule_view::Titel(&tp);
+        if (L < 0 || L > kTitelMax + 1) return;   // longer than 65: never closed, as below
+        memcpy(tb_, tp, (size_t)L);
+        tn_ = L + 1;
+        if (!census_title::zusatz.empty()) {
+          int q = tn_ - 1;
+          for (unsigned char c : census_title::zusatz) { if (q < kTitelMax + 1) tb_[q] = c; ++q; }
+          if (q < kTitelMax + 1) tb_[q] = b;
+          tn_ = q + 1;
+          if (tn_ > kTitelMax + 1) { zu_ = tok_ = false; seite_ok_ = false; return; }   // too long, as before
+        }
         tok_ = zu_ = tn_ - 1 >= kTitelMin;
         seite_ok_ = false;                    // new page, new candidates
-      } else if (tn_ > kTitelMax + 1) {
-        in_titel_ = false;
       }
     }
   }
@@ -112,7 +127,7 @@ class Tab {
   void Kandidaten(const unsigned char* t, int n, const Wahl& w,
                   std::vector<Ref>* out, int* nq = nullptr, int* nt = nullptr) {
     Seite(t, n);
-    if (w.hops > kHops) Fail("hops > 12");
+    if (w.hops > kHops) __builtin_unreachable();
     out->clear();
     std::vector<const Kand*> e;
     for (size_t i = 0; i < kand_.size(); ++i) {
@@ -140,7 +155,7 @@ class Tab {
       if (Teil((*out)[x], tk_.data(), (int)tk_.size(), th_, true)) { ++*w.sub; continue; }
       (*out)[k++] = (*out)[x];
     }
-    out->resize(k);
+    while (out->size() > k) out->pop_back();   // shorter only
   }
 
   const unsigned char* Data(const Ref& r) const { return blk_[r.art][r.eimer].data() + r.off; }
@@ -149,7 +164,7 @@ class Tab {
   }
   bool Teil(const Ref& r, const unsigned char* tk, int tn, uint64_t th, bool drin) const {
     if (tn > 0 && !r.anders && (drin ? r.len >= tn : r.len <= tn)) return r.len == tn && r.h == th;
-    std::vector<unsigned char> k(Data(r), Data(r) + r.len);
+    std::vector<unsigned char> k; u8_append::Anh(k, Data(r), Data(r) + r.len);
     k.resize((size_t)TitleKey(k.data(), (int)k.size(), k.data()));
     return drin ? alias_substring_dedup::Teilstring(k.data(), (int)k.size(), tk, tn)
                 : alias_substring_dedup::Teilstring(tk, tn, k.data(), (int)k.size());
@@ -158,8 +173,6 @@ class Tab {
   // the title).
   const std::vector<unsigned char>& TitelSchluessel(uint64_t* th) const { *th = th_; return tk_; }
 
-  unsigned long long links = 0, piped = 0, verworfen = 0, redirects = 0;
-  size_t Eintraege() const { return (size_t)redirects + texte_; }
   size_t Bytes() const {
     size_t n = ring_.capacity() + quelle_.capacity() * sizeof(H64);
     for (int a = 0; a < 2; ++a) for (int i = 0; i < kEimer; ++i) n += blk_[a][i].capacity() + sizeof(blk_[a][i]);
@@ -181,12 +194,13 @@ class Tab {
   std::vector<unsigned char> ring_;
   long long pos_ = 0;
   uint64_t t_ = 0, anker_wort_ = 0;
-  struct Cand { long long open, pipe; };
+  struct Cand { long long open, pipe, oopen, opipe; };   // + positions in the reader view
+  long long o_lb_ = -1;
   std::vector<Cand> open_;
   bool in_titel_ = false, tok_ = false, zu_ = false, anker_ = false;
   int tn_ = 0;
   unsigned char tb_[kTitelMax + 1];
-  std::vector<std::vector<unsigned char> > blk_[2];
+  std::vector<unsigned char> blk_[2][kEimer];
   std::vector<H64> quelle_;                 // hash per source title (raw), in stream order
   size_t texte_ = 0;
   bool seite_ok_ = false;
@@ -202,30 +216,40 @@ class Tab {
     return 1;
   }
   static uint32_t Lies4(const unsigned char* p) { uint32_t v; memcpy(&v, p, 4); return v; }
-  template <class F> void ForEach(int art, uint64_t z, F f) {
+  void Block(int art, uint64_t z, const unsigned char** p, const unsigned char** e) {
+    const std::vector<unsigned char>& v = blk_[art][Eimer(z)];
+    *p = v.data();
+    *e = *p + v.size();
+  }
+  COLD_SIZE_ATTR __attribute__((noinline)) bool Naechst(int art, uint64_t z, const unsigned char** pp,
+                                                         const unsigned char* e, Ref* r, unsigned char** vier) {
     const uint32_t ei = Eimer(z);
-    const std::vector<unsigned char>& v = blk_[art][ei];
-    const unsigned char* p = v.data();
-    const unsigned char* e = p + v.size();
+    const unsigned char* b = blk_[art][ei].data();
+    const unsigned char* p = *pp;
     while (p < e) {
       uint64_t h;
       memcpy(&h, p, 8);
       const unsigned char* t = p + 12;
       const unsigned char* q = (const unsigned char*)memchr(t, 0x0a, (size_t)(e - t));
+      const unsigned char* a = p;
+      p = q + 1;
       if (h == z) {
         const int n = (int)(q - t);
-        f(Ref{Hash(t, n), (uint32_t)(t - v.data()), Lies4(p + 8), (uint16_t)n, (uint16_t)ei,
-              (uint8_t)art, Anders(t, n)}, (unsigned char*)p + 8);
+        *r = Ref{Hash(t, n), (uint32_t)(t - b), Lies4(a + 8), (uint16_t)n, (uint16_t)ei, (uint8_t)art, Anders(t, n)};
+        *vier = (unsigned char*)a + 8;
+        *pp = p;
+        return true;
       }
-      p = q + 1;
     }
+    *pp = p;
+    return false;
   }
   void Leg(int art, uint64_t z, uint32_t vier, const unsigned char* t, int n) {   // append
     std::vector<unsigned char>& v = blk_[art][Eimer(z)];
-    if (v.size() + 13 + (size_t)n > 0xFFFFFFFFu) Fail("sub-block over 4 GiB");
-    v.insert(v.end(), (const unsigned char*)&z, (const unsigned char*)&z + 8);
-    v.insert(v.end(), (const unsigned char*)&vier, (const unsigned char*)&vier + 4);
-    v.insert(v.end(), t, t + n);
+    if (v.size() + 13 + (size_t)n > 0xFFFFFFFFu) __builtin_unreachable();
+    u8_append::Anh(v, (const unsigned char*)&z, (const unsigned char*)&z + 8);
+    u8_append::Anh(v, (const unsigned char*)&vier, (const unsigned char*)&vier + 4);
+    u8_append::Anh(v, t, t + n);
     v.push_back(0x0a);
   }
 
@@ -233,32 +257,39 @@ class Tab {
     const uint64_t h = Hash(t, n);
     if (seite_ok_ && seite_h_ == h) return;
     seite_ok_ = true; seite_h_ = h;
-    tk_.assign(t, t + n);
+    u8_append::Setze(tk_, t, t + n);
     tk_.resize((size_t)TitleKey(tk_.data(), n, tk_.data()));
     th_ = Hash(tk_.data(), (int)tk_.size());
     kand_.clear(); ali_.clear();
     const int kap = KapWeg(t, n);
     const uint64_t k = Hash(t + kap, n - kap);
-    std::vector<std::pair<uint64_t, uint8_t> > stage(1, std::make_pair(k, (uint8_t)0)), naechste;
+    std::vector<std::pair<uint64_t, uint8_t> > stage, naechste;
+    stage.push_back(std::make_pair(k, (uint8_t)0));
+    const unsigned char *bp, *be;
+    Ref r;
+    unsigned char* vier;
     for (int d = 0; d < kHops && !stage.empty(); ++d) {
       naechste.clear();
       for (size_t i = 0; i < stage.size(); ++i) {
         const uint8_t ml0 = stage[i].second;
-        ForEach(kQuelle, stage[i].first, [&](const Ref& r, unsigned char*) {
-          if (r.h == h) return;
+        Block(kQuelle, stage[i].first, &bp, &be);
+        while (Naechst(kQuelle, stage[i].first, &bp, be, &r, &vier)) {
+          if (r.h == h) continue;
           const uint8_t ml = r.len > ml0 ? (uint8_t)r.len : ml0;
           kand_.push_back(Kand{r, (uint8_t)d, ml});
           const unsigned char* q = Data(r);
           const int o = KapWeg(q, r.len);
           naechste.push_back(std::make_pair(Hash(q + o, r.len - o), ml));
-        });
+        }
       }
       stage.swap(naechste);
     }
     std::vector<uint32_t> zahl;
-    ForEach(kAlias, k, [&](const Ref& r, unsigned char* vier) {
-      ali_.push_back(r); zahl.push_back(Lies4(vier));
-    });
+    Block(kAlias, k, &bp, &be);
+    while (Naechst(kAlias, k, &bp, be, &r, &vier)) {
+      ali_.push_back(r);
+      zahl.push_back(Lies4(vier));
+    }
     for (size_t x = 1; x < ali_.size(); ++x) {          // most common first, stable
       const Ref v = ali_[x];
       const uint32_t c = zahl[x];
@@ -269,9 +300,21 @@ class Tab {
   }
 
   // Link scanner (incremental) over the folded link form `[target|text]`.
-  void Link(unsigned char b) {
+  COLD_SIZE_ATTR void Link(unsigned char b) {
     const long long q = pos_;
     const unsigned char prev = (unsigned char)(t_ >> 8), prev2 = (unsigned char)(t_ >> 16);
+    if (prev == 0x5b && b != 0x5b && prev2 != 0x5b) {
+      open_.push_back(Cand{q - 1, -1, o_lb_, -1});
+    }
+    if (open_.empty()) return;
+    if (b == 0x0a) { open_.clear(); return; }
+    if (b == 0x51) {
+      for (size_t i = 0; i < open_.size(); ++i)
+        if (open_[i].pipe < 0) { open_[i].pipe = q; open_[i].opipe = rule_view::Letzt(); }
+      return;
+    }
+    if (b == 0x5d) LinkOrig();
+    return;
     if (prev == 0x5b && b != 0x5b && prev2 != 0x5b) {
       open_.push_back(Cand{q - 1, -1});
     }
@@ -286,11 +329,11 @@ class Tab {
     const long long ring_base = q >= kRing ? q - kRing + 1 : 0;
     for (size_t i = 0; i < open_.size(); ++i) {
       const Cand c = open_[i];
-      ++links;
       const long long za = c.open + 1;
-      if (za < ring_base) { ++verworfen; continue; }
+      if (za < ring_base) {
+        continue;
+      }
       if (c.pipe < 0 || c.pipe <= za) continue;
-      ++piped;
       int kn = 0;
       bool bad = false;
       for (long long x = za; x < c.pipe; ++x) {
@@ -311,12 +354,65 @@ class Tab {
       const int o = KapWeg(key, kn);
       const uint64_t z = Hash(key + o, kn - o);
       bool da = false;
-      ForEach(kAlias, z, [&](const Ref& r, unsigned char* vier) {
-        if (da || r.len != tn || memcmp(Data(r), txt, (size_t)tn) != 0) return;
-        const uint32_t v = Lies4(vier) + 1;
-        memcpy(vier, &v, 4);
-        da = true;
-      });
+      {
+        const unsigned char *bp, *be;
+        Block(kAlias, z, &bp, &be);
+        Ref r;
+        unsigned char* vier;
+        while (Naechst(kAlias, z, &bp, be, &r, &vier)) {
+          if (r.len != tn || memcmp(Data(r), txt, (size_t)tn) != 0) continue;
+          const uint32_t v = Lies4(vier) + 1;
+          memcpy(vier, &v, 4);
+          da = true;
+          break;   // the first entry with this text counts
+        }
+      }
+      if (!da) { Leg(kAlias, z, 1, txt, (int)tn); ++texte_; }
+    }
+    open_.clear();
+  }
+
+  COLD_SIZE_ATTR void LinkOrig() {
+    const long long q = rule_view::Letzt();
+    unsigned char key[kTextMax], txt[kTextMax];
+    for (size_t i = 0; i < open_.size(); ++i) {
+      const Cand c = open_[i];
+      const long long za = c.oopen + 1;
+      if (q - za >= kRing) {
+        continue;
+      }
+      if (c.pipe < 0 || c.opipe <= za) continue;
+      int kn = 0;
+      bool bad = false;
+      for (long long x = za; x < c.opipe; ++x) {
+        const unsigned char t = rule_view::At(x);
+        if (t == 0x23) { bad = x == za; break; }
+        if (kn == kTextMax) { bad = true; break; }
+        key[kn++] = t;
+      }
+      if (bad || kn == 0) continue;
+      kn = TitleKey(key, kn, key);
+      if (kn == 0 || memchr(key, 0x4a, (size_t)kn)) continue;
+      const long long tn = q - c.opipe - 1;         // text up to this `]`
+      if (tn <= 0 || tn > kTextMax) continue;
+      for (long long x = 0; x < tn; ++x) txt[x] = rule_view::At(c.opipe + 1 + x);
+      if (tn == kn && memcmp(txt, key, (size_t)kn) == 0) continue;
+      const int o = KapWeg(key, kn);
+      const uint64_t z = Hash(key + o, kn - o);
+      bool da = false;
+      {
+        const unsigned char *bp, *be;
+        Block(kAlias, z, &bp, &be);
+        Ref r;
+        unsigned char* vier;
+        while (Naechst(kAlias, z, &bp, be, &r, &vier)) {
+          if (r.len != tn || memcmp(Data(r), txt, (size_t)tn) != 0) continue;
+          const uint32_t v = Lies4(vier) + 1;
+          memcpy(vier, &v, 4);
+          da = true;
+          break;   // the first entry with this text counts
+        }
+      }
       if (!da) { Leg(kAlias, z, 1, txt, (int)tn); ++texte_; }
     }
     open_.clear();
@@ -338,7 +434,6 @@ class Tab {
     for (size_t i = 0; i < quelle_.size(); ++i) if (quelle_[i].h == roh) return;
     quelle_.push_back(H64{roh});
     Leg(kQuelle, z, (uint32_t)quelle_.size(), tb_, tlen);
-    ++redirects;
   }
 };
 inline Tab tab;
@@ -368,6 +463,6 @@ inline SynMenge& Syn() {
   return m;
 }
 
-}
+}  // namespace alias_table
 
 #endif

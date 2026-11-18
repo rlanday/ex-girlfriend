@@ -7,12 +7,10 @@
 
 class IntervalHash : public Context {
  public:
-  static constexpr int kKind = Context::kIntervalHash;
-  int Kind() const override { return kKind; }
   IntervalHash(const unsigned int& bit_context, const std::vector<int>& map,
       unsigned int num_bits, unsigned int order, unsigned int hash_size);
   void Update();
-  bool IsEqual(Context* c) const;
+  bool IsEqual(const IntervalHash* p) const;
 
  private:
   const unsigned int& byte_;

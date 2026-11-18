@@ -42,6 +42,6 @@ inline int Forced(unsigned int node) {
   return g_det[node & 255];
 }
 
-}
+}  // namespace char_rate
 
 #endif

@@ -14,10 +14,31 @@
 #   2. main and selfextract_decomp from the linker map.
 #   3. entry of the argc==1 branch = block start of the call site of
 #      selfextract_decomp (walk backwards to just past the last terminator).
-#   4. reachability from this entry: CFG within main, then the
-#      complete call graph over all reached functions.
+#   3a. the prelude of main: every instruction of main from which that entry
+#      is reachable inside main (backward reachability in the CFG of main).
+#      archive9 runs it first on every start (progress clock, layout tag),
+#      so its callees are roots as well.  The one exception is the argument
+#      vector of comp9 (data, see below): the prelude reads it on purpose.
+#      The rest of main (the branches behind argc==1) is free.
+#   4. reachability from this entry and the prelude: CFG within main, then
+#      the complete call graph over all reached functions.
 #      Direct call/jmp targets AND address-taking are considered
 #      (lea/mov $imm/rip-relative), so that function pointers do not slip through.
+#   4a. Which mov/lea/push immediates are addresses (entry branch, 2026-11-09).
+#      The image is linked -no-pie, so "mov $0x2950da,%edi" can be a function
+#      pointer; but the same form carries plain numbers (a memset length
+#      0x23fbfc), and every number between the image base and the end of
+#      .bss falls into SOME input section.  Rule: an immediate that lies
+#      strictly inside a text input section (file.o:(.text...)) is an address
+#      only if a symbol of the map sits exactly there; code is entered at
+#      symbols, never in the middle of a function (the tree has no computed
+#      goto, the one construct that takes an inner code address).  Such inner
+#      immediates are numbers: they are not followed, and they are listed in
+#      the output so that a reader can check them.  Immediates on a section
+#      start, on a symbol, in data, or in no input section at all are
+#      followed as before.  (Before this rule a memset length that happened
+#      to fall inside CmxRecodeMain made its callees 16 false duds:
+#      builds/resm_b22dd10.)
 #   5. Every reached function that lies in .encoder_only is a DUD.
 #   6. Roots from .preinit_array/.init_array/.fini_array (they run in every
 #      process: archive9 without arguments, every helper process, verify).
@@ -32,7 +53,12 @@
 #
 # LIMIT.  The method sees only what is in the linked image.  A call via an
 # address computed at run time (dlsym or similar) would be invisible; there
-# is none in the tree.
+# is none in the tree.  Rule 4a would miss the address of a label inside a
+# function taken by an immediate (GNU computed goto, &&label); there is none
+# in the tree either (grep 'goto \*' src), and such a target stays inside its
+# own function anyway.  A plain number that happens to equal a function entry
+# or to fall into a data object is still followed (false duds possible, never
+# a missed one).
 #
 # USAGE
 #   cut_dpath.py <image> <linker-map> [<linker-script>]
@@ -172,7 +198,26 @@ def main():
         m = re.match(r'^(?:0x)?([0-9a-f]+)\s*', ops)
         return int(m.group(1), 16) if m else None
 
-    def imm_targets(mn, ops):
+    # Rule 4a (see the header): an immediate strictly inside a text input
+    # section is an address only if a symbol of the map sits exactly there.
+    sym_addr = set(vma for vma, n in syms)
+    imm_inner = {}                    # (site, value) -> text input section
+
+    def imm_is_addr(v, at):
+        i = bisect.bisect_right(sec_addr, v) - 1
+        if i < 0:
+            return True               # below every input section: as before
+        vma, size, name = in_sec[i]
+        if ':(.text' not in name:
+            return True               # data or linker-made section: as before
+        if v == vma or v >= vma + size:
+            return True               # a section start, or in no section: as before
+        if v in sym_addr:
+            return True               # an entry inside a multi-symbol section
+        imm_inner[(at, v)] = (vma, name)
+        return False
+
+    def imm_targets(mn, ops, at=None):
         """address-taking: mov $0x..., lea ...(%rip) # 0x... <sym>"""
         out = []
         # Only instructions that can materialise a pointer take an address;
@@ -180,7 +225,9 @@ def main():
         # in the XML model once fell into the encoder block by layout).
         if mn.startswith(('mov', 'lea', 'push')):
             for m in re.finditer(r'\$0x([0-9a-f]{5,})', ops):
-                out.append(int(m.group(1), 16))
+                v = int(m.group(1), 16)
+                if imm_is_addr(v, at):
+                    out.append(v)
         m = re.search(r'#\s*(?:0x)?([0-9a-f]{5,})\s', ops + ' ')
         if m and mn in ('lea', 'mov', 'movq', 'movl'):
             out.append(int(m.group(1), 16))
@@ -203,6 +250,59 @@ def main():
         i -= 1
     dentry = order[i]
 
+    # --- 0. prelude of main (step 3a) --------------------------------------
+    # CFG of main within its input section; jumps leaving it are tail calls.
+    mi = bisect.bisect_right(sec_addr, main_a) - 1
+    if mi < 0:
+        die("main is not in any input section of the map")
+    MAIN_LO, MAIN_HI = main_a, in_sec[mi][0] + in_sec[mi][1]
+    succ, pre_t, pre_ind = {}, [], []
+    for a in order[bisect.bisect_left(order, MAIN_LO):bisect.bisect_left(order, MAIN_HI)]:
+        mn, ops = ins[a]
+        s = []
+        if mn.startswith(('ret', 'hlt', 'ud2')):
+            pass
+        elif mn == 'jmp':
+            t = branch_target(ops)
+            if t is not None:
+                s.append(t)
+        elif mn[0] == 'j':
+            t = branch_target(ops)
+            if t is not None:
+                s.append(t)
+            s.append(nxt(a))
+        else:
+            s.append(nxt(a))
+        succ[a] = [b for b in s if b is not None and MAIN_LO <= b < MAIN_HI]
+    if dentry not in succ:
+        die("the argc==1 entry 0x%x is not in main" % dentry)
+    pred = collections.defaultdict(list)
+    for a, l in succ.items():
+        for b in l:
+            pred[b].append(a)
+    fw, st = set(), [dentry]                 # forward from the entry
+    while st:
+        a = st.pop()
+        if a not in fw:
+            fw.add(a)
+            st.extend(succ.get(a, ()))
+    prel, st = set(), [dentry]               # backward to the entry
+    while st:
+        a = st.pop()
+        if a not in prel:
+            prel.add(a)
+            st.extend(pred.get(a, ()))
+    prel -= fw
+    for a in prel:
+        mn, ops = ins[a]
+        if mn == 'call' or mn[0] == 'j':
+            t = branch_target(ops)
+            if t is not None and not (MAIN_LO <= t < MAIN_HI):
+                pre_t.append(t)
+            elif t is None and '*' in ops:
+                pre_ind.append(a)
+        pre_t += imm_targets(mn, ops, a)
+
     # --- 1. CFG within main from dentry ----------------------------------
     seen_ins, stack, callees, indirect = set(), [dentry], set(), []
     while stack:
@@ -211,7 +311,7 @@ def main():
             continue
         seen_ins.add(a)
         mn, ops = ins[a]
-        for t in imm_targets(mn, ops):
+        for t in imm_targets(mn, ops, a):
             callees.add(t)
         if mn.startswith(('ret', 'hlt', 'ud2')):
             continue
@@ -270,6 +370,45 @@ def main():
             nm, typ, addr, off, size, flg = m.groups()
             elf_secs.append((nm, typ, int(addr, 16), int(off, 16), int(size, 16), flg))
     raw = open(binary, 'rb').read()
+
+    # The fixed argument vector of comp9 (started without arguments) must lie
+    # in the encoder block.  archive9 is started without arguments as well and
+    # knows it is not the compressor only because that block is zeros there.
+    # Placed anywhere else, archive9 would start as a compressor.  Found by its
+    # text, not by a section name, so a renamed section cannot slip past; every
+    # build carries the vector, so not finding it is an error as well.
+    oa_text = b'-e\x00enwik9\x00archive9\x00'
+    oa_n, k = 0, raw.find(oa_text)
+    vec_rng = []                      # input sections holding the vector (data only)
+    while k >= 0:
+        va = None
+        for nm, typ, a, o, z, flg in elf_secs:
+            if typ != 'NOBITS' and 'A' in flg and o <= k < o + z:
+                va = a + (k - o)
+                break
+        if va is not None:            # only what is loaded counts
+            if not (ENC_LO <= va < ENC_HI):
+                die("argument vector at vaddr 0x%x is not in .encoder_only "
+                    "(0x%x..0x%x) - archive9 would compress"
+                    % (va, ENC_LO, ENC_HI), rc=1)
+            oa_n += 1
+            vi = bisect.bisect_right(sec_addr, va) - 1
+            if vi >= 0 and va < in_sec[vi][0] + in_sec[vi][1] and '(.rodata' in in_sec[vi][2]:
+                vec_rng.append((in_sec[vi][0], in_sec[vi][0] + in_sec[vi][1]))
+        k = raw.find(oa_text, k + 1)
+    if oa_n == 0:
+        die("argument vector of the compressor not found in the image", rc=1)
+    print("cut_dpath: argument vector %d x in .encoder_only" % oa_n)
+
+    # Prelude targets; the vector is the one thing in .encoder_only it may read.
+    pre_vec = [t for t in pre_t if any(lo <= t < hi for lo, hi in vec_rng)]
+    pre_t = [t for t in pre_t if not any(lo <= t < hi for lo, hi in vec_rng)]
+    print("cut_dpath: prelude of main %d instructions (CFG from the argc==1 entry %d, "
+          "main %d), %d targets, %d of them on the argument vector"
+          % (len(prel), len(fw), len(succ), len(pre_t) + len(pre_vec), len(pre_vec)))
+    if pre_ind:
+        print("cut_dpath: NOTE %d indirect jumps in the prelude of main" % len(pre_ind))
+
     exec_rng = [(a, a + z) for nm, typ, a, o, z, flg in elf_secs if 'X' in flg and 'A' in flg]
     def is_code(v):
         return any(lo <= v < hi for lo, hi in exec_rng)
@@ -295,7 +434,8 @@ def main():
         die(".init_array/.fini_array without code pointers - image without section headers "
             "or wrong image; the initialisation roots are missing")
 
-    reached, stack = set(), [func_start(t) for t in callees] + sorted(init_roots)
+    reached, stack = set(), ([func_start(t) for t in callees] + [func_start(t) for t in pre_t]
+                             + sorted(init_roots))
     data_seen = set()
     while stack:
         f = stack.pop()
@@ -309,7 +449,7 @@ def main():
                 t = branch_target(ops)
                 if t is not None:
                     tl.append(t)
-            tl += imm_targets(mn, ops)
+            tl += imm_targets(mn, ops, a)
             for t in tl:
                 s = func_start(t)
                 if s is None:
@@ -329,13 +469,30 @@ def main():
         names[f] = sec_of(f) or ("0x%x" % f)
 
     print("cut_dpath: .encoder_only 0x%x..0x%x (%d B), %d functions reachable "
-          "from the argc==1 entry 0x%x + %d init/fini roots "
+          "from the argc==1 entry 0x%x + prelude of main + %d init/fini roots "
           "(data hull: %d data objects with code pointers)"
           % (ENC_LO, ENC_HI, ENC_SZ, len(reached), dentry, len(init_roots), len(data_seen)))
     if indirect:
         print("cut_dpath: NOTE %d indirect jumps on the -d path; the "
               "address-taking check covers them, as long as the target address is in the "
               "image." % len(indirect))
+
+    # Rule 4a: the immediates taken as numbers, for the reader of the log.
+    # "walked" counts only the code the guard looked at (main from the
+    # argc==1 entry, its prelude, and every reached function).
+    if imm_inner:
+        inner_enc = sum(1 for (at, v) in imm_inner if ENC_LO <= v < ENC_HI)
+        print("cut_dpath: rule 4a: %d mov/lea/push immediates in the walked code lie inside a "
+              "function body where no symbol sits (%d of them inside .encoder_only): taken as "
+              "numbers, not followed:" % (len(imm_inner), inner_enc))
+        for (at, v) in sorted(imm_inner, key=lambda k: (k[1], k[0] or 0)):
+            vma, name = imm_inner[(at, v)]
+            print("    at 0x%-8x $0x%x = %s+0x%x%s%s"
+                  % (at or 0, v, name, v - vma,
+                     "" if v in ins else " (not an instruction boundary)",
+                     "  [.encoder_only]" if ENC_LO <= v < ENC_HI else ""))
+    else:
+        print("cut_dpath: rule 4a: no mov/lea/push immediate in the walked code lies inside a function body.")
 
     if not blind:
         print("cut_dpath: clean - no .encoder_only function on the -d path.")
@@ -373,7 +530,7 @@ def main():
         print("cut_dpath: to DELETE from %s:" % ldspath)
         for l in lines:
             print("   " + l.rstrip())
-        fehlt = want_sym - hit
+        missing = want_sym - hit
         if missing:
             print("cut_dpath: NOT in the linker script (come from a "
                   "collection rule?): %s" % ", ".join(sorted(missing)))

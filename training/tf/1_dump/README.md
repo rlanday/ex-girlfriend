@@ -1,81 +1,173 @@
 # Stage (b): the coder-side runs
 
 Everything the trainer consumes is produced *by the compressor itself*, from
-`enwik9`. The source of the entry is reduced to the submitted configuration and
-has no mode that writes these files. `trainmodes.patch` adds three modes to a
-copy of `src/`; `build_dump_tools.sh` builds one tool per mode. The source of
-the entry stays unchanged.
+`enwik9`. The tools are plain builds of the source of this entry with the patch
+`trainmodes.patch` of this directory, which restores the run modes of the
+development tree as `TRAIN_MODE` 1 to 5. Without `TRAIN_MODE` the patched
+source builds the compressor of the entry unchanged.
+`../2_package/build_package.sh` runs the whole chain; this page describes the
+runs one by one.
+
+The stream of the text form: the metadata block and behind it the census
+metadata block (both gated, zone 3), then the text start (the dictionary
+article, the contributor article and the census pseudo article), then page 0,
+whose title line is a short zone-3 run of its own (the gate runs on over it),
+then the pages.
 
 | file | what it is |
 |---|---|
-| `trainmodes.patch` | adds the stream, dump and prior modes to a copy of `src/` (9 files, `TRAIN_MODE` blocks and conditions; built without the define, the patched copy gives the same binary as the unpatched one) |
-| `build_dump_tools.sh` | copies `src/`, applies the patch, builds `cmix_stream`, `cmix_dump`, `cmix_priors` |
-| `dumpleser.py` | reference reader of the dump records (record format below) |
-| `features_*.txt` | record: build lines of the development tree (commit `786964b1`) that ran stage (b) for the shipped transformer; the tools give the same outputs (section 4) |
+| `trainmodes.patch` | the run modes on the source of the entry (section 0) |
+| `build_dump_tools.sh` | builds the tools of the table in section 0 from the source of the entry with the patch; `--tree` builds the first four from the development tree with the build lines below |
+| `features_stream.txt`, `features_dump.txt`, `features_priors.txt` | the build lines with which the development tree built the tools of the shipped training package |
+| `features_end.txt` | a coder line of the development tree, reference of the line check of `--tree` |
+| `dumpleser.py` | reference reader of the dump records |
 
 ## 0. Build
 
 ```
-bash build_dump_tools.sh <entry directory> <tools directory>
+bash build_dump_tools.sh <entry directory> <tools directory> [stream dump priors bed trace]
 ```
 
-Toolchain of `build.sh` (clang++-18, ld.lld-18, make) plus `patch`. Plain
-builds, no profile, no LTO, no packing.
+The script copies `src/`, `makefile`, `encoder_split.lds` and
+`runtime_exports.map` of the unpacked source package, applies the patch and
+runs `make cmix TRAIN_MODE=<n> CC="clang++-18 -DTRAIN_MODE=<n>"` (no profile,
+no LTO, no packing; clang 18 and lld 18 as in `install.sh`), about 20 s per
+tool with 8 make jobs (`JOBS`).
 
-| tool | build | mode |
-|---|---|---|
-| `cmix_stream` | `-DTRAIN_MODE=1` | `-e`: reads `./.dict` and `./.new_article_order` instead of the blocks of the binary, writes the coder stream before and after the pack steps, stops after the preprocessing |
-| `cmix_dump` | `-DTRAIN_MODE=2` | `-n`: codes the unpacked stream with a constant prediction; the match models, the gate, the prompt automaton, the link context and the metadata unit run, the transformer forward step and all other models do not; writes the fed-row dump, the zone mask and the match channel |
-| `cmix_priors` | `-DTRAIN_MODE=3` | `-n`: as `cmix_dump`, with PPMd as the only model; writes in addition the PPMd distribution and the token of every byte fed to PPMd, and the PPMd restart line on stderr |
+| `TRAIN_MODE` | tool | run | writes |
+|---:|---|---|---|
+| 1 | `cmix_stream` | `-e enwik9` | the coder stream (`out.cmix.temp`), stops before the coder |
+| 2 | `cmix_dump` | `-n` on the bed | the fed rows, the zone mask, the match channel (section 2) |
+| 3 | `cmix_priors` | `-n` on the bed | the PPMd priors, their byte tokens and origin (section 3) |
+| 4 | `cmix_bed` | `-e enwik9` | the canonical stream (the bed of the `-n` runs), the census pseudo article of the text start (`.vs3`) and the coder stream, stops before the coder |
+| 5 | `cmix_trace` | `-e enwik9` | the inputs of BITLSTM for every bit (`../../bitl/README.md`, section 1) |
 
-The archives of `cmix_dump` and `cmix_priors` are not decodable. All outputs go
-to the working directory, so each run gets its own directory.
-
-## 1. The coder stream
+**How the patch was made.** The package generator writes the source of the
+entry from the development tree and resolves every build switch to the value
+of the submitted build. It was run once with the build line of the entry and
+once per mode with that line plus the switches of the mode; the patch merges
+the five mode sources into the source of the entry. Where a mode differs, a
+region reads
 
 ```
-mkdir stream && cd stream
-cp <entry>/dictionary/english.dic .dict
-cp <entry>/src/readalike_prepr/data/new_article_order .new_article_order
-<tools directory>/cmix_stream -e <enwik9> archive
+#if TRAIN_MODE == 2 || TRAIN_MODE == 3
+  (text of these modes)
+#else
+  (text of the entry)
+#endif
 ```
 
-| output | bytes | sha256 |
-|---|---:|---|
-| `archive.cmix.temp`, the coder stream (packed form) | 552,750,198 | `8e0b264a777cb56a6be48c58002450c4711b1cebf3ffcb0129a32ef34273c3ba` |
-| `archive.cmix.temp.vorpack`, the same stream before the metadata block is packed | 555,771,398 | `e556d3f837c66c69e0a4f3a1e972b05bdb034633f6a8cadd6d91ef9c34135111` |
+(in the `makefile`: `ifneq (,$(filter $(TRAIN_MODE),2 3))`). Regions never
+cross a conditional or a continued line of the file, and `unifdef
+-DTRAIN_MODE=0` of every patched file gives back the file of the entry; for
+each mode `n`, `unifdef -DTRAIN_MODE=n` gives back the generated source of that
+mode (with the English texts below). Switches of the development tree added to
+the line of the entry:
 
-Input files, both shipped with the entry: `.dict` 520,804 B, sha256
-`0ab9f2d2733003577b53b206791f382fd31b91eff9975041b2173bb5585c5535`;
-`.new_article_order` 115,870 B, sha256
-`c9f8b1001bfbc041a087eab65e5caa609eb87bb8ecf297cfcdbcdaffa7a1dd19`.
+| mode | switches |
+|---|---|
+| 1, 4 | `PREPARE_ONLY=1 REUSE_EXTRACTED=1`; 4 also `CENSBLOCK_PRUEF=1` |
+| 2, 3 | `PROGRESS=1 TF1_SLOT=0 B5C_SLIM=0 TF1_ENGINE_FIXED=0 TF1_SELBSTAUSKUNFT=1 TF1_PAKET_DUMP=1` and `TF1_DUMPONLY=1` (2) or `PPMD_ONLY=1` (3); without the semantic cache, the embedded container, the transformer state as an input of BITLSTM and the cuts of the release form that need the fixed engine |
+| 5 | `BITL_MESS=1 BITL_TRACE=1 REUSE_EXTRACTED=1` |
 
-About 1 min, 1.4 GB RAM. The packed stream is the one the compressor of this
-entry codes. The unpacked form is the input of the two `-n` runs: `-n` applies
-the pack steps itself, so the coder sees the stream of a `-e` run behind a
-6-byte segment header (552,750,204 B in total).
+In all five modes BITLSTM runs without the three stamped weight sets (its
+online form, as in the build lines of the development tree); none of the
+outputs depends on its weights. In mode 5 it also runs in the metadata blocks,
+so the trace covers the whole stream. `PROGRESS=1` gives modes 2 and 3 the
+stderr lines the recipe reads (the slot sizes of the text start, the PPMd
+restart and warm-ups) and `progress.log`. The run modes keep the names of the
+development tree, and `NEIF_*` environment variables name their output files.
+The messages that only these modes print are given English texts before the
+merge (a table of 40 replacements, none of them in the source of the entry).
+
+## 1. The bed run
+
+```
+mkdir bed && cd bed
+cp <dictionary> .dict                 # 520,804 B, sha256 0ab9f2d2733003577b53b206791f382fd31b91eff9975041b2173bb5585c5535
+cp <order v4> .new_article_order      # 40,694 B, sha256 0eec59a305774b5a46b17b83a31274aafd5081ba387a3536def3372a442ba59d
+<tools>/cmix_bed -e <enwik9> out
+```
+
+The dictionary is `dictionary/english.dic` of the entry, the order file is
+`src/readalike_prepr/data/new_article_order`.
+
+| output | what it is | bytes | sha256 |
+|---|---|---:|---|
+| `censpruef_kanon.bin` | canonical stream: the bed of the `-n` runs | 508,139,578 | `c10b5f3d…` |
+| `censpruef_vs3.bin` | census pseudo article of the text start, `.vs3` of the `-n` runs | 82,445 | `ed68bb4becbaae3e…` |
+| `censpruef_strom.bin` | coder stream | 501,062,281 | `c35d3073eeba70f2…` |
+| `.main_phda9prepr` | stream before the article order | 797,117,307 | `aec42ab7821e9f7a…` |
+
+`cmix_stream -e` in a second directory with the same inputs writes the same
+coder stream as `out.cmix.temp` (cross-check). About 6 min on an EPYC 7502P,
+2.1 GB maximum resident set, about 5 GB of temporary files in the run
+directory.
 
 ## 2. The dump run
 
 ```
 mkdir dump && cd dump
-cp <entry>/dictionary/english.dic .dict      # dictionary pretraining of the match models
+cp <dictionary> .dict
+cp ../bed/censpruef_vs3.bin .vs3
 ln -s /dev/null aus
-<tools directory>/cmix_dump -n ../stream/archive.cmix.temp.vorpack ./aus
+NEIF_TF1_WEIGHTS=none NEIF_TF1_PAKET_DUMP=./ NEIF_TF1_GATE_DUMP=$PWD/zonenmaske.u8 \
+NEIF_TF1_MATCH_DUMP=./ NEIF_TF1_SAVE_PRIORS=/dev/null OMP_NUM_THREADS=1 \
+  <tools>/cmix_dump -n ../bed/censpruef_kanon.bin ./aus
 ```
 
-The run is complete when its last stderr line `coded stream bytes N` gives the
-stream size + 6 (552,750,204).
+`NEIF_TF1_WEIGHTS` only switches the transformer path on; the dump build never
+reads a container. **`.vs3` must lie in the run directory.** Without it the
+census pseudo article is packed empty and nothing complains (stderr
+`slot content a / b / 0 B`).
 
-| output | value |
+The run is complete when the exit code is 0, `zonenmaske.u8`,
+`match-bytes.uint8` and `match-len.uint8` have one byte per coded byte (coder
+stream + 6, 501,062,287 B), the last stream row of `paket-zeilen.bin` is the
+last coded byte and every stream row carries the token of the coder stream
+(`../2_package/dump_check.py <run dir> <coder stream>`). The stderr line
+`text start pack: … (slot content a / b / c B)` names c = size of `.vs3`.
+
+| output | what it is |
 |---|---|
-| `paket-zeilen.bin` | 7,117,383,324 B, sha256 `58fc6c74c09400192c28cf3608e6eeb0387ba4f40b4255d39dbc8ac5e0bf66a0`, 593,115,277 records including the header |
-| `zonenmaske.u8` | 552,750,204 B, one zone id per stream byte; zone 3 (metadata block) on bytes 1 to 5,164,202, zone 0 elsewhere |
-| `match-bytes.uint8`, `match-len.uint8` | 552,750,204 B each, per stream byte the token index of the predicted byte (208 = no match) and the match length (capped at 255) |
-| first byte after the metadata block | 5,164,203 (the training stream starts here) |
-| runtime | 22 to 25 min on one core (i9-13900), 6.5 GB maximum resident set |
+| `paket-zeilen.bin` | fed rows, 12-B records with a header record (section 4) |
+| `zonenmaske.u8` | zone id per coded byte: 3 on the metadata blocks (first run, from the stream head) and on the title line of page 0, 0 elsewhere |
+| `match-bytes.uint8`, `match-len.uint8` | per coded byte the token index of the predicted byte (208 = no match) and the match length |
 
-### Record format of the dump (version 2), read by `dumpleser.py` and `../2_package/dumpv2.py`
+## 3. The prior run
+
+```
+mkdir priors && cd priors
+cp <dictionary> .dict
+cp ../bed/censpruef_vs3.bin .vs3
+ln -s /dev/null aus
+NEIF_TF1_WEIGHTS=none NEIF_TF1_SAVE_PRIORS=<dir>/ppmd-probs.float16 \
+NEIF_PPMD_ONLY_BYTES=<dir>/ppmd-bytes.uint8 NEIF_PPMD_ONLY_QUELLE=<dir>/ppmd-quelle.u8 OMP_NUM_THREADS=1 \
+  <tools>/cmix_priors -n ../bed/censpruef_kanon.bin ./aus
+```
+
+PPMd-only mode runs the PPMd model of the coder on every byte the compressor
+feeds it, the coded bytes and the bytes injected through all models (the
+contributor names, the timestamps, the census values, the coordinates of census
+pages and the heads of the text-start articles), and writes per byte the PPMd
+distribution over the 208 byte values as float16 (416 B per row; row *i* is
+the distribution for byte *i+1*), the token of the byte and its origin (0
+coded, 1 injected). The stderr lines `ppmd: metablock end at model byte …` and
+`ppmd warm-up …` give the restarts and the warm-ups; the warm-up at the end of
+the dictionary article is the same in the dump run.
+
+The run is complete when the exit code is 0, the rows of origin 0 are exactly
+the coded bytes (coder stream + 6) with their tokens and the priors have 416 B
+per row (`../2_package/dump_check.py <run dir> <coder stream> --prioren <dir>
+--kopf-laenge <size of the bed>`). The 6-byte segment header of a `-n` run
+carries the length of its input (the bed) in place of the length of the coder
+stream; it stands in front of the PPMd restart at the end of the metadata
+blocks and in front of the cut. The package keeps the rows of coded bytes
+behind the cut (`trim_quelle.py`).
+
+The dump run and the prior run read the same bed and run in parallel.
+
+## 4. Record format of the dump (version 2), read by `dumpleser.py` and `../2_package/dumpv2.py`
 
 ```
 record 0 (header):  int32 -2 | 'P' 'K' 'D' | uint8 version 2 | uint8 record size 12 |
@@ -84,74 +176,54 @@ records (12 B):     int32 src (-1 = inserted) | uint8 tok prev1 prev2 match_b ma
                     uint16 reserved
 flags:              bit0 inserted . bit1 MASKED . bit2 document start .
                     bit3 redirect page . bit4 prior0 row (no stream target) .
-                    bit5 reinjected alias or author byte . bit6 author byte .
+                    bit5 reinjected alias or contributor byte . bit6 contributor byte .
                     bit7 metadata prompt row
 ```
 
-Author rows run through all models and carry bit5 and bit6; alias rows reach
-only the transformer and carry bit5 alone (`../2_package/prior_mask.py`).
+`src` is the position in the coded bytes (coder stream + 6-byte segment
+header).
+A dump written by an `-e` run (a coder build with the dump switches) counts
+`src`, the zone mask and the match files from the first byte of the coder
+stream, without the 6 header bytes; add 6 before comparing it with a `-n`
+dump.
 
-## 3. The prior run
+## 5. Probe bed C40
 
-```
-mkdir priors && cd priors
-cp <entry>/dictionary/english.dic .dict
-ln -s /dev/null aus
-<tools directory>/cmix_priors -n ../stream/archive.cmix.temp.vorpack ./aus
-```
+The first 40,000,000 B of the canonical stream, cut back to the end of the last
+page anchor in them (stream stages look ahead inside a page; the rule stages
+start at page 71,361, byte 21,628,867). It holds the metadata blocks, the text
+start and about 22.5 MB of whole pages. `build_package.sh` with
+`PREFIX=40000000`. The dump writes no row for the last byte of a page anchor,
+so the last stream row of a probe dump is the coded byte in front of it.
+Values of the stream form of this entry:
 
-To write the priors to another disk, create `ppmd-probs.float16` and
-`ppmd-bytes.uint8` as symlinks into it before the run. The run also writes the
-four files of section 2 (match channel: 208 and 0 throughout); `prior_mask.py` reads its
-`paket-zeilen.bin`.
-
-PPMd-only mode runs the PPMd model of the entry (an order limit per context
-class, order 14 inside the metadata block, a restart after it, a warm start
-from the word stems of the dictionary) on every byte the compressor feeds it and
-writes, per byte, the PPMd distribution over the 208 byte values as float16
-(416 B per row). Row *i* is the distribution for byte *i+1*, written after the
-model was updated with byte *i*. The stderr line
-`ppmd: metablock end at model byte N, order 25 -> 25, ...` gives the restart
-position, where the trimming cuts.
-
-The raw raster has 555,385,644 rows, the stream bytes plus the bytes the
-coder injects through all models (author names of the metadata unit, 1,561,159,
-and the timestamp feed before the restart, 1,074,281). The training package
-keeps the rows of stream bytes behind the metadata block, 547,586,001 rows
-(`../2_package`, trimming step); the row sums of 4,000 samples lie in
-0.99967 ... 1.00030.
-
-| output | value |
+| quantity | value |
 |---|---|
-| `ppmd-probs.float16` after trimming | 227,795,776,416 B, sha256 `3ee22a2618de7d9ac458ada84d92247a58676e32571df4c9dc52494de5768194` |
-| `ppmd-bytes.uint8` after trimming | 547,586,001 B, sha256 `bc419ee2f7bd4dddc6004851ab0c87623c6e59ef3fccb778a4d650e94c1ad9f9` |
-| raw `ppmd-probs.float16` | about 231 GB |
-| runtime | 1 h 2 min to 1 h 12 min on one core (i9-13900), 8.6 GB maximum resident set; trimming and probes (`../2_package`) 12 to 14 min |
+| probe bed | 39,998,324 B |
+| coded bytes (zone mask) | 37,565,854 |
+| cut (`token_start`), `n_tokens` | 13,023,920, 24,541,934 |
+| further zone-3 run (title line of page 0) | 15,282,101 to 15,282,107 (7 B) |
+| `slot content` | 490,360 / 1,685,370 / 82,445 B |
+| dump records | 29,546,663 (24,537,085 stream, 5,009,578 inserted) |
+| prior raster | 46,621,131 rows (37,565,854 coded, 9,055,277 injected), `ppmd-bytes` of the package sha256 `f045e25fff19b7de…` |
+| package documents / longest | 4,844 / 131,038 rows |
+| positions masked by the coder (forced name bytes of the contributor article) | 694,429 |
 
-## 4. Tools against the original runs
+## 6. The tools of the patch against those of the development tree
 
-The original runs used the development tree with the build lines in
-`features_*.txt` (clang 17, no profile; the stream build had one extra file
-copy, which the stream mode contains). Byte comparison; on the bed both sides
-ran on the same input, on the full stream the tools are compared with the
-outputs of the original runs (`../../MANIFEST.tsv`):
+The shipped training package was built with the tools of the development tree
+(`--tree`, clang 17). The tools of the patch (clang 18, EPYC 7502P) were run
+against them on the same inputs; every output was the same, byte for byte:
 
-| run | input | outputs | result |
-|---|---|---|---|
-| stream | `enwik9` | `archive.cmix.temp`, `.vorpack`; md5 of `.main_reordered` | equal (`8e0b264a…`, `e556d3f8…`, `28ca879d…`) |
-| dump | 8-MiB bed | `paket-zeilen.bin`, `zonenmaske.u8`, `match-bytes.uint8`, `match-len.uint8` | equal (`f0222bc6…`, `265a235c…`, `0eeb53da…`, `bdd5ed97…`) |
-| priors | 8-MiB bed | `ppmd-probs.float16`, `ppmd-bytes.uint8` and the four dump files; restart line (model byte 6,238,484, order 25 -> 25) | equal (`ecd93e33…`, `fae22290…`) |
-| dump | full unpacked stream | `paket-zeilen.bin` | equal (`58fc6c74…`); `zonenmaske.u8` behind the cut: zone 0 only (547,586,001 B) |
-| priors | full unpacked stream | trimmed `ppmd-probs.float16` and `ppmd-bytes.uint8`, `z3-prior0.float16` (`../2_package/build_package.sh`, sections 0, 1, 4 to 6); restart line | equal (`3ee22a26…`, `bc419ee2…`, `59121815…`); model byte 6,238,484, order 25 -> 25, as in the original run |
+| tool | input | outputs (bytes, sha256) |
+|---|---|---|
+| `cmix_bed` | `enwik9` | the four outputs of section 1 (`c10b5f3d…`, `ed68bb4b…`, `c35d3073…`, `aec42ab7…`) |
+| `cmix_stream` | `enwik9` | `out.cmix.temp` 501,062,281 `c35d3073…`, `.main_phda9prepr` `aec42ab7…` |
+| `cmix_dump` | probe bed C40 | `paket-zeilen.bin` 354,559,956 `0b124db7…`, `zonenmaske.u8` `dc8b1597…`, `match-bytes.uint8` `3b6e8d55…`, `match-len.uint8` `bec3f847…` (37,565,854 each) |
+| `cmix_priors` | probe bed C40 | `ppmd-probs.float16` 19,394,390,496 `eebb3812…`, `ppmd-bytes.uint8` `2b56a78b…`, `ppmd-quelle.u8` `49729226…` (46,621,131 each) |
+| `../2_package/build_package.sh`, `ENTRY` form | `PREFIX=40000000` | the probe package of section 5 (`zeilen.dump` `e861d051…`, `ppmd-bytes.uint8` `f045e25f…`, prior0 `97de4610…`, trimmed priors `fb615d84…`, `seiten.tsv` `9808f122…`), acceptance passed |
+| `cmix_trace` | `enwik9`, container `729694cb…` | the first 40,000,000 records of `spur.bin` (6,560,000,020 B) `c918c795…` and the first 700,000,000 B of `kanal.bin` `5faeb21b…`, against the trace build of the development tree with `BITL_META_OFF=0` |
 
-8-MiB bed: the first 8,388,608 B of `archive.cmix.temp.vorpack`, sha256
-`0e570e2b9c3fd752c0e67956ecee25861eb6bc94388dc8bdd9bf78f30d2af8d9`. It holds
-the metadata block and the first 4,307 pages, all from the redirect block, no
-article text; the two full-stream rows cover the text.
-The patched copy built without `-DTRAIN_MODE` and the unpatched copy give the
-same binary.
-
-## Not in this package
-
-The outputs above, 235 GB in total; `../../MANIFEST.tsv` lists them as
-references with their checksums.
+The full-stream dump and priors were not rerun with the tools of the patch;
+the probe bed C40 holds the metadata blocks, the text start and about 22.5 MB
+of whole pages (section 5).

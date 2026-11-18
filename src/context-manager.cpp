@@ -1,10 +1,11 @@
 #include "context-manager.h"
 #include "attributes.h"
 #include "page_registry.h"
-#include "port_cfg.h"
+#include "cold_size.h"
 
 extern unsigned long long wrtcxt;
-extern int lstmpr;
+
+static unsigned char bl_digits[256];
 
 extern const unsigned char wrt_2b[256];
 extern const unsigned char wrt_3b[256];
@@ -66,28 +67,24 @@ const unsigned char wrt_4b[256]={
 // 400000; a larger map is an idea from L. Lakhani's fx3-cmix experiments,
 // GPL-3.0).  The initializer list follows the declaration order in
 // context-manager.h (clang warns otherwise); the order has no effect.
- ContextManager::ContextManager() : history_(60000000u, 0),
-#if PORT_RESTORE_SHARED
-    shared_map_(256*(std::size_t)1000000, 0),   // W2: 1M rows (neif 500k)
-#else
+COLD_SIZE_ATTR  ContextManager::ContextManager() : history_(60000000u, 0),
     shared_map_(256*(std::size_t)500000, 0),
-#endif
     words_(8, 0), recent_bytes_(8, 0),
     hashes_ind1((std::size_t)(dense_index::kN * dense_index::kN * dense_index::kN), 0),
     hashes_ind4(0x100, 0),
-#if PORT_RESTORE_IND
-    // W2: the double-indirect tables of fx2-cmix-transformer (0x1000000 and
-    // 0x2000000 entries); uint32 holds every value exactly (32- and 25-bit masks).
-    hashes_ind2(0x1000000, 0), hashes_ind3(0x2000000, 0),
-#else
     hashes_ind2(0, 0), hashes_ind3(0, 0),
-#endif
     hashes_ind5(0x100, 0) {
   PAGE_REGISTRY_ADD(history_.data(), history_.size());
   PAGE_REGISTRY_ADD(shared_map_.data(), shared_map_.size());
   PAGE_REGISTRY_ADD(hashes_ind1.data(), hashes_ind1.size());
   PAGE_REGISTRY_ADD(hashes_ind2.data(), hashes_ind2.size() * sizeof(std::uint32_t));
   PAGE_REGISTRY_ADD(hashes_ind3.data(), hashes_ind3.size() * sizeof(std::uint32_t));
+  {
+    unsigned int rank = 1;
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)
+    for (int i = 0; i < 256; ++i)
+      bl_digits[i] = vocab_frozen::InSet(i) ? (unsigned char)(rank++) : (unsigned char)0;
+  }
 }
 
 void ContextManager::UpdateLineState(unsigned char c) {
@@ -170,29 +167,14 @@ void ContextManager::UpdateWords() {
    mx9cxt=(mx9cxt * (1 << 4) + c) &0xff;
 
    mx10cxt=c;
-   mx11cxt=c;
-   mx12cxt=0;
-   mx13cxt=0;
 
    mx14 = c*256+recent_bytes_[0];
    mx15 = recent_bytes_[0]*256+recent_bytes_[1];
 
    hashes_ind1[context1_ind] = (ind1 * (1 << 8) + c) & (0x100-1);
-   bd1_d2_ = bd1_d1_; bd1_d1_ = bd1_d0_; bd1_d0_ = dense_index::kDigits.m[c];
+   bd1_d2_ = bd1_d1_; bd1_d1_ = bd1_d0_; bd1_d0_ = bl_digits[c];
    context1_ind = (bd1_d2_ * dense_index::kN + bd1_d1_) * dense_index::kN + bd1_d0_;
    ind1 = hashes_ind1[context1_ind];
-
-#if PORT_RESTORE_IND
-  // W2: update rule of fx2-cmix-transformer (training/tf/tree_upstream
-  // src/context-manager.cpp:138-144), verbatim.
-  hashes_ind2[context1_ind2] = (ind2 * (1 << 8) + c) & (0x100000000-1);
-  context1_ind2 = (context1_ind2 * (1 << 6) + c) & (0x1000000-1);
-  ind2 = hashes_ind2[context1_ind2];
-
-  hashes_ind3[context1_ind3] = (ind3 * (1 << 5) + c) & (0x2000000-1);
-  context1_ind3 = (context1_ind3 * (1 << 5) + c) & (0x2000000-1);
-  ind3 = hashes_ind3[context1_ind3];
-#endif
 
   hashes_ind5[context1_ind5] = (ind5 * (1 << 6) + c) & (0x40000000-1);
   context1_ind5 = c;
@@ -225,14 +207,27 @@ void ContextManager::UpdatePage() {
 }
 
 void ContextManager::UpdateLx1() {
-  const lstm_sharpen::State& s = lstm_sharpen::state;
   {
-    unsigned int q = s.full_alive ? (1 + lstm_sharpen::Q4(s.full_best)) : 0;
+    unsigned int q = 0;
+    // The gate zone as a LAYER-0 CONTEXT, without adding a mixer or an
+    // input (see Predictor::AddMixers): a weight row per gate zone, 5 + zone.
+    // The zone is written by the gate automaton on already decoded tokens only.
     if (tf_gate::ctx.zone) q = 5u + tf_gate::ctx.zone;
     lx1_agree = (unsigned long long)q * 256 + long_bit_context_;
   }
 }
 
+// The gate bit as a mixer context.  Called like UpdatePage() /
+// UpdateLx1() / UpdateReload() at the start of Predictor::Predict(), i.e. after
+// UpdateContexts() has set long_bit_context_ to the bit now due.
+// tf_gate::ctx.zone was written at the end of the PREVIOUS byte by the
+// gate automaton, which sees already decoded tokens only, so encoder and
+// decoder read the same value.
+//
+// The end mixer is the one place where the bit is a context of its own; the
+// layer-0 side is folded into the selector lx1_agree (see UpdateLx1 above and
+// the note in Predictor::AddMixers on why an extra layer-0 mixer is not
+// buildable here).
 void ContextManager::UpdateTf1Gate() {
   tf1_gate_ctx1 = (unsigned long long)tf_gate::ctx.zone;
 }
@@ -241,12 +236,6 @@ void ContextManager::UpdateReload() {
   // Not called in this configuration; the line class from UpdateLineState(),
   // which is not called either, stays 0.
   reload_line = (unsigned long long)(line_class_ & 7u) * 256 + long_bit_context_;
-  // byte-mixer bit prediction (1..4095) in 8 levels
-  {
-    unsigned int q = (unsigned int)(lstmpr >> 9);
-    if (q > 7u) q = 7u;
-    reload_lpr = (unsigned long long)q * 256 + long_bit_context_;
-  }
   reload_mtc = (unsigned long long)dictreload::MtcSel() * 256 + long_bit_context_;
   reload_ord = (unsigned long long)dictreload::OrdSel() * 256 + long_bit_context_;
 }
@@ -289,16 +278,6 @@ void ContextManager::UpdateContexts(int bit) {
   mx19cxt=    wrtcxt;
   mx9=(mx9cxt)*256+long_bit_context_;
   mx10=(mx10cxt)*256+long_bit_context_;
-  mx11=(mx11cxt)*256+long_bit_context_;
-  mx12=long_bit_context_;
-  mx13=long_bit_context_;
   mx16=(recent_bytes_[1])*256+long_bit_context_;
   mx17=(b3stream&0x3f)*256+long_bit_context_;// 7f or 3f
-
-  if (bpos==0)  mxx=(stream2bR&63)*8 + (b3stream&7);
-  else if (bpos>3) {
-      mxx=((b2stream<<2)&63)+wrt_2b[(long_bit_context_<<(8-bpos))&255]*8+(b3stream&7);
-  } else
-      mxx=(stream2bR&63)*8 +(b3stream&7);
-
 }

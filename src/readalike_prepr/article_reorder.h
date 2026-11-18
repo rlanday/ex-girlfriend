@@ -2,6 +2,7 @@
 // GPL-3.0), src/readalike_prepr/; inherited through fx2-cmix and cmix-lex.
 #ifndef ARTICLE_REORDER_H
 #define ARTICLE_REORDER_H
+#include "../meld.h"
 
 #include <string.h>
 #include <string>
@@ -33,19 +34,11 @@ enum ParserState {
 int line_count = 0;
 static char s[8192*8];
 
-void bubblesort(std::vector<Accumulator>& mylist) {
-    for (int i = 1; i < mylist.size(); i++)	{
-        for (int j = 0; j < mylist.size() - i; j++) {
-            if (mylist[j].id > mylist[j + 1].id) {
-            std::swap(mylist[j], mylist[j + 1]);
-            }
-       }
-   }
-}
-
 const char *patterns1[] = { "<page>", "<id>", "</page>" };
 const int transitions1[3] = { expect_id, expect_pageend, expect_page };
-std::vector<Accumulator> vec;
+// pages of the loaded file: id and line range
+static Accumulator* vec = nullptr;
+static size_t vec_n = 0, vec_cap = 0;
 static char* line_buf = nullptr;      // text of all lines, back to back
 static uint64_t* line_off = nullptr;  // line i = line_buf[line_off[i] .. line_off[i+1])
 static size_t line_n = 0, line_cap = 0;
@@ -62,6 +55,8 @@ static void freeLines() {
   free(line_buf); line_buf = nullptr;
   free(line_off); line_off = nullptr;
   line_n = line_cap = 0;
+  free(vec); vec = nullptr;
+  vec_n = vec_cap = 0;
 }
 
 void loadFile(const char *fname) {
@@ -70,8 +65,8 @@ void loadFile(const char *fname) {
     int  state = expect_page;
     Accumulator acc;
     {
-      struct stat st;
-      const size_t n = stat(fname, &st) == 0 ? (size_t)st.st_size : 0;
+      FILE* sf = fopen(fname, "rb");   // size without stat (one import less)
+      size_t n = 0; if (sf) { fseek(sf, 0, SEEK_END); n = (size_t)ftell(sf); fclose(sf); }
       freeLines();
       line_buf = (char*)malloc(n + 1);  // the text never outgrows the file
       line_cap = n / 40 + 2;            // enwik9 averages ~75 B per line
@@ -96,7 +91,12 @@ void loadFile(const char *fname) {
       }
       state = transitions1[state];
       if (state == expect_page){
-        vec.push_back(acc);
+        if (vec_n == vec_cap) {
+          vec_cap = vec_cap * 2 + 262144;
+          vec = (Accumulator*)realloc(vec, vec_cap * sizeof(Accumulator));
+          if (!vec) exit(1);
+        }
+        vec[vec_n++] = acc;
        }
     }
     line_count++;
@@ -114,90 +114,90 @@ void loadFile(const char *fname) {
   fclose(file);
 
 }
+// The store holds .main up to its first NUL, and .main has none: the lines
+// read below are those of the file.
 void reorder() {
-    std::vector<int> positions;
-    std::vector<int> used(NUM_OF_ARTICLES, 0);
-
     loadFile(".main");
+    const char* const txt = line_buf;
+    const char* const txt_end = line_buf + line_off[line_n];
 
-    // Article numbers need to be remapped (see article_remap.cpp).
-    // Here we read enwik9 in order to generate the article number mapping.
-    std::unordered_map<int, int> remap;
-    std::ifstream infile(".main");
-    std::string line;
-    int count1 = -1, count2 = -1;
-    bool redirect = false;
-    std::vector<std::string> prefix = {
-      "      <text xml:space=\"preserve\">#REDIRECT",
-      "      <text xml:space=\"preserve\">#redirect",
-      "      <text xml:space=\"preserve\">#Redirect",
-      "      <text xml:space=\"preserve\">#REdirect",
-      "      <text xml:space=\"preserve\">{{softredirect",};
-    while (getline(infile, line)) {
-      for (auto pre : prefix) {
-        if (line.rfind(pre, 0) == 0) {
-          redirect = true;
-          break;
-        }
-      }
-      if (line == "  <page>") {
-        remap[count2] = count1;
-        if (!redirect) {
-          ++count2;
-        }
-        ++count1;
-        redirect = false;
-      }
-    }
-
+    // Article numbers need to be remapped (see article_remap.cpp): at every
+    // page line the number of non-redirect pages before the previous page is
+    // mapped to the index of that page (the last write wins, an unwritten
+    // number maps to 0).  remap[u + 1] is the page of unit u.
+    int* remap = (int*)calloc(NUM_OF_ARTICLES + 2, sizeof(int));
     {
-      std::vector<int> units;
-      if (!ord::DecodeOrderV3(".new_article_order", ".main", &units)) {
-        fprintf(stderr, "article order: reconstruction failed\n");
-        exit(1);
-      }
-      for (size_t i = 0; i < units.size(); i++) {
-        int res = remap[units[i]];    // Article numbers get remapped.
-        positions.push_back(res);
-        used[res] = 1;
+      int count1 = -1, count2 = -1;
+      bool redirect = false;
+      for (const char* p = txt; p < txt_end; ) {
+        const char* e = (const char*)memchr(p, '\n', (size_t)(txt_end - p));
+        const size_t n = e ? (size_t)(e - p) : (size_t)(txt_end - p);
+        if (ord::IsRedirLine(p, n)) redirect = true;
+        if (n == 8 && memcmp(p, "  <page>", 8) == 0) {
+          if (count2 + 1 <= NUM_OF_ARTICLES + 1) remap[count2 + 1] = count1;
+          if (!redirect) ++count2;
+          ++count1;
+          redirect = false;
+        }
+        p += n + 1;
       }
     }
 
-    const int n_listed = (int)positions.size();
-    const int n_front = n_listed;
-    if (positions.size() < NUM_OF_ARTICLES) {
+    int* units = (int*)malloc(NUM_OF_ARTICLES * sizeof(int));
+    const int nu = ord::DecodeOrderV3(".new_article_order", txt, (size_t)(txt_end - txt),
+                                     units, NUM_OF_ARTICLES);
+    if (nu < 0) {
+      msg_stop(115);
+      exit(1);
+    }
+    int* positions = (int*)malloc((size_t)(nu + NUM_OF_ARTICLES) * sizeof(int));
+    unsigned char* used = (unsigned char*)calloc(NUM_OF_ARTICLES, 1);
+    int np = 0;
+    for (int i = 0; i < nu; i++) {
+      int res = remap[units[i] + 1];    // Article numbers get remapped.
+      positions[np++] = res;
+      used[res] = 1;
+    }
+    free(units); free(remap);
+
+    const int n_front = np;
+    if (np < NUM_OF_ARTICLES) {
         for (int i = 0; i < NUM_OF_ARTICLES; i++) {
             if (used[i] == 0) {
-                positions.push_back(i);
+                positions[np++] = i;
             }
        }
     }
+    free(used);
 
   FILE* out = fopen(".main_reordered", "wb");
-  for(int i = 0; i < positions.size(); i++) {
-    const int n_rest = (int)positions.size() - n_front;
+  const int n_rest = np - n_front;
+  for(int i = 0; i < np; i++) {
     int pos = positions[i < n_rest ? n_front + i : i - n_rest];
     writeLines(vec[pos].start, vec[pos].end, out);
   }
   fclose(out);
-  vec.clear();
-  std::vector<Accumulator>(vec).swap(vec);  // Why C++? why
+  free(positions);
   freeLines();
+}
+
+// pages by id ascending (the ids of enwik9 are distinct)
+static int AccLess(const void* a, const void* b) {
+  const int x = ((const Accumulator*)a)->id, y = ((const Accumulator*)b)->id;
+  return (x > y) - (x < y);
 }
 
 void sort() {
   loadFile(".main_decomp_restored");
 
-  bubblesort(vec);
+  qsort(vec, vec_n, sizeof(Accumulator), AccLess);
 
   FILE* out = fopen(".main_decomp_restored_sorted", "wb");
-  for(int i =0; i < vec.size(); i++) {
+  for(size_t i =0; i < vec_n; i++) {
     writeLines(vec[i].start, vec[i].end, out);
   }
 
   fclose(out);
-  vec.clear();
-  std::vector<Accumulator>(vec).swap(vec);
   freeLines();
 }
 #endif // ARTICLE_REORDER_H

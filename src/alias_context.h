@@ -1,6 +1,7 @@
 #ifndef ALIAS_CONTEXT_H_
 #define ALIAS_CONTEXT_H_
 
+#include "u8_append.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -41,8 +42,8 @@ constexpr unsigned char kColon = 0x4a;
 constexpr unsigned char kUnder = 0x5f;
 constexpr unsigned char kBlank = 0x20;
 constexpr bool kLinkDouble = 0 != 0;
-constexpr int kMaxTitle = 64;   // as zctx/zgrammar.py MAX_TITLE_TOKENS
-constexpr int kMinTitle = 3;
+constexpr int kMaxTitle = 64;   // title tokens at most, as in the training data
+constexpr int kMinTitle = 3;    // title tokens at least, as in the training data
 [[noreturn]] static inline void Fail(const char* msg) {
   fprintf(stderr, "%s\n", msg);
   fflush(nullptr);
@@ -74,7 +75,7 @@ class Aut {
     if (alias_table::tab.Anker()) {
       ++st_.articles;
     } else if (const int n = alias_table::tab.TitelZu(&t)) {
-      title_.assign(t, t + n);
+      u8_append::Setze(title_, t, t + n);
       TitleClosed(n);
     }
   }
@@ -88,10 +89,6 @@ class Aut {
   }
 
   void Finish() {
-    st_.links = alias_table::tab.links;
-    st_.links_piped = alias_table::tab.piped;
-    st_.links_dropped = alias_table::tab.verworfen;
-    st_.redirects = alias_table::tab.redirects;
   }
 
   // Read-only view of the block built for the title that just closed; not used
@@ -117,8 +114,7 @@ class Aut {
   long long pos_ = 0;
   std::vector<unsigned char> title_;
 
-  // prev_block_: its reader was removed; the member is kept so
-  // the object layout and therefore the binary stay identical.
+  // prev_block_ has no reader; it stays for the object layout.
   std::vector<unsigned char> block_, prev_block_;
   int praefix_ = 0;
   bool have_block_ = false;
@@ -145,7 +141,7 @@ class Aut {
           if (syn.Kennt(tab.K(id_list[i]))) { ++syn.n_p2; continue; }
           id_list[w2++] = id_list[i];
         }
-        id_list.resize(w2);
+        while (id_list.size() > w2) id_list.pop_back();   // shorter only
       }
       syn.Verbraucht();
     }
@@ -167,14 +163,15 @@ class Aut {
         alias_title_subst::g_titel_bytes += (unsigned long long)title_len;
         alias_title_subst::g_ersatz_bytes += (unsigned long long)n;
         alias_title_subst::g_block_gespart += (unsigned long long)(n + 1);
-        id_list.erase(id_list.begin() + (long)best);
+        for (size_t i = best; i + 1 < id_list.size(); ++i) id_list[i] = id_list[i + 1];   // chosen entry (wahl) out, order kept
+        id_list.pop_back();
       }
     }
     for (size_t i = 0; i < id_list.size(); ++i) {
       const int n = id_list[i].len;
       if ((int)b.size() + 1 + n > 64) break;
       b.push_back(kNL);
-      b.insert(b.end(), tab.Data(id_list[i]), tab.Data(id_list[i]) + n);
+      u8_append::Anh(b, tab.Data(id_list[i]), tab.Data(id_list[i]) + n);
     }
   }
 
@@ -196,6 +193,6 @@ class Aut {
 
 inline Aut aut;
 
-}
+}  // namespace alias_context
 
 #endif

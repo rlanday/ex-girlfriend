@@ -64,6 +64,6 @@ static inline void TrainRows(const float* __restrict x,
   }
 }
 
-}
+}  // namespace mixbank
 
 #endif

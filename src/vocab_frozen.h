@@ -64,10 +64,6 @@ inline void FillVocab(VocabVec* vocab) {
   for (int i = 0; i < 256; ++i) (*vocab)[i] = InSet(i);
 }
 
-constexpr int kColClamp(int i) {
-  return kByteMap[i] < 208 ? kByteMap[i] : 208 - 1;
-}
-
-}
+}  // namespace vocab_frozen
 
 #endif

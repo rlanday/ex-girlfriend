@@ -18,8 +18,8 @@ namespace helper_process {
 
 // Immediately before every system() call.  malloc_trim hands the free
 // tops of the arenas back to the kernel; what is still in use stays.  The
-// call sits in fx_self_d/fx_self_c themselves so that NO call site can miss
-// it -- not even one added later.
+// call sits in the self-call functions themselves (in the release configuration
+// only fx_self_d), so that NO call site can miss it, not even one added later.
 inline void VorStart(const char* wo) {
   malloc_trim(0);
   (void)wo;
@@ -27,9 +27,9 @@ inline void VorStart(const char* wo) {
 
 // Copy one block from the own, still open image into a file without
 // holding the image in memory.  The 1 MiB buffer is deliberately on the HEAP
-// (not in the BSS: a BSS buffer would be 1 MiB in EVERY build, also at
-// default 0 -- and it would stay resident after the first touch) and is
-// freed right afterwards.
+// (not in the BSS: a BSS buffer would be 1 MiB in every build, also where
+// the copy is not used, and it would stay resident after the first touch)
+// and is freed right afterwards.
 // Returns 0 = fine, otherwise an error number (the caller reports and stops).
 inline int BlockAusAbbild(FILE* f, long off, size_t len, const char* ziel) {
   const size_t kPuf = 1u << 20;
@@ -48,9 +48,9 @@ inline int BlockAusAbbild(FILE* f, long off, size_t len, const char* ziel) {
   return rc;
 }
 
-// The page cache of the own archive (~109 MB) is not needed once the
-// blocks are cut out.  It does not count in the jury metric, but fully in
-// the cgroup's memory.max -- and the jury runs a 10 GiB limit.  DONTNEED
+// The page cache of the own archive is not needed once the blocks are cut
+// out.  It does not count in the jury metric, but fully in the cgroup's
+// memory.max, and the jury runs a 10 GiB limit.  DONTNEED
 // drops only CLEAN pages not used elsewhere; a failure is harmless and is
 // therefore not reported.
 inline void CacheZurueck(FILE* f) {
@@ -60,6 +60,6 @@ inline void CacheZurueck(FILE* f) {
   }
 }
 
-}
+}  // namespace helper_process
 
 #endif

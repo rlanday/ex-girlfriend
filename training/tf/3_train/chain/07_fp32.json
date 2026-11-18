@@ -1,0 +1,50 @@
+{
+ "overrides": {
+  "n_key_value_heads": 1,
+  "value_embedding_pattern": [
+   null,
+   null,
+   null,
+   0,
+   null,
+   null,
+   null,
+   1,
+   null,
+   null,
+   null,
+   2,
+   null,
+   null,
+   null,
+   3
+  ],
+  "d_mlp": 1024,
+  "skip_connections": false,
+  "token_embedding_connections": false,
+  "prior_logit_mixing": true,
+  "window_size": 2048
+ },
+ "arch": {
+  "attnres": {
+   "mode": "replace",
+   "block": 2,
+   "impl": "fused"
+  }
+ },
+ "seed": 1,
+ "ve_sentinel": "clamp",
+ "fastmuon": true,
+ "name": "tf2_fp32_end",
+ "out": "<W>/t3/fp32",
+ "phase": "fp32",
+ "epochs": 16,
+ "lr": 1e-07,
+ "warmup_frac": 0.0,
+ "final_mult": 1e-08,
+ "init": "<W>/t3/qat/model.tch",
+ "init_strict": true,
+ "mixed": "<W>/t3/fisher/alloc_1.000.npz",
+ "eval": true,
+ "ckpt_every": 1
+}

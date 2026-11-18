@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/vec_math.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // vec_math.h - shared AVX2 fp32 vector math library for the fx2 inference
 // engine (CANONICAL - SPEC.md forbids -ffast-math; everything here is safe
 // under strict IEEE compilation, uses FMA/AVX2 only, no libm calls).

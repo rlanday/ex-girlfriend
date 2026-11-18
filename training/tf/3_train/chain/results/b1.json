@@ -1,0 +1,80 @@
+{
+ "name": "tf2_b1",
+ "config": {
+  "overrides": {
+   "n_key_value_heads": 1,
+   "value_embedding_pattern": [
+    null,
+    null,
+    null,
+    0,
+    null,
+    null,
+    null,
+    1,
+    null,
+    null,
+    null,
+    2,
+    null,
+    null,
+    null,
+    3
+   ],
+   "d_mlp": 1024,
+   "skip_connections": false,
+   "token_embedding_connections": false,
+   "prior_logit_mixing": true,
+   "window_size": 2048
+  },
+  "arch": {
+   "attnres": {
+    "mode": "replace",
+    "block": 2,
+    "impl": "fused"
+   }
+  },
+  "seed": 1,
+  "ve_sentinel": "clamp",
+  "fastmuon": true,
+  "name": "tf2_b1",
+  "out": "<W>/b1",
+  "phase": "bf16",
+  "epochs": 100,
+  "lr": 0.0005,
+  "init": "<W>/start/start_bf16.tch",
+  "init_strict": true,
+  "state_every": 1,
+  "keep_every": 25,
+  "eval_every": 0,
+  "eval_epochs": [],
+  "compile": true,
+  "rewarm": {
+   "start": 0.1,
+   "peak": 1.0,
+   "frac": 0.02,
+   "final": 0.025
+  }
+ },
+ "params": 9285596,
+ "world": 4,
+ "evals": [
+  {
+   "nats_per_tok": 0.9339901747658332,
+   "bits_per_tok": 1.347462993373684,
+   "n_scored": 487298491,
+   "epoch": 100,
+   "tag": "final",
+   "time": 1792824043.1523793
+  }
+ ],
+ "arch": {
+  "attnres": {
+   "mode": "replace",
+   "block": 2,
+   "new_params": 6336
+  }
+ },
+ "train_s_last_section": 26669.361001968384,
+ "done": 1792824043.1524951
+}

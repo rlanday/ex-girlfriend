@@ -20,8 +20,7 @@ void IntervalHash::Update() {
   context_ = (context_ * (1 << hash_size_) + interval_) % size_;
 }
 
-bool IntervalHash::IsEqual(Context* c) const {
-  IntervalHash* p = Context::As<IntervalHash>(c);
+bool IntervalHash::IsEqual(const IntervalHash* p) const {
   if (!p) return false;
   for (int i = 0; i < 256; ++i) {
     if (p->map_[i] != map_[i]) return false;

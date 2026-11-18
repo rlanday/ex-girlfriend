@@ -1,0 +1,25 @@
+# Research commits condensed into the Ex-Girlfriend 2.0 release commit
+# (private port repository, oldest first; e55521d = cmix-neif 2.0 imported unchanged, f5b7ff5 = certified source)
+
+e55521d 2026-10-31 cmix-neif-2.0 pristine upstream (Marcus Woelk, GPL-3.0)
+8094873 2026-10-31 PORT_CMX_MEAS: research measurement knobs for cheap prefix A/Bs of -e (default 0 = upstream)
+33215ec 2026-10-31 PORT_CMX_MEAS: CMX_TFOFF takes the gated form (neutral row) instead of the no-transformer row
+4750eae 2026-10-31 PORT_CMX_MEAS: CMX_AT checkpoints, CMX_PAGES marks, first_article mark
+8707485 2026-10-31 PORT_CMX_MEAS: bed mode -n, census recode -r, lever switches and telemetry for the 10-31 A/B batch
+9045fae 2026-10-31 PORT_CMX_MEAS: BITL_SEQ override of the frozen BITLSTM state reset (driver BL0 / BL4096 arms)
+0eb428d 2026-10-31 PORT_CMX_MEAS: CONST-BRACKET and MATCH-AGE knobs (driver 10-31)
+93c966a 2026-10-31 PORT_CMX_MEAS: WL-MIXGRAD and FXCM-LAZYRESET knobs (driver 10-31)
+6aace1e 2026-10-31 PORT_CMX_MEAS: CMX_MIXSKIP_TEXT (error-limit skip only from first_article on)
+0617229 2026-10-31 PORT_CMX_MEAS: CMX_SEMDUMP, SEMCACHE prediction records for the fine-tune (driver 10-31)
+e9c52d9 2026-10-31 PORT_CMX_MEAS: CMX_FW_BLOCKS (F8: fast-weight head over more MLP blocks) and CMX_FW_TICKS
+b607fcd 2026-11-01 PORT_CMX_MEAS: CMX_MATCHDUMP (match predictions per coder position) and CMX_BYTECOST_PATH
+acd2b2a 2026-11-01 PORT_CMX_MEAS: CMX_ROWDECAY (per-row learning-rate clock) and CMX_SEM_KCEN0 / CMX_SEM_KCEN (driver 11-01)
+15e716e 2026-11-01 PORT_CMX_MEAS: unambiguous region-begin names in the dump meta.json writers
+a9f4584 2026-11-07 PORT_CMX_MEAS: CMX_WL_TEXT (kappa term from census_end on) and a scalar SemOldest for kM != 15
+adcf543 2026-11-07 PORT_CMX_MEAS: CMX_SEMTOP (SEMCACHE end stage keyed on the vote's top share) and CMX_ADEPTH_MODE (code-skip vs learn-skip)
+66d7146 2026-11-08 PORT_CMX_MEAS: CMX_SEMIN (vote share / agreement as continuous inputs) and CMX_ADEPTH_TAU_CODE (split tau)
+01f0779 2026-11-08 PORT_CMX_MEAS: CMX_SEMKEY2 (a second SEMCACHE keyed on the mixer read of layer L)
+3029c8f 2026-11-08 PORT_CMX_MEAS: CMX_FXLS, CMX_FWOFF and the CM census telemetry CMX_CM_TICKS / CMX_VALTEL
+cb63fc6 2026-11-08 PORT_CMX_MEAS: CMX_SEMKEYS=L1,L2,... (up to three extra SEMCACHE instances; CMX_SEMKEY2=L is its alias)
+bc1d9b7 2026-11-08 PORT_CMX_MEAS: CMX_SEMKEYS list element R (an extra cache on the release key with its own seed)
+f5b7ff5 2026-11-09 PORT_ENTRY: recipe "candidate A" as constants in encoder and decoder; cut guard rule 4a

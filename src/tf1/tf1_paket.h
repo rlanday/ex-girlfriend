@@ -1,6 +1,7 @@
 #ifndef TF1_PAKET_H_
 #define TF1_PAKET_H_
 
+#include "tf1_config.h"
 
 namespace fx2 {
 

@@ -41,6 +41,11 @@ for k, v in (("ZCTX_ARM", "pkd"), ("PK_LAST_X0ROW", "1"), ("PK_REDIRMERGE", "1")
 PKG, ROH, TS, SKIP = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
 os.environ["PK_DUMP_DIR"] = PKG
 import numpy as np, torch
+# OpenMP teams of OMP_NUM_THREADS (4 at most), no inter-op pool; the
+# prefetch thread of the loader gets a team of its own, so build_package.sh
+# sets OMP_NUM_THREADS to half its thread limit and one BLAS thread
+torch.set_num_threads(min(4, int(os.environ.get("OMP_NUM_THREADS", "4"))))
+torch.set_num_interop_threads(1)
 from tft import config as tftcfg
 from zctx.zpdump import PaketDumpDataLoader
 from zctx import dumpv2
@@ -60,7 +65,7 @@ n = lader.n_articles
 docs = sorted(set([0, 1, 2, 5, 10, 20, 26, 27, 28] + [int(x) for x in np.linspace(30, n - 1, 11)]))
 print(f"loader: {n} documents, {lader.n_tokens} tokens; sample of {len(docs)} documents", flush=True)
 # package row i = raw row i + SKIP + 1 (mk_pkgdump drops SKIP + 1 rows in front)
-V = 208
+V = lader.vocabulary_size
 gesamt = {"zeilen": 0, "tok": 0, "p1": 0, "p2": 0, "mb": 0, "mc": 0, "src": 0, "bewertet": 0}
 strom_rows = np.flatnonzero(rsrc >= TS)
 strom_src = rsrc[strom_rows]

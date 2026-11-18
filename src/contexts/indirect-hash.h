@@ -8,12 +8,10 @@
 
 class IndirectHash : public Context {
  public:
-  static constexpr int kKind = Context::kIndirectHash;
-  int Kind() const override { return kKind; }
   IndirectHash(const unsigned int& bit_context, unsigned int order1,
       unsigned int hash_size1, unsigned int order2, unsigned int hash_size2);
   void Update();
-  bool IsEqual(Context* c) const;
+  bool IsEqual(const IndirectHash* p) const;
 
  private:
   const unsigned int& byte_;

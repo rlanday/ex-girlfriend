@@ -1,6 +1,9 @@
 
 #ifndef CMTIDX_TRANSFORM_H_
 #define CMTIDX_TRANSFORM_H_
+#include "../meld.h"
+#include "../enc_only.h"
+#include "page_stream.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,8 +29,6 @@ static char*  cmt_tb = 0;      // scratch buffer (page with shortened comment)
 static long   cmt_tbcap = 0;
 static char*  cmt_sb = 0;      // copy of the section name (decoder)
 static long   cmt_sbcap = 0;
-static long   cmtidx_pages = 0;   // changed pages (statistics)
-static long   cmtidx_escapes = 0; // of those, with escape
 
 static int cmt_grow(char** p, long* cap, long need) {
   if (*cap >= need) return 1;
@@ -40,11 +41,7 @@ static int cmt_grow(char** p, long* cap, long need) {
 }
 
 static long cmt_find(const char* h, long n, long from, const char* pat, long pl) {
-  if (from < 0) from = 0;
-  for (long i = from; i + pl <= n; ++i) {
-    if (h[i] == pat[0] && memcmp(h + i, pat, (size_t)pl) == 0) return i;
-  }
-  return -1;
+  return page_find(h, n, from, pat, pl);   // same result for pl > 0 (all calls)
 }
 
 static int cmt_isws(char c) { return c == ' ' || c == '\t'; }
@@ -114,6 +111,22 @@ static int cmt_seccanon(const char* b, long bn, long* ss, long* sn, long* mend) 
   return 0;
 }
 
+// ---------------------------------------------------------------------------
+// (3) text body:  (<text[^>]*>)(.*?)(</text>\n)      [re.S]
+//     *tbs/*tbe = span of the body, *tend = end of group 3.
+// ---------------------------------------------------------------------------
+// Insertion point of the mark: one line BEHIND the "</text>" line, i.e. behind
+// the "    </revision>" line (which in enwik9 follows "</text>" directly on all
+// 243,418 pages).
+//
+// Not directly behind "</text>": phda9 moves the language-link tail of an
+// article INCLUDING the "</text>" line out into the lang stream.  On restore,
+// henttail1() splices that tail back in exactly when it sees the
+// "</revision>" line, in front of it.  A mark placed right behind "</text>"
+// would already be in the stream at that point and end up in front of the
+// tail, in the middle of the article text (71 % of the 31,099 marks on
+// enwik9).  One line further back the mark sits behind the splice point and
+// stays untouched.
 static long cmt_line_after(const char* p, long n, long from) {
   long i = from;
   while (i < n && p[i] != '\n') ++i;
@@ -209,7 +222,7 @@ static int cmt_head_at(const char* body, long bn, long idx,
 // ---------------------------------------------------------------------------
 // Page encoder.  Returns 1 = changed (result in cmt_ob/*outn).
 // ---------------------------------------------------------------------------
-static int cmt_encode_page(const char* p, long n, long* outn) {
+static ENC_ONLY int cmt_encode_page(const char* p, long n, long* outn) {
   long ls, le, bs, be;
   if (!cmt_find_comment(p, n, &ls, &le, &bs, &be)) return 0;
   long ss, sn, mend;
@@ -272,11 +285,9 @@ static int cmt_encode_page(const char* p, long n, long* outn) {
   if (escsec) {
     memcpy(cmt_ob + o, escsec, (size_t)escn); o += escn;
     cmt_ob[o++] = '\n';
-    ++cmtidx_escapes;
   }
   memcpy(cmt_ob + o, cmt_tb + insat, (size_t)(tn - insat)); o += tn - insat;
   *outn = o;
-  ++cmtidx_pages;
   return 1;
 }
 
@@ -298,7 +309,6 @@ static int cmt_decode_page(const char* p, long n, long* outn) {
   const char* sec; long sn;
   if (tokn > 0 && (unsigned char)tok[0] == CMT_ESC) {
     sec = tok + 1; sn = tokn - 1;
-    ++cmtidx_escapes;
   } else {
     if (tokn <= 0) return -1;
     long idx = 0;
@@ -335,83 +345,29 @@ static int cmt_decode_page(const char* p, long n, long* outn) {
   if (bodyn) cmt_ob[o++] = ' ';
   memcpy(cmt_ob + o, cmt_tb + bs, (size_t)(tn - bs)); o += tn - bs;
   *outn = o;
-  ++cmtidx_pages;
   return 1;
 }
 
-static int cmtidx_stream(FILE* in, FILE* out, int enc) {
-  const long CH = 1 << 20;
-  long cap = 4 * CH, n = 0, pos;
-  char* buf = (char*)malloc((size_t)cap);
-  if (!buf) return 0;
-  int inside = 0, eof = 0, err = 0;
-  while (!eof) {
-    if (n + CH > cap) {
-      long nc = (n + CH) * 2;
-      char* q = (char*)realloc(buf, (size_t)nc);
-      if (!q) { free(buf); return 0; }
-      buf = q; cap = nc;
-    }
-    size_t got = fread(buf + n, 1, (size_t)CH, in);
-    if (got == 0) eof = 1;
-    n += (long)got;
-    pos = 0;
-    for (;;) {
-      if (!inside) {
-        long s = cmt_find(buf, n, pos, "<page>", 6);
-        if (s < 0) {
-          long keep = eof ? 0 : 5;
-          long upto = n - keep;
-          if (upto < pos) upto = pos;
-          if (upto > pos) fwrite(buf + pos, 1, (size_t)(upto - pos), out);
-          pos = upto;
-          break;
-        }
-        if (s > pos) fwrite(buf + pos, 1, (size_t)(s - pos), out);
-        pos = s;
-        inside = 1;
-      } else {
-        long e = cmt_find(buf, n, pos, "</page>", 7);
-        if (e < 0) break;
-        e += 7;
-        long pl = e - pos, ol = 0;
-        int changed = enc ? cmt_encode_page(buf + pos, pl, &ol)
-                          : cmt_decode_page(buf + pos, pl, &ol);
-        if (changed < 0) { err = 1; changed = 0; }
-        if (changed) fwrite(cmt_ob, 1, (size_t)ol, out);
-        else         fwrite(buf + pos, 1, (size_t)pl, out);
-        pos = e;
-        inside = 0;
-      }
-    }
-    if (pos > 0) { memmove(buf, buf + pos, (size_t)(n - pos)); n -= pos; }
-  }
-  if (n > 0) fwrite(buf, 1, (size_t)n, out);
-  free(buf);
-  return err ? 0 : 1;
+static int cmt_dec_cb(const char* p, long n, long* outn, const char** ob) {
+  const int changed = cmt_decode_page(p, n, outn);
+  *ob = cmt_ob;
+  return changed;
 }
-
-static int cmtidx_file(const char* inpath, const char* outpath, int enc) {
-  FILE* in = fopen(inpath, "rb");
-  if (!in) { fprintf(stderr, "comment index: cannot read %s\n", inpath); return 0; }
-  FILE* out = fopen(outpath, "wb");
-  if (!out) { fclose(in); fprintf(stderr, "comment index: cannot write %s\n", outpath); return 0; }
-  cmtidx_pages = 0; cmtidx_escapes = 0;
-  int ok = cmtidx_stream(in, out, enc);
-  fclose(in);
-  if (fclose(out) != 0) ok = 0;
-  return ok;
+static ENC_ONLY int cmt_enc_cb(const char* p, long n, long* outn, const char** ob) {
+  const int changed = cmt_encode_page(p, n, outn);
+  *ob = cmt_ob;
+  return changed;
 }
 
 // Rewrite a file in place (via a temporary file).
-static int cmtidx_inplace(const char* path, const char* tmp, int enc) {
-  if (!cmtidx_file(path, tmp, enc)) return 0;
-  remove(path);
-  if (rename(tmp, path) != 0) {
-    fprintf(stderr, "comment index: rename %s -> %s failed\n", tmp, path);
-    return 0;
-  }
-  return 1;
+template <int enc>
+static DIR_INLINE int cmtidx_inplace(const char* path, const char* tmp) {
+  return page_file(path, tmp, enc ? cmt_enc_cb : cmt_dec_cb, 1);
+}
+
+// The encoder direction (compression path only), see enc_only.h.
+static ENC_ONLY int cmtidx_inplace_enc(const char* path, const char* tmp) {
+  return cmtidx_inplace<1>(path, tmp);
 }
 
 // Count '\n' in a file (for the cut lines of split4Decomp).

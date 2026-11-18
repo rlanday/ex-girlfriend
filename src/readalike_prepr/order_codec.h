@@ -8,12 +8,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <unordered_map>
-#include <algorithm>
+#include "../preprocess/dict_derive.h"   // SortU64, SortByScore, ReadVarint
+#include "../preprocess/hd_cm.h"
 
 // Article order as rule plus residual.  From features of every page (title
 // tokens, wikilinks, content words of the lead, categories) a deterministic
@@ -26,34 +24,21 @@
 // that pipeline (src/article_order/manual-sort.ipynb in fx2-cmix): census,
 // image, disambiguation, geographic and personal-name disambiguation pages
 // are moved to the end.
+// Plain arrays instead of std containers: the code runs once per run, and the
+// template instances cost more than the code itself in the packed binary.
 namespace ord {
 
-// ---------------------------------------------------------------- Varint
-static bool ReadFileBytes(const char* path, std::vector<uint8_t>& out) {
+// The whole file in one malloc'd buffer; 0 if it cannot be read.
+static uint8_t* ReadFileBytes(const char* path, size_t* n) {
   FILE* f = fopen(path, "rb");
-  if (!f) return false;
-  fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
-  out.resize((size_t)n);
-  bool ok = (n == 0) || fread(out.data(), 1, (size_t)n, f) == (size_t)n;
+  if (!f) return 0;
+  fseek(f, 0, SEEK_END); long m = ftell(f); fseek(f, 0, SEEK_SET);
+  uint8_t* b = m < 0 ? 0 : (uint8_t*)malloc((size_t)m + 1);
+  if (b && fread(b, 1, (size_t)m, f) != (size_t)m) { free(b); b = 0; }
   fclose(f);
-  return ok;
+  *n = (size_t)m;
+  return b;
 }
-
-struct VarintReader {
-  const uint8_t* p; const uint8_t* end;
-  bool ok = true;
-  int64_t Get() {
-    int64_t x = 0; int s = 0;
-    while (p < end) {
-      uint8_t c = *p++;
-      x |= (int64_t)(c & 0x7f) << s;
-      if (!(c & 0x80)) return x;
-      s += 7;
-    }
-    ok = false; return -1;
-  }
-  bool Done() const { return p >= end; }
-};
 
 // ------------------------------------------------ integer fixed-point ln
 // round(2^57 * ln(x)) for integer x >= 1, pure integer arithmetic.
@@ -107,7 +92,36 @@ static inline bool IsAlphaA(char c) {
 }
 static inline bool IsAlnumA(char c) { return IsAlphaA(c) || (c >= '0' && c <= '9'); }
 static const size_t ORD_LEADCHARS = 600;
-static const int ORD_MAXCW = 160;
+static const int ORD_MAXCW = 160;           // content words per page
+
+// The opening of the page text (33 bytes) and the redirect marks behind it
+// (one array with its own section, read by the encoder only).
+#define ORD_TEXT_OPEN "      <text xml:space=\"preserve\">"
+static const char kRedir[] = "#REDIRECT\0#redirect\0#Redirect\0#REdirect\0{{softredirect";
+// The census sentences of Byron Knoll's manual sort step (fx2-cmix), one
+// NUL-separated array.
+static const char kCen[] =
+  "According to the [[United States Census Bureau]],\0"
+  "According to the [[U.S. Census Bureau]],\0"
+  "As of the [[2000]] census,\0"
+  "According to the [[2000]] census, \0"
+  "According to the [[United States Census Bureau|U.S. Census Bureau]],\0"
+  "According to the [[US Census Bureau]], \0"
+  "According to the U.S. Census,\0"
+  "As of the 2000 \0"
+  "As of the census of 2000,";
+
+// true if the line opens the page text with a redirect mark.
+static bool IsRedirLine(const char* s, size_t n) {
+  if (n < 33 || memcmp(s, ORD_TEXT_OPEN, 33)) return false;
+  for (const char* w = kRedir; w < kRedir + sizeof kRedir; ) {
+    const size_t l = strlen(w);
+    if (n - 33 >= l && !memcmp(s + 33, w, l)) return true;
+    w += l + 1;
+  }
+  return false;
+}
+
 static const char kKalTxt[] =
   "January\0February\0March\0April\0May\0June\0July\0August\0September\0"
   "October\0November\0December\0Deaths in \0Births in \0 century\0 millennium";
@@ -162,24 +176,27 @@ static int64_t KalKey(const char* s, size_t n) {
 struct PageScan {
   bool is_redirect = false;
   int klass = 0;                        // 0 normal, 1 census .. 5 hndis
-  std::vector<uint64_t> feats;          // deduplicated, sorted
   int64_t kal = -1;                     // KalKey of the title, -1 = none
 };
 
+// The features of all pages go into ONE growing array: those of the current
+// page from p0 on.  At the page end they are sorted and deduplicated there;
+// the caller keeps them (p0 = fn) or drops them (fn = p0).
 struct Extractor {
   // state of the current page
   bool in_page = false, in_text = false;
   bool f_cen = false, f_dis = false, f_geo = false, f_hnd = false;
   bool f_img = false, f_distitle = false, redirect = false;
   int n_links = 0;
-  std::vector<uint64_t> feats;
+  uint64_t* fa = 0;             // features
+  size_t fn = 0, fcap = 0, p0 = 0;
   int n_cw = 0;                 // content words in the lead (cap ORD_MAXCW)
   size_t lead_used = 0;         // body characters consumed
   int64_t kal = -1;             // KalKey of the title of the current page
 
-  static bool StartsWith(const std::string& l, const char* p) {
-    size_t n = strlen(p);
-    return l.size() >= n && memcmp(l.data(), p, n) == 0;
+  void Push(uint64_t h) {
+    if (fn == fcap) { fcap = fcap * 2 + 65536; fa = (uint64_t*)realloc(fa, fcap * 8); }
+    fa[fn++] = h;
   }
 
   void Title(const char* a, const char* b) {           // title bytes
@@ -203,7 +220,7 @@ struct Extractor {
             char c = a[s + t];
             buf[t] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
           }
-          feats.push_back(Fnv1a('W', buf, len));
+          Push(Fnv1a('W', buf, len));
         }
       }
     }
@@ -225,7 +242,7 @@ struct Extractor {
         const char* x = s + a; const char* y = s + b;
         StripSpan(x, y);
         size_t len = (size_t)(y - x);
-        if (len) { if (len > 60) len = 60; feats.push_back(Fnv1a('l', x, len)); }
+        if (len) { if (len > 60) len = 60; Push(Fnv1a('l', x, len)); }
         i = b + 1;
       } else i = a - 1;
     }
@@ -242,29 +259,22 @@ struct Extractor {
           char c = s[st + t];
           buf[t] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
         }
-        feats.push_back(Fnv1a('w', buf, len));
+        Push(Fnv1a('w', buf, len));
         ++n_cw;
       }
     }
     lead_used += m;
   }
 
-  // The census sentences and the disambiguation templates below are the
-  // detection strings of Byron Knoll's manual sort step (fx2-cmix).
+  // The census sentences (kCen) and the disambiguation templates below are
+  // the detection strings of Byron Knoll's manual sort step (fx2-cmix).
   void FlagsLine(const char* s, size_t n) {            // body text only
-    static const char* CEN[9] = {
-      "According to the [[United States Census Bureau]],",
-      "According to the [[U.S. Census Bureau]],",
-      "As of the [[2000]] census,",
-      "According to the [[2000]] census, ",
-      "According to the [[United States Census Bureau|U.S. Census Bureau]],",
-      "According to the [[US Census Bureau]], ",
-      "According to the U.S. Census,",
-      "As of the 2000 ",
-      "As of the census of 2000," };
     if (!f_cen)
-      for (int i = 0; i < 9; ++i)
-        if (memmem(s, n, CEN[i], strlen(CEN[i]))) { f_cen = true; break; }
+      for (const char* w = kCen; w < kCen + sizeof kCen; ) {
+        const size_t l = strlen(w);
+        if (memmem(s, n, w, l)) { f_cen = true; break; }
+        w += l + 1;
+      }
     if (!f_hnd && memmem(s, n, "{{hndis", 7)) f_hnd = true;
     if (!f_geo && memmem(s, n, "{{geodis}}", 10)) f_geo = true;
     if (!f_dis) {                                      // \{\{[Dd]isam[^}]*\}\}
@@ -290,7 +300,7 @@ struct Extractor {
       if (b > a) {
         const char* x = s + a; const char* y = s + b;
         StripSpan(x, y);
-        feats.push_back(Fnv1a('C', x, (size_t)(y - x)));
+        Push(Fnv1a('C', x, (size_t)(y - x)));
       }
       i = (b > a) ? b : a;
     }
@@ -317,7 +327,7 @@ struct Extractor {
           char c = x[t];
           buf[t] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
         }
-        feats.push_back(Fnv1a('T', buf, len));
+        Push(Fnv1a('T', buf, len));
       }
       i = b;
     }
@@ -334,7 +344,7 @@ struct Extractor {
         size_t len = (size_t)(y - x);
         if (len) {
           if (len > 60) len = 60;
-          feats.push_back(Fnv1a('L', x, len));
+          Push(Fnv1a('L', x, len));
           ++n_links;
         }
         i = b + 1;
@@ -344,18 +354,18 @@ struct Extractor {
     }
   }
 
-  // processes one line; returns true when a page has been completed.
-  bool Line(const std::string& l, PageScan* out) {
-    if (StartsWith(l, "  <page>")) {
+  // processes one line s[0..n); returns true when a page has been completed.
+  bool Line(const char* s, size_t n, PageScan* out) {
+    if (n >= 8 && memcmp(s, "  <page>", 8) == 0) {
       in_page = true; in_text = false;
       f_cen = f_dis = f_geo = f_hnd = f_img = f_distitle = redirect = false;
-      n_links = 0; feats.clear();
+      n_links = 0; fn = p0;
       n_cw = 0; lead_used = 0;
       kal = -1;
       return false;
     }
     if (!in_page) return false;
-    if (StartsWith(l, "  </page>")) {
+    if (n >= 9 && memcmp(s, "  </page>", 9) == 0) {
       in_page = false;
       out->is_redirect = redirect;
       out->kal = kal;
@@ -367,25 +377,19 @@ struct Extractor {
       if (f_geo) k = 4;
       if (f_hnd) k = 5;
       out->klass = k;
-      std::sort(feats.begin(), feats.end());
-      feats.erase(std::unique(feats.begin(), feats.end()), feats.end());
-      out->feats.swap(feats);
+      dict_derive::SortU64(fa + p0, fn - p0);          // sorted, deduplicated
+      size_t w = p0;
+      for (size_t i = p0; i < fn; ++i)
+        if (w == p0 || fa[i] != fa[w - 1]) fa[w++] = fa[i];
+      fn = w;
       return true;
     }
-    static const char* REDIR[5] = {
-      "      <text xml:space=\"preserve\">#REDIRECT",
-      "      <text xml:space=\"preserve\">#redirect",
-      "      <text xml:space=\"preserve\">#Redirect",
-      "      <text xml:space=\"preserve\">#REdirect",
-      "      <text xml:space=\"preserve\">{{softredirect" };
-    for (int i = 0; i < 5; ++i)
-      if (StartsWith(l, REDIR[i])) { redirect = true; break; }
-    const char* s = l.data(); size_t n = l.size();
+    if (IsRedirLine(s, n)) redirect = true;
     if (const char* t = (const char*)memmem(s, n, "<title>", 7)) {
       const char* e = (const char*)memmem(t + 7, n - (size_t)(t + 7 - s), "</title>", 8);
       if (e) Title(t + 7, e);
     }
-    bool text_open = StartsWith(l, "      <text xml:space=\"preserve\">");
+    bool text_open = n >= 33 && memcmp(s, ORD_TEXT_OPEN, 33) == 0;
     if (text_open) in_text = true;
     if (in_text) {
       FlagsLine(s, n);
@@ -402,317 +406,54 @@ struct Extractor {
   }
 };
 
-// ------------------------------------------------------- residual file
-struct Residual {
-  std::vector<int32_t> excl;                       // unit IDs, ascending
-  std::vector<std::pair<int32_t, uint8_t>> corr;   // (unit ID, class)
-  std::vector<int32_t> starts;                     // dense run starts
-  std::vector<int64_t> syms;                       // symbol stream
-  int64_t n_split = 0;                             // schema v3 only
-  int64_t n_kal = 0;
-};
-
-static bool ParseResidual(const char* path, Residual* r) {
-  std::vector<uint8_t> buf;
-  if (!ReadFileBytes(path, buf)) return false;
-  VarintReader v{buf.data(), buf.data() + buf.size()};
-  int64_t ne = v.Get();
-  int64_t last = -1;
-  for (int64_t i = 0; i < ne; ++i) { last += v.Get(); r->excl.push_back((int32_t)last); }
-  int64_t nc = v.Get();
-  last = -1;
-  for (int64_t i = 0; i < nc; ++i) {
-    last += v.Get();
-    int64_t k = v.Get();
-    r->corr.push_back({(int32_t)last, (uint8_t)k});
-  }
-  int64_t nr = v.Get();
-  for (int64_t i = 0; i < nr; ++i) r->starts.push_back((int32_t)v.Get());
-  while (!v.Done()) {
-    int64_t s = v.Get();
-    if (!v.ok) break;
-    r->syms.push_back(s);
-  }
-  return v.ok;
-}
-
-// ------------------------------------------------ main entry: decoding
-// main_path: the page stream (.main); residual_path: residual file.
-// Result: unit IDs in target order (like the lines of the former
-// .new_article_order). Returns false on any consistency error.
-static bool DecodeOrder(const char* residual_path, const char* main_path,
-                        std::vector<int>* order) {
-  const int CAP = 512, DFMAX = 800;
-  Residual res;
-  if (!ParseResidual(residual_path, &res)) return false;
-
-  // pass over the page stream: class per unit, features of the normal units.
-  std::vector<uint8_t> klass;                  // per unit (after corrections)
-  std::vector<std::vector<uint64_t>> feats;    // normal units only (index parallel to uni)
-  std::vector<int32_t> uni;                    // normal units, ascending
-  {
-    std::unordered_map<int32_t, uint8_t> corr(res.corr.begin(), res.corr.end());
-    std::vector<char> excluded;
-    for (int32_t e : res.excl) {
-      if ((size_t)e >= excluded.size()) excluded.resize((size_t)e + 1, 0);
-      excluded[(size_t)e] = 1;
-    }
-    std::ifstream in(main_path);
-    if (!in) return false;
-    std::string line;
-    Extractor ex;
-    PageScan ps;
-    int32_t unit = 0;
-    while (std::getline(in, line)) {
-      if (!ex.Line(line, &ps)) continue;
-      if (ps.is_redirect) continue;
-      int k = ps.klass;
-      auto it = corr.find(unit);
-      if (it != corr.end()) k = it->second;
-      if ((size_t)unit < excluded.size() && excluded[(size_t)unit]) k = 6;  // not listed
-      klass.push_back((uint8_t)k);
-      if (k == 0) { uni.push_back(unit); feats.push_back(std::move(ps.feats)); }
-      ++unit;
-    }
-  }
-  const int32_t n = (int32_t)uni.size();
-  if ((int64_t)res.syms.size() != (int64_t)n) return false;
-
-  // inverted index: count DF, keep DF<=800, integer IDF.
-  std::unordered_map<uint64_t, int32_t> fid;   // feature -> index
-  {
-    std::unordered_map<uint64_t, int32_t> df;
-    df.reserve((size_t)n * 8);
-    for (int32_t t = 0; t < n; ++t)
-      for (uint64_t f : feats[t]) ++df[f];
-    fid.reserve(df.size());
-    for (auto& kv : df)
-      if (kv.second <= DFMAX) fid.emplace(kv.first, (int32_t)fid.size());
-  }
-  std::vector<std::vector<int32_t>> post(fid.size());   // sorted ascending
-  std::vector<int64_t> idf(fid.size());
-  for (int32_t t = 0; t < n; ++t) {
-    std::vector<uint64_t> kept;
-    for (uint64_t f : feats[t]) {
-      auto it = fid.find(f);
-      if (it != fid.end()) { post[it->second].push_back(t); kept.push_back((uint64_t)it->second); }
-    }
-    feats[t].swap(kept);                               // from here on: feature indices
-  }
-  for (auto& kv : fid) idf[kv.second] = Idf((uint64_t)n, (uint64_t)post[kv.second].size());
-
-  // decode the symbol stream (rank/gap code, candidates via score).
-  std::vector<char> alive(n, 1);
-  std::vector<int64_t> score(n, 0);
-  std::vector<int32_t> stamp(n, -1);
-  std::vector<int32_t> touched;
-  std::unordered_map<int32_t, int32_t> cur;            // feature -> weight
-  std::vector<int32_t> dense;
-  dense.reserve(n);
-  size_t si = 0;
-  int32_t prev = -1;
-  for (int32_t i = 0; i < n; ++i) {
-    int64_t s = res.syms[i];
-    int32_t t;
-    if (s == 0) {
-      if (si >= res.starts.size()) return false;
-      t = res.starts[si++];
-      cur.clear();
-      prev = -1;
-    } else if (s <= CAP) {
-      touched.clear();
-      for (auto& kv : cur) {
-        int64_t wt = (int64_t)kv.second * idf[kv.first];
-        for (int32_t j : post[kv.first]) {
-          if (j >= prev) break;
-          if (!alive[j]) continue;
-          if (stamp[j] != i) { stamp[j] = i; score[j] = 0; touched.push_back(j); }
-          score[j] += wt;
-        }
-      }
-      int32_t r = (int32_t)s - 1;
-      if ((size_t)r >= touched.size()) return false;
-      std::nth_element(touched.begin(), touched.begin() + r, touched.end(),
-        [&](int32_t a, int32_t b) {
-          return score[a] != score[b] ? score[a] > score[b] : a > b;
-        });
-      t = touched[r];
-    } else {
-      t = prev - (int32_t)(s - CAP - 1);
-    }
-    if (t < 0 || t >= n || !alive[t]) return false;
-    dense.push_back(t);
-    alive[t] = 0;
-    for (uint64_t f : feats[t]) ++cur[(int32_t)f];
-    prev = t;
-  }
-  if (si != res.starts.size()) return false;
-
-  // assemble: normal part, then the 5 class blocks by descending ID.
-  order->clear();
-  order->reserve(klass.size());
-  for (int32_t t : dense) order->push_back(uni[t]);
-  for (int k = 1; k <= 5; ++k)
-    for (int32_t u = (int32_t)klass.size() - 1; u >= 0; --u)
-      if (klass[u] == k) order->push_back(u);
-  return true;
-}
-
-static bool DecodeOrderV2(const char* residual_path, const char* main_path,
-                          std::vector<int>* order) {
-  const int DFMAX = 800;
-  const int64_t R_ESC = 4096;
-  Residual res;                       // starts == cluster sequence, syms == symbols
-  if (!ParseResidual(residual_path, &res)) return false;
-
-  std::vector<uint8_t> klass;
-  std::vector<std::vector<uint64_t>> feats;
-  std::vector<int32_t> uni;
-  {
-    std::unordered_map<int32_t, uint8_t> corr(res.corr.begin(), res.corr.end());
-    std::vector<char> excluded;
-    for (int32_t e : res.excl) {
-      if ((size_t)e >= excluded.size()) excluded.resize((size_t)e + 1, 0);
-      excluded[(size_t)e] = 1;
-    }
-    std::ifstream in(main_path);
-    if (!in) return false;
-    std::string line;
-    Extractor ex;
-    PageScan ps;
-    int32_t unit = 0;
-    while (std::getline(in, line)) {
-      if (!ex.Line(line, &ps)) continue;
-      if (ps.is_redirect) continue;
-      int k = ps.klass;
-      auto it = corr.find(unit);
-      if (it != corr.end()) k = it->second;
-      if ((size_t)unit < excluded.size() && excluded[(size_t)unit]) k = 6;
-      klass.push_back((uint8_t)k);
-      if (k == 0) { uni.push_back(unit); feats.push_back(std::move(ps.feats)); }
-      ++unit;
-    }
-  }
-  const int32_t n = (int32_t)uni.size();
-  if ((int64_t)res.syms.size() != (int64_t)n) return false;
-  const int32_t nrun = (int32_t)res.starts.size();
-
-  std::unordered_map<uint64_t, int32_t> fid;
-  {
-    std::unordered_map<uint64_t, int32_t> df;
-    df.reserve((size_t)n * 8);
-    for (int32_t t = 0; t < n; ++t)
-      for (uint64_t f : feats[t]) ++df[f];
-    fid.reserve(df.size());
-    for (auto& kv : df)
-      if (kv.second <= DFMAX) fid.emplace(kv.first, (int32_t)fid.size());
-  }
-  std::vector<std::vector<int32_t>> post(fid.size());
-  std::vector<int64_t> idf(fid.size());
-  for (int32_t t = 0; t < n; ++t) {
-    std::vector<uint64_t> kept;
-    for (uint64_t f : feats[t]) {
-      auto it = fid.find(f);
-      if (it != fid.end()) { post[it->second].push_back(t); kept.push_back((uint64_t)it->second); }
-    }
-    feats[t].swap(kept);
-  }
-  for (auto& kv : fid) idf[kv.second] = Idf((uint64_t)n, (uint64_t)post[kv.second].size());
-
-  // sequential vote: cluster per dense id
-  std::vector<int32_t> clus(n, -1);
-  int32_t n_seen = 0;
-  std::vector<int64_t> clscore((size_t)nrun + 2, 0);
-  std::vector<int32_t> clstamp((size_t)nrun + 2, -1);
-  std::vector<int32_t> cltouch;
-  for (int32_t t = 0; t < n; ++t) {
-    cltouch.clear();
-    for (uint64_t ff : feats[t]) {
-      int32_t f = (int32_t)ff;
-      int64_t w = idf[f];
-      for (int32_t j : post[f]) {
-        if (j >= t) break;
-        int32_t cs = clus[j];
-        if (clstamp[(size_t)cs] != t) { clstamp[(size_t)cs] = t; clscore[(size_t)cs] = 0; cltouch.push_back(cs); }
-        clscore[(size_t)cs] += w;
-      }
-    }
-    int64_t sym = res.syms[t];
-    int32_t cl;
-    if (sym == 0) {
-      cl = n_seen++;
-      if (cl >= nrun) return false;
-    } else if (sym < R_ESC) {
-      int64_t r = sym - 1;
-      if ((size_t)r >= cltouch.size()) return false;
-      std::nth_element(cltouch.begin(), cltouch.begin() + r, cltouch.end(),
-        [&](int32_t a, int32_t b) {
-          return clscore[(size_t)a] != clscore[(size_t)b]
-                 ? clscore[(size_t)a] > clscore[(size_t)b] : a < b;
-        });
-      cl = cltouch[r];
-    } else {
-      cl = (int32_t)(sym - R_ESC);
-      if (cl >= n_seen) return false;
-    }
-    clus[t] = cl;
-  }
-  if (n_seen != nrun) return false;
-
-  // assemble: cluster sequence, inside by dense id descending (= unit ID
-  // descending), then the 5 class blocks as in schema v1.
-  std::vector<std::vector<int32_t>> members((size_t)nrun);
-  for (int32_t t = 0; t < n; ++t) members[(size_t)clus[t]].push_back(t);
-  order->clear();
-  order->reserve(klass.size());
-  for (int32_t cs : res.starts) {
-    if (cs < 0 || cs >= nrun) return false;
-    std::vector<int32_t>& m = members[(size_t)cs];
-    for (size_t i = m.size(); i-- > 0;) order->push_back(uni[m[i]]);
-  }
-  for (int k = 1; k <= 5; ++k)
-    for (int32_t u = (int32_t)klass.size() - 1; u >= 0; --u)
-      if (klass[u] == k) order->push_back(u);
-  return true;
-}
-
 static const int   ORDV3_DFMAX = 175;
 static const int   ORDV3_AXISK = 8;      // axis neighbors per side
 static const int   ORDV3_AXISW = 2;      // smoothing weight in 1/16
 static const int   ORDV3_NORMK = 16;
 static const int64_t ORDV3_R_ESC = 4096;
+static const int64_t ORDV4_TAG = 0x1FFFFE;
+struct Residual {
+  int32_t* excl = 0;                               // unit IDs, ascending
+  int32_t* corr = 0;                               // (unit ID, class) pairs, ascending
+  int32_t* starts = 0;                             // cluster sequence
+  int64_t ne = 0, nc = 0, nr = 0;
+  int64_t n_split = 0;
+  int64_t n_kal = 0;
+  uint8_t* buf = 0;                                // the file
+  size_t len = 0;
+  size_t hdr = 0;
+};
 
-static const int64_t ORDV3_TUNE_TAG = 0x1FFFFF;
-
-// like ParseResidual, but with the v3 header n_split between corr and n_runs.
-// A separate function on purpose: an extra parameter on ParseResidual made
-// the packed binary 8 B larger.
+// The v3 header with n_split between corr and n_runs.  Varints of the
+// dictionary derivation (one reader); a count beyond the file length is a
+// broken file.
 static bool ParseResidualV3(const char* path, Residual* r) {
-  std::vector<uint8_t> buf;
-  if (!ReadFileBytes(path, buf)) return false;
-  VarintReader v{buf.data(), buf.data() + buf.size()};
-  int64_t ne = v.Get();
+  using dict_derive::ReadVarint;
+  uint8_t* b = r->buf = ReadFileBytes(path, &r->len);
+  if (!b) return false;
+  const size_t n = r->len;
+  size_t q = 0;
+  const uint64_t ne = ReadVarint(b, q);
+  if (ne > n) return false;
+  r->excl = (int32_t*)malloc(4 * ne + 4); r->ne = (int64_t)ne;
   int64_t last = -1;
-  for (int64_t i = 0; i < ne; ++i) { last += v.Get(); r->excl.push_back((int32_t)last); }
-  int64_t nc = v.Get();
+  for (uint64_t i = 0; i < ne; ++i) { last += (int64_t)ReadVarint(b, q); r->excl[i] = (int32_t)last; }
+  const uint64_t nc = ReadVarint(b, q);
+  if (nc > n) return false;
+  r->corr = (int32_t*)malloc(8 * nc + 8); r->nc = (int64_t)nc;
   last = -1;
-  for (int64_t i = 0; i < nc; ++i) {
-    last += v.Get();
-    int64_t k = v.Get();
-    r->corr.push_back({(int32_t)last, (uint8_t)k});
+  for (uint64_t i = 0; i < nc; ++i) {
+    last += (int64_t)ReadVarint(b, q);
+    r->corr[2 * i] = (int32_t)last;
+    r->corr[2 * i + 1] = (uint8_t)ReadVarint(b, q);
   }
-  r->n_split = v.Get();
-  r->n_kal = v.Get();
-  int64_t nr = v.Get();
-  for (int64_t i = 0; i < nr; ++i) r->starts.push_back((int32_t)v.Get());
-  while (!v.Done()) {
-    int64_t s = v.Get();
-    if (!v.ok) break;
-    r->syms.push_back(s);
-  }
-  if (r->syms.empty() || r->syms.back() != ORDV3_TUNE_TAG) return false;
-  r->syms.pop_back();
-  return v.ok;
+  r->n_split = (int64_t)ReadVarint(b, q);
+  r->n_kal = (int64_t)ReadVarint(b, q);
+  const int64_t nr = (int64_t)ReadVarint(b, q);
+  if (nr <= 0 || nr > (1 << 20) || (int64_t)ReadVarint(b, q) != ORDV4_TAG) return false;
+  r->starts = (int32_t*)calloc((size_t)nr, 4); r->nr = nr;
+  r->hdr = q;
+  return q <= n;
 }
 
 // vote of one article: fills cltouch/clscore (score order = rank).
@@ -720,230 +461,303 @@ static bool ParseResidualV3(const char* path, Residual* r) {
 // consistent by construction.
 struct ORDV3Vote {
   int32_t nrun = 0;
-  std::vector<int64_t> clscore;
-  std::vector<int32_t> clstamp;
-  std::vector<int64_t> smear;
-  std::vector<int32_t> smstamp;
-  std::vector<int32_t> fill;
-  std::vector<int32_t> cltouch;
-  std::vector<int32_t> axis_of_seq;      // seq id -> axis rank
-  const std::vector<int32_t>* seq_of_axis = 0;   // axis rank -> seq id
+  int32_t nt = 0;                        // number of voted clusters in cltouch
+  int64_t* clscore;                      // the int64 block: clscore, smear
+  int64_t* smear;
+  int32_t* clstamp;                      // the int32 block: clstamp, smstamp,
+  int32_t* smstamp;                      //   axis_of_seq, fill, cltouch
+  int32_t* axis_of_seq;                  // seq id -> axis rank
+  int32_t* fill;
+  int32_t* cltouch;
+  const int32_t* seq_of_axis;            // axis rank -> seq id
 
-  bool Init(int32_t nr, const std::vector<int32_t>& starts) {
+  bool Init(int32_t nr, const int32_t* starts) {
     nrun = nr;
-    clscore.assign((size_t)nrun + 2, 0);
-    clstamp.assign((size_t)nrun + 2, -1);
-    smear.assign((size_t)nrun + 2, 0);
-    smstamp.assign((size_t)nrun + 2, -1);
-    fill.assign((size_t)nrun + 2, 0);
-    axis_of_seq.assign((size_t)nrun, -1);
-    if ((int32_t)starts.size() != nrun) return false;
+    const size_t m = (size_t)nrun + 2;
+    clscore = (int64_t*)calloc(2 * m, 8);
+    smear = clscore + m;
+    clstamp = (int32_t*)calloc(5 * m, 4);
+    memset(clstamp, 0xff, 12 * m);       // clstamp, smstamp, axis_of_seq = -1
+    smstamp = clstamp + m;
+    axis_of_seq = smstamp + m;
+    fill = axis_of_seq + m;
+    cltouch = fill + m;
     for (int32_t a = 0; a < nrun; ++a) {
-      int32_t s = starts[(size_t)a];
-      if (s < 0 || s >= nrun || axis_of_seq[(size_t)s] != -1) return false;
-      axis_of_seq[(size_t)s] = a;
+      int32_t s = starts[a];
+      if (s < 0 || s >= nrun || axis_of_seq[s] != -1) return false;
+      axis_of_seq[s] = a;
     }
-    seq_of_axis = &starts;
+    seq_of_axis = starts;
     return true;
   }
 
-  // t: dense id of the current article; nfeat: its feature indices;
+  // t: dense id of the current article; nfeat[0..nn): its feature indices;
+  // post[poff[f]..poff[f+1]): dense ids with feature f, ascending;
   // clus_of_dense: seq clusters of the already decoded articles; n_seen: number
   // of seq ids handed out so far.
-  void Score(int32_t t, const std::vector<uint64_t>& nfeat,
-             const std::vector<std::vector<int32_t>>& post,
-             const std::vector<int64_t>& idf,
-             const std::vector<int32_t>& clus_of_dense, int32_t n_seen) {
-    cltouch.clear();
-    for (uint64_t ff : nfeat) {
-      int32_t f = (int32_t)ff;
-      int64_t w = idf[(size_t)f];
+  void Score(int32_t t, const uint64_t* nfeat, size_t nn, const int32_t* post,
+             const uint32_t* poff, const int64_t* idf,
+             const int32_t* clus_of_dense, int32_t n_seen) {
+    nt = 0;
+    for (size_t i = 0; i < nn; ++i) {
+      int32_t f = (int32_t)nfeat[i];
+      int64_t w = idf[f];
       if (w <= 0) continue;
-      for (int32_t j : post[(size_t)f]) {
+      for (uint32_t k = poff[f]; k < poff[f + 1]; ++k) {
+        int32_t j = post[k];
         if (j >= t) break;
-        int32_t cs = clus_of_dense[(size_t)j];
-        if (clstamp[(size_t)cs] != t) {
-          clstamp[(size_t)cs] = t; clscore[(size_t)cs] = 0; cltouch.push_back(cs);
+        int32_t cs = clus_of_dense[j];
+        if (clstamp[cs] != t) {
+          clstamp[cs] = t; clscore[cs] = 0; cltouch[nt++] = cs;
         }
-        clscore[(size_t)cs] += w;
+        clscore[cs] += w;
       }
     }
     // axis smoothing: smear a cluster's own score onto its axis neighbors.
     // Only the originally voted clusters are sources (prefix of cltouch);
     // newly touched neighbors are appended at the end.
-    if (!cltouch.empty()) {
-      const size_t nbase = cltouch.size();
-      for (size_t bi = 0; bi < nbase; ++bi) {
+    if (nt) {
+      const int32_t nbase = nt;
+      for (int32_t bi = 0; bi < nbase; ++bi) {
         int32_t cs = cltouch[bi];
-        int32_t a = axis_of_seq[(size_t)cs];
-        int64_t w = (clscore[(size_t)cs] * ORDV3_AXISW) >> 4;
+        int32_t a = axis_of_seq[cs];
+        int64_t w = (clscore[cs] * ORDV3_AXISW) >> 4;
         for (int d = 1; d <= ORDV3_AXISK && w > 0; ++d, w >>= 1) {
           for (int sgn = -1; sgn <= 1; sgn += 2) {
             int32_t ax = a + sgn * d;
             if (ax < 0 || ax >= nrun) continue;
-            int32_t nb = (*seq_of_axis)[(size_t)ax];
+            int32_t nb = seq_of_axis[ax];
             if (nb >= n_seen) continue;              // cluster not seen yet
-            if (clstamp[(size_t)nb] != t) {
-              clstamp[(size_t)nb] = t; clscore[(size_t)nb] = 0; cltouch.push_back(nb);
+            if (clstamp[nb] != t) {
+              clstamp[nb] = t; clscore[nb] = 0; cltouch[nt++] = nb;
             }
-            if (smstamp[(size_t)nb] != t) { smstamp[(size_t)nb] = t; smear[(size_t)nb] = 0; }
-            smear[(size_t)nb] += w;
+            if (smstamp[nb] != t) { smstamp[nb] = t; smear[nb] = 0; }
+            smear[nb] += w;
           }
         }
       }
-      for (size_t k = 0; k < cltouch.size(); ++k) {
+      for (int32_t k = 0; k < nt; ++k) {
         int32_t cs = cltouch[k];
-        if (smstamp[(size_t)cs] == t) { clscore[(size_t)cs] += smear[(size_t)cs]; smstamp[(size_t)cs] = -1; }
+        if (smstamp[cs] == t) { clscore[cs] += smear[cs]; smstamp[cs] = -1; }
       }
     }
     // score normalization by cluster fill level (integer division)
-    for (int32_t cs : cltouch)
-      clscore[(size_t)cs] = clscore[(size_t)cs] * 64 / (fill[(size_t)cs] + ORDV3_NORMK);
+    for (int32_t k = 0; k < nt; ++k) {
+      int32_t cs = cltouch[k];
+      clscore[cs] = clscore[cs] * 64 / (fill[cs] + ORDV3_NORMK);
+    }
   }
-  void Commit(int32_t cl) { ++fill[(size_t)cl]; }
-  void Recent(int32_t t, const std::vector<int32_t>& clus_of_dense) {
+  void Commit(int32_t cl) { ++fill[cl]; }
+  void Recent(int32_t t, const int32_t* clus_of_dense) {
     if (t == 0) return;
     int64_t mx = 0;
-    for (int32_t x : cltouch) if (clscore[(size_t)x] > mx) mx = clscore[(size_t)x];
-    const int32_t p1 = clus_of_dense[(size_t)t - 1];
+    for (int32_t k = 0; k < nt; ++k) if (clscore[cltouch[k]] > mx) mx = clscore[cltouch[k]];
+    const int32_t p1 = clus_of_dense[t - 1];
     Add(p1, mx * 3 / 16);
-    if (t > 1 && clus_of_dense[(size_t)t - 2] != p1) Add(clus_of_dense[(size_t)t - 2], mx * 2 / 16);
+    if (t > 1 && clus_of_dense[t - 2] != p1) Add(clus_of_dense[t - 2], mx * 2 / 16);
   }
   void Add(int32_t c, int64_t b) {
     bool have = false;
-    for (int32_t x : cltouch) if (x == c) { have = true; break; }
-    if (!have) { cltouch.push_back(c); clscore[(size_t)c] = 0; }
-    clscore[(size_t)c] += b > 1 ? b : 1;
+    for (int32_t k = 0; k < nt; ++k) if (cltouch[k] == c) { have = true; break; }
+    if (!have) { cltouch[nt++] = c; clscore[c] = 0; }
+    clscore[c] += b > 1 ? b : 1;
   }
 };
 
-static bool DecodeOrderV3(const char* residual_path, const char* main_path,
-                          std::vector<int>* order) {
-  Residual res;
-  if (!ParseResidualV3(residual_path, &res)) return false;
+static ENC_ONLY int64_t OrdSym(hdcm::Cm* cm, const ORDV3Vote& V, int64_t sym, int32_t n_seen,
+                      int64_t prev, int nf) {
+  using namespace hdcm;
+  int64_t s1 = 0, s2 = 0, s3 = 0;                  // the three best scores
+  for (int32_t k = 0; k < V.nt; ++k) {
+    const int64_t v = V.clscore[V.cltouch[k]];
+    if (v > s1) { s3 = s2; s2 = s1; s1 = v; }
+    else if (v > s2) { s3 = s2; s2 = v; }
+    else if (v > s3) s3 = v;
+  }
+  const size_t nt = (size_t)V.nt;
+  const int r8 = R8(s1, s2), lnt = Lg(nt, 6), ls = Lg((uint64_t)s1, 50);
+  const int pv = prev == 0 ? 0 : (prev == 1 ? 1 : 2);
+  Ctx(cm, 0, K(K(31, r8), lnt)); Ctx(cm, 1, K(32, ls / 2)); Ctx(cm, 2, K(K(33, pv), nt == 0));
+  if (Bit(cm, sym == 0, 20)) return 0;
+  Ctx(cm, 0, K(K(34, r8), lnt)); Ctx(cm, 1, K(35, pv));
+  if (Bit(cm, sym >= ORDV3_R_ESC, 21))
+    return ORDV3_R_ESC + Bits(cm, (int)(sym - ORDV3_R_ESC), Lg((uint64_t)n_seen, 20), 9);
+  return 1 + Rank(cm, (int)sym - 1, 24, 12, K(K(36, r8), lnt), K(K(37, R8(s1, s3)), ls / 3),
+                  K(K(38, pv), Lg((uint64_t)nf, 8)), 22);
+}
 
-  std::vector<uint8_t> klass;
-  std::vector<std::vector<uint64_t>> feats;
-  std::vector<int32_t> uni;
-  std::vector<uint64_t> kal;    // block entries: title key << 18 | unit
+// ------------------------------------------------ main entry: decoding
+// residual_path: residual file; text[0..len): the page stream (.main).
+// Result: unit IDs in target order (as the lines of the plain
+// .new_article_order) in order[0..return value); at most cap units.
+// Returns -1 on any consistency error.
+static int DecodeOrderV3(const char* residual_path, const char* text, size_t len,
+                         int* order, int cap) {
+  Residual res;
+  if (!ParseResidualV3(residual_path, &res)) return -1;
+
+  // pass over the page stream: class per unit, features of the normal units.
+  // The exclusion and correction lists are ascending (varint deltas), so one
+  // cursor each finds the entry of a unit; of two corrections of one unit the
+  // first counts.
+  uint8_t* klass = (uint8_t*)malloc((size_t)cap + 1);   // per unit (after corrections)
+  int32_t* uni = (int32_t*)malloc(4 * (size_t)cap + 4); // normal units, ascending
+  size_t* fo = (size_t*)malloc(8 * (size_t)cap + 8);    // their features: fa[fo[t]..fo[t+1])
+  uint64_t* kal = (uint64_t*)malloc(8 * (size_t)cap + 8);   // block entries: title key << 18 | unit
+  size_t nkal = 0;
+  int32_t nkl = 0, n = 0;
   {
-    std::unordered_map<int32_t, uint8_t> corr(res.corr.begin(), res.corr.end());
-    std::vector<char> excluded;
-    for (int32_t e : res.excl) {
-      if ((size_t)e >= excluded.size()) excluded.resize((size_t)e + 1, 0);
-      excluded[(size_t)e] = 1;
-    }
-    std::ifstream in(main_path);
-    if (!in) return false;
-    std::string line;
     Extractor ex;
     PageScan ps;
-    int32_t unit = 0;
-    while (std::getline(in, line)) {
-      if (!ex.Line(line, &ps)) continue;
-      if (ps.is_redirect) continue;
+    int64_t ei = 0, ci = 0;
+    fo[0] = 0;
+    for (const char* p = text, *end = text + len; p < end; ) {
+      const char* e = (const char*)memchr(p, '\n', (size_t)(end - p));
+      const size_t ln = e ? (size_t)(e - p) : (size_t)(end - p);
+      const bool done = ex.Line(p, ln, &ps);
+      p += ln + 1;
+      if (!done) continue;
+      if (ps.is_redirect) { ex.fn = ex.p0; continue; }
+      if (nkl >= cap) return -1;
+      const int32_t unit = nkl;
       int k = ps.klass;
-      auto it = corr.find(unit);
-      if (it != corr.end()) k = it->second;
-      if ((size_t)unit < excluded.size() && excluded[(size_t)unit]) k = 6;
-      if (k == 0 && ps.kal >= 0) { k = 7; kal.push_back((uint64_t)ps.kal << 18 | (uint64_t)unit); }
-      klass.push_back((uint8_t)k);
-      if (k == 0) { uni.push_back(unit); feats.push_back(std::move(ps.feats)); }
-      ++unit;
+      while (ci < res.nc && res.corr[2 * ci] < unit) ++ci;
+      if (ci < res.nc && res.corr[2 * ci] == unit) k = res.corr[2 * ci + 1];
+      while (ei < res.ne && res.excl[ei] < unit) ++ei;
+      if (ei < res.ne && res.excl[ei] == unit) k = 6;
+      if (k == 0 && ps.kal >= 0) { k = 7; kal[nkal++] = (uint64_t)ps.kal << 18 | (uint64_t)unit; }
+      klass[nkl++] = (uint8_t)k;
+      if (k == 0) { uni[n++] = unit; fo[n] = ex.p0 = ex.fn; }
+      else ex.fn = ex.p0;
     }
-  }
-  const int32_t n = (int32_t)uni.size();
-  if ((int64_t)res.syms.size() != (int64_t)n) return false;
-  const int32_t nrun = (int32_t)res.starts.size();
-  if (nrun <= 0) return false;
+    uint64_t* fa = ex.fa;
 
-  std::unordered_map<uint64_t, int32_t> fid;
-  {
-    std::unordered_map<uint64_t, int32_t> df;
-    df.reserve((size_t)n * 16);
-    for (int32_t t = 0; t < n; ++t)
-      for (uint64_t f : feats[t]) ++df[f];
-    fid.reserve(df.size());
-    for (auto& kv : df)
-      if (kv.second <= ORDV3_DFMAX) fid.emplace(kv.first, (int32_t)fid.size());
-  }
-  std::vector<std::vector<int32_t>> post(fid.size());
-  std::vector<int64_t> idf(fid.size());
-  for (int32_t t = 0; t < n; ++t) {
-    std::vector<uint64_t> kept;
-    for (uint64_t f : feats[t]) {
-      auto it = fid.find(f);
-      if (it != fid.end()) { post[it->second].push_back(t); kept.push_back((uint64_t)it->second); }
+    // inverted index: document frequency = run length in the sorted list of
+    // all features (each page holds a feature once), DF<=ORDV3_DFMAX kept,
+    // integer IDF.  Feature ids in ascending hash order; they are only
+    // indices, every result reads them through post/idf.
+    const size_t F = fo[n];
+    uint64_t* uh = (uint64_t*)malloc(8 * F + 8);
+    memcpy(uh, fa, 8 * F);
+    dict_derive::SortU64(uh, F);
+    int32_t* ufid = (int32_t*)malloc(4 * F + 4);
+    size_t U = 0;
+    for (size_t i = 0; i < F; ) {
+      size_t j = i;
+      while (j < F && uh[j] == uh[i]) ++j;
+      uh[U] = uh[i]; ufid[U++] = (int32_t)(j - i);
+      i = j;
     }
-    feats[t].swap(kept);
-  }
-  for (auto& kv : fid) idf[kv.second] = Idf((uint64_t)n, (uint64_t)post[kv.second].size());
-
-  ORDV3Vote V;
-  if (!V.Init(nrun, res.starts)) return false;
-  std::vector<int32_t> clus(n, -1);
-  int32_t n_seen = 0;
-  for (int32_t t = 0; t < n; ++t) {
-    V.Score(t, feats[t], post, idf, clus, n_seen);
-    V.Recent(t, clus);
-    int64_t sym = res.syms[t];
-    int32_t cl;
-    if (sym == 0) {
-      cl = n_seen++;
-      if (cl >= nrun) return false;
-    } else if (sym < ORDV3_R_ESC) {
-      int64_t r = sym - 1;
-      if ((size_t)r >= V.cltouch.size()) return false;
-      std::nth_element(V.cltouch.begin(), V.cltouch.begin() + r, V.cltouch.end(),
-        [&](int32_t a, int32_t b) {
-          return V.clscore[(size_t)a] != V.clscore[(size_t)b]
-                 ? V.clscore[(size_t)a] > V.clscore[(size_t)b] : a < b;
-        });
-      cl = V.cltouch[(size_t)r];
-    } else {
-      cl = (int32_t)(sym - ORDV3_R_ESC);
-      if (cl >= n_seen) return false;
+    uint32_t* poff = (uint32_t*)malloc(4 * U + 8);
+    int32_t nf = 0;
+    poff[0] = 0;
+    for (size_t u = 0; u < U; ++u) {
+      if (ufid[u] <= ORDV3_DFMAX) { poff[nf + 1] = poff[nf] + (uint32_t)ufid[u]; ufid[u] = nf++; }
+      else ufid[u] = -1;
     }
-    clus[t] = cl;
-    V.Commit(cl);
-  }
-  if (n_seen != nrun) return false;
+    int32_t* post = (int32_t*)malloc(4 * (size_t)poff[nf] + 4);
+    int64_t* idf = (int64_t*)malloc(8 * (size_t)nf + 8);
+    uint32_t* pcur = (uint32_t*)malloc(4 * (size_t)nf + 4);
+    for (int32_t f = 0; f < nf; ++f) {
+      idf[f] = Idf((uint64_t)n, (uint64_t)(poff[f + 1] - poff[f]));
+      pcur[f] = poff[f];
+    }
+    // postings in ascending dense id; each page's features become its kept
+    // feature ids, in place and in the same order
+    size_t w = 0;
+    for (int32_t t = 0; t < n; ++t) {
+      const size_t a = fo[t], b = fo[t + 1];
+      fo[t] = w;
+      for (size_t i = a; i < b; ++i) {
+        size_t lo = 0, hi = U;
+        while (lo < hi) { const size_t m = (lo + hi) / 2; if (uh[m] < fa[i]) lo = m + 1; else hi = m; }
+        const int32_t f = ufid[lo];
+        if (f >= 0) { post[pcur[f]++] = t; fa[w++] = (uint64_t)f; }
+      }
+    }
+    fo[n] = w;
+    free(uh); free(ufid); free(pcur);
 
-  // normal part in target order: cluster sequence, inside dense id descending.
-  std::vector<std::vector<int32_t>> members((size_t)nrun);
-  for (int32_t t = 0; t < n; ++t) members[(size_t)clus[t]].push_back(t);
-  std::vector<int> nrm;
-  nrm.reserve((size_t)n);
-  for (int32_t cs : res.starts) {
-    if (cs < 0 || cs >= nrun) return false;
-    std::vector<int32_t>& m = members[(size_t)cs];
-    for (size_t i = m.size(); i-- > 0;) nrm.push_back(uni[m[i]]);
+    const int32_t nrun = (int32_t)res.nr;
+    if (nrun <= 0) return -1;
+    hdcm::Cm* cm = (hdcm::Cm*)malloc(sizeof(hdcm::Cm));
+    hdcm::Init(cm, res.buf + res.hdr, res.len - res.hdr, 255, 6);
+    hdcm::Perm(cm, (uint32_t*)res.starts, (uint32_t)nrun);
+    int64_t prevsym = -1;
+    ORDV3Vote V;
+    if (!V.Init(nrun, res.starts)) return -1;
+    int32_t* clus = (int32_t*)malloc(4 * (size_t)n + 4);
+    int32_t n_seen = 0;
+    for (int32_t t = 0; t < n; ++t) {
+      V.Score(t, fa + fo[t], fo[t + 1] - fo[t], post, poff, idf, clus, n_seen);
+      V.Recent(t, clus);
+      int64_t sym = OrdSym(cm, V,
+                           0,
+                           n_seen, prevsym, (int)(fo[t + 1] - fo[t]));
+      prevsym = sym;
+      int32_t cl;
+      if (sym == 0) {
+        cl = n_seen++;
+        if (cl >= nrun) return -1;
+      } else if (sym < ORDV3_R_ESC) {
+        int64_t r = sym - 1;
+        if (r >= (int64_t)V.nt) return -1;
+        // rank r in the vote (score descending, cluster ascending: a total
+        // order, so the sorted list has the same element at r as any selection)
+        dict_derive::SortByScore((uint32_t*)V.cltouch, (uint32_t)V.nt, V.clscore);
+        cl = V.cltouch[r];
+      } else {
+        cl = (int32_t)(sym - ORDV3_R_ESC);
+        if (cl >= n_seen) return -1;
+      }
+      clus[t] = cl;
+      V.Commit(cl);
+    }
+    free(cm);
+    if (n_seen != nrun) return -1;
+    free(ex.fa); free(post); free(poff); free(idf);
+    free(V.clscore); free(V.clstamp);
+
+    // normal part in target order: cluster sequence (a permutation, checked
+    // in Init), inside dense id descending; cnt[c] = start of cluster c.
+    int32_t* cnt = (int32_t*)calloc((size_t)nrun + 1, 4);
+    for (int32_t t = 0; t < n; ++t) ++cnt[clus[t]];
+    int32_t acc = 0;
+    for (int32_t a = 0; a < nrun; ++a) {
+      const int32_t cs = res.starts[a], c = cnt[cs];
+      cnt[cs] = acc; acc += c;
+    }
+    int32_t* nrm = (int32_t*)malloc(4 * (size_t)n + 4);
+    for (int32_t t = n - 1; t >= 0; --t) nrm[cnt[clus[t]]++] = uni[t];
+    free(cnt); free(clus); free(uni);
+    uni = nrm;
   }
-  if ((int32_t)nrm.size() != n) return false;
 
   // assemble with n_split: norm[0..s) | 1 | 2 | norm[s..) | 3 | 4 | 5.
   // n_split == 0 (or >= n) = schema v2 behavior: norm | 1 | 2 | 3 | 4 | 5.
   int64_t sp = res.n_split;
-  if (sp < 0 || sp > (int64_t)n) return false;
+  if (sp < 0 || sp > (int64_t)n) return -1;
   const bool split = (sp > 0 && sp < (int64_t)n);
-  order->clear();
-  order->reserve(klass.size());
-  std::sort(kal.begin(), kal.end());
+  int no = 0;
+  dict_derive::SortU64(kal, nkal);
   const int64_t q = res.n_kal;
-  if (q < 0 || q > (int64_t)n || klass.size() > 0x40000) return false;
+  if (q < 0 || q > (int64_t)n || nkl > 0x40000) return -1;
   for (int64_t i = 0; i <= (int64_t)n; ++i) {
     if (i == q)
-      for (uint64_t e : kal) order->push_back((int)(e & 0x3FFFF));
+      for (size_t j = 0; j < nkal; ++j) order[no++] = (int)(kal[j] & 0x3FFFF);
     if (split && i == sp)
       for (int k = 1; k <= 2; ++k)
-        for (int32_t u = (int32_t)klass.size() - 1; u >= 0; --u)
-          if (klass[u] == k) order->push_back(u);
-    if (i < (int64_t)n) order->push_back(nrm[(size_t)i]);
+        for (int32_t u = nkl - 1; u >= 0; --u)
+          if (klass[u] == k) order[no++] = u;
+    if (i < (int64_t)n) order[no++] = uni[i];
   }
   for (int k = split ? 3 : 1; k <= 5; ++k)
-    for (int32_t u = (int32_t)klass.size() - 1; u >= 0; --u)
-      if (klass[u] == k) order->push_back(u);
-  return true;
+    for (int32_t u = nkl - 1; u >= 0; --u)
+      if (klass[u] == k) order[no++] = u;
+  free(kal);
+  free(uni); free(klass); free(fo);
+  free(res.excl); free(res.corr); free(res.starts); free(res.buf);
+  return no;
 }
 
 }  // namespace ord

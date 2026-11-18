@@ -4,7 +4,7 @@
 # profile-guided optimisation and LTO, and lld does the code
 # generation.  A different major version produces a different binary.
 
-source date            2026-10-02T18:32:52Z
+source date            2026-10-27T22:19:35Z
 target                 linux-x86_64, x86-64-v3 (AVX2+FMA), single thread
 
 ## toolchain of the machine that generated this package
@@ -16,6 +16,8 @@ llvm-objcopy-18        llvm-objcopy, compatible with GNU objcopy
 llvm-strip-18          llvm-strip, compatible with GNU strip
 make                   GNU Make 4.3
 objcopy                GNU objcopy (GNU Binutils for Ubuntu) 2.42
+gcc                    gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+ld                     GNU ld (GNU Binutils for Ubuntu) 2.42
 
 kernel                 Linux 6.8.0-137-generic
 distribution           Ubuntu 24.04.4 LTS
@@ -23,7 +25,7 @@ distribution           Ubuntu 24.04.4 LTS
 ## submitted artefacts
 # Measured on the shipped files themselves; the same sums stand in the
 # result table of README.md.
-comp9 sha256           8b07d85f0a374b55688fd08d1a464222f766efbb5bfefc2bc94d6abb201133d7
-archive9 sha256        30eaf239168bd4efb4c57af09002b968308d7614d0cca619540e971fc38f4f18
-comp9 bytes            4000689
-archive9 bytes         91913343
+comp9 sha256           976bf2d309707ab555e0c92720da5508ff0e5e6b846fc7082234262b06767f82
+archive9 sha256        88dd7087404122d010261e6855afd88875d34dde1f0539377d3e832fc0f6b3fd
+comp9 bytes            4042564
+archive9 bytes         89346392

@@ -4,6 +4,7 @@
 """Loader probe over the WHOLE package, on the CPU
 
     TRAIN_TREE=<training tree> [PYLIB=<python packages>] loader_probe.py <package dir>
+                                                         [--soll-bewertet N]
 
 Runs the real trainer loader (arm `pkd` of the training tree assembled as in
 `training/README.md` section 1) over every micro-batch of the package in
@@ -12,6 +13,12 @@ row sums of the scored rows between 0.9 and 1.1.  It also counts scored prior
 rows with a float16 zero (underflow, information only).  The GPU libraries
 that `tft.config` imports through `pysrc.model` (fla, flash_attn, ...) are
 replaced by empty stand-ins; the loader path does not use them.
+
+The epoch must be complete: the trainer loader builds the micro-batches in a
+prefetch thread whose exception only ends the epoch early (`pysrc/data.py`
+`prefetch()`, end mark in `finally`), so the probe counts the micro-batches
+against `n_ordered_micro_batches()` of the loader and, with `--soll-bewertet`
+(the scored count of the Z table), the scored rows; a difference fails.
 (German names: Attrappe = stand-in, Wurzeln = top-level packages, lader =
 loader, bewertet = scored, nullzeilen = rows with a zero.)
 """
@@ -38,8 +45,14 @@ for k, v in (("ZCTX_ARM", "pkd"), ("PK_LAST_X0ROW", "1"), ("PK_REDIRMERGE", "1")
              ("TFT_MICRO_BATCH_TOKENS", "262144"), ("TFT_OPTIMIZER_BATCH_TOKENS", "1048576")):
     os.environ.setdefault(k, v)
 PKG = sys.argv[1]
+SOLL_BEW = int(sys.argv[sys.argv.index("--soll-bewertet") + 1]) if "--soll-bewertet" in sys.argv else None
 os.environ["PK_DUMP_DIR"] = PKG
 import torch, time
+# OpenMP teams of OMP_NUM_THREADS (4 at most), no inter-op pool; the
+# prefetch thread of the loader gets a team of its own, so build_package.sh
+# sets OMP_NUM_THREADS to half its thread limit and one BLAS thread
+torch.set_num_threads(min(4, int(os.environ.get("OMP_NUM_THREADS", "4"))))
+torch.set_num_interop_threads(1)
 from tft import config as tftcfg
 from zctx.zpdump import PaketDumpDataLoader
 lader = PaketDumpDataLoader(
@@ -50,7 +63,10 @@ lader = PaketDumpDataLoader(
     gradient_accumulation_steps=tftcfg.gradient_accumulation_steps(1),
     max_article_tokens=tftcfg.MICRO_BATCH_TOKENS, max_merge_tokens=None,
     device=torch.device("cpu"), rank=0, world_size=1)
-print("loader ready: %d documents, %d tokens, V %d" % (lader.n_articles, lader.n_tokens, lader.vocabulary_size), flush=True)
+SOLL_MB = lader.n_ordered_micro_batches()
+print("loader ready: %d documents, %d tokens, V %d, %d micro-batches" % (lader.n_articles, lader.n_tokens, lader.vocabulary_size, SOLL_MB), flush=True)
+if SOLL_BEW is None:
+    print("  --   without --soll-bewertet only the micro-batch count shows a shortened epoch", flush=True)
 V = lader.vocabulary_size
 nullzeilen = nullwerte = 0; nullbsp = None
 n = bew = pos = 0; smin, smax = 9.0, 0.0; spmax = 0; t0 = time.time()
@@ -69,5 +85,17 @@ for artikel, mb in lader.iter_ordered_micro_batches():
     if n % 200 == 0:
         print("  %d micro-batches, scored %d, %.0f s" % (n, bew, time.time() - t0), flush=True)
 print("scored prior rows with at least one 0 (float16 underflow): %d, zero values %d, first example (micro-batch, pos) %s" % (nullzeilen, nullwerte, nullbsp), flush=True)
-print("LOADER PROBE PASSED: %d micro-batches, scored %d, largest span %d, prior sums %.5f..%.5f, %.0f s"
-      % (n, bew, spmax, smin, smax, time.time() - t0), flush=True)
+# spmax: the longest segment of cumulative_sequence_lengths over all
+# micro-batches; that is often the filler segment at the end of a micro-batch
+# (micro-batch length minus the documents in it), not a document
+fehler = []
+if n != SOLL_MB:
+    fehler.append("%d micro-batches != %d of the loader: the epoch ended early (an exception in the prefetch thread "
+                  "of the trainer loader ends it without an error)" % (n, SOLL_MB))
+if SOLL_BEW is not None and bew != SOLL_BEW:
+    fehler.append("scored %d != %d of the Z table" % (bew, SOLL_BEW))
+if fehler:
+    print("LOADER PROBE FAILED: " + "; ".join(fehler), flush=True)
+    sys.exit(1)
+print("LOADER PROBE PASSED: %d micro-batches (= loader), scored %d%s, longest segment of a micro-batch %d (filler included), prior sums %.5f..%.5f, %.0f s"
+      % (n, bew, " (= Z table)" if SOLL_BEW is not None else "", spmax, smin, smax, time.time() - t0), flush=True)

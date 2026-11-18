@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Reader of the coder's row dump, record format v2.
 
-The contract is the record format written by the dump mode that
-trainmodes.patch adds to a copy of the entry's source (cmix_dump, cmix_priors).
+The contract is the record format written by the dump mode of the dump tool
+(cmix_dump of build_dump_tools.sh; README.md section 4 of this directory).
 Summary:
 
   record 0 (header, recognised by src == -2):

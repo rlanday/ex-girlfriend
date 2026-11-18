@@ -5,12 +5,13 @@
 #include "../attributes.h"
 #include <string>
 #include <array>
-#include <list>
 
 #include <stdlib.h>
 #include <string.h>
 
 namespace preprocessor {
+
+constexpr unsigned int kWrtSubMin = 7;
 
 class FastWordMap {
  public:
@@ -91,24 +92,25 @@ class FastWordMap {
   unsigned int mask_ = 0;
 };
 
+// The code word of dictionary rank r (bands 1-4 of
+// the code plan, r < 65.360), 1..3 bytes to o; returns their end.  The one
+// copy for the dictionary, the PPMd warm-up and the dictionary article.
+unsigned char* CodeWord(unsigned r, unsigned char* o);
+
 class Dictionary {
  public:
   Dictionary(FILE* dictionary, bool encode, bool decode);
   void Encode(FILE* input, int len, FILE* output);
-  void EncodeString(const std::string& input, std::string* output);
   unsigned char Decode(FILE* input);
 
  private:
   void EncodeWord(const std::string& word, int num_upper, bool next_lower,
       FILE* output);
-  void EncodeWordString(const std::string& word, int num_upper,
-      bool next_lower, std::string* output);
   bool EncodeSubstring(const std::string& word, FILE* output);
-  bool EncodeSubstringString(const std::string& word, std::string* output);
-  void AddToBuffer(FILE* input);
 
   FastWordMap word_map_;
-  std::list<unsigned char> output_buffer_;
+  const char* wort_ = nullptr;   // rest of the decoded word (in word_map_)
+  unsigned int rest_ = 0;
   bool decode_upper_ = false, decode_capital_ = false;
   unsigned int longest_word_ = 0;
 };

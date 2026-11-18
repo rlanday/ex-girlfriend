@@ -1,13 +1,16 @@
 #ifndef PPMD_PREWARM_H_
 #define PPMD_PREWARM_H_
+#include "meld.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "ppmd_meta.h"
+#include "preprocess/dictionary.h"   // kWrtSubMin, the partial-word rule of the WRT stage
 
 namespace ppmd_prewarm {
 
-// Word book: runs of a-z of ./.dict in file order, first 65.360 (code plan of
+// Word book: runs of a-z of ./.dict in file order, first 65,360 (code plan of
 // bands 1-4), FNV-1a table with linear probing (same as FastWordMap).
 struct Buch {
   const unsigned char* t;
@@ -26,33 +29,22 @@ struct Buch {
   }
 };
 
-static const unsigned kBandKap4 = 80 + 3840 + 40960 + 20480;   // 65.360
+static const unsigned kBandKap4 = 80 + 3840 + 40960 + 20480;   // 65,360
+// the number of derived endings the stems are cut by
+static const unsigned kKX = 16;
 
-// Code bytes of dictionary rank r (Dictionary::Dictionary, bands 1-4).
-static inline unsigned char* Code(unsigned r, unsigned char* o) {
-  if (r < 80) { *o++ = (unsigned char)(0x80 + r); return o; }
-  if (r < 3920) {
-    r -= 80; *o++ = (unsigned char)(0xD0 + r / 80);
-  } else if (r < 44880) {
-    r -= 3920; *o++ = (unsigned char)(0xF0 + r / 2560);
-    *o++ = (unsigned char)(0xD0 + (r / 80) % 32);
-  } else {
-    r -= 44880; *o++ = (unsigned char)(0xF0 + r / 1280);
-    *o++ = (unsigned char)(0xF0 + (r / 80) % 16);
-  }
-  *o++ = (unsigned char)(0x80 + r % 80);
-  return o;
-}
+// Code bytes of dictionary rank r: preprocessor::CodeWord (dictionary.cpp).
 
+// The stems of ./.dict (warm-up at the end of slot 1); caller frees the buffer.
 __attribute__((minsize, noinline))
 static unsigned char* Material(size_t* n_out) {
   FILE* f = fopen(".dict", "rb");
-  if (!f) { fprintf(stderr, "ppmd warm-up: .dict missing\n"); exit(1); }
+  if (!f) { msg_note(104); exit(1); }
   fseek(f, 0L, SEEK_END);
   const unsigned L = (unsigned)ftell(f);
   fseek(f, 0L, SEEK_SET);
   unsigned char* t = (unsigned char*)malloc(L + 1);
-  if (fread(t, 1, L, f) != L) { fprintf(stderr, "ppmd warm-up: .dict missing\n"); exit(1); }
+  if (fread(t, 1, L, f) != L) { msg_note(104); exit(1); }
   fclose(f);
   Buch b;
   b.t = t;
@@ -89,9 +81,9 @@ static unsigned char* Material(size_t* n_out) {
       ++cnt[c];
     }
   }
-  unsigned char xs[16][4];
-  unsigned xl[16], nx = 0;
-  for (; nx < (unsigned)(16); ++nx) {
+  unsigned char xs[kKX][4];
+  unsigned xl[kKX], nx = 0;
+  for (; nx < kKX; ++nx) {
     unsigned best = 0, bc = 0;
     for (unsigned c = 0; c < 27 * 27 * 27 * 27; ++c)
       if (cnt[c] > bc) { bc = cnt[c]; best = c; }
@@ -116,15 +108,11 @@ static unsigned char* Material(size_t* n_out) {
       seen[h] = (i + 1) | (sl << 17);
       *o++ = ' ';
       int r = -1;
-      unsigned a = 0, z = sl;                 // letters [0,a) code(r) [z,sl)
-      if (sl > 7) {
-        for (a = 1; sl - a >= 7 && (r = b.Find(p + a, sl - a)) < 0; ++a) {}
-        if (r < 0)
-          for (a = 0, z = sl - 1; z >= 7 && (r = b.Find(p, z)) < 0; --z) {}
-      }
-      if (r < 0) { a = sl; z = sl; }
-      memcpy(o, p, a); o += a;
-      if (r >= 0) o = Code((unsigned)r, o);
+      unsigned z = 0;                         // code(r) [z,sl)
+      if (sl > preprocessor::kWrtSubMin)
+        for (z = sl - 1; z >= preprocessor::kWrtSubMin && (r = b.Find(p, z)) < 0; --z) {}
+      if (r < 0) z = 0;
+      else o = preprocessor::CodeWord((unsigned)r, o);
       memcpy(o, p + z, sl - z); o += sl - z;
     }
   }
@@ -133,6 +121,19 @@ static unsigned char* Material(size_t* n_out) {
   return out;
 }
 
+__attribute__((minsize, noinline))
+static unsigned char* CodesMaterial(size_t* n_out) {
+  static_assert(54857 <= kBandKap4, "exceeds the bands CodeWord() knows");
+  unsigned char* out = (unsigned char*)malloc(4 * (size_t)(54857) + 16);
+  unsigned char* o = out;
+  for (unsigned r = 0; r < (unsigned)(54857); ++r) {
+    *o++ = ' ';
+    o = preprocessor::CodeWord(r, o);
+  }
+  *n_out = (size_t)(o - out);
+  return out;
 }
+
+}  // namespace ppmd_prewarm
 
 #endif

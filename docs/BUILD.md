@@ -1,120 +1,115 @@
-# Reproducing Ex-Girlfriend 1.0
+# Reproducing Ex-Girlfriend 2.0
 
-This document describes the original, verified FINAL artifact. Source files and
-constructor inputs have been preserved; the expected compressor is 3,995,122
-bytes, SHA-256 `952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67`.
+This document describes the verified 2.0 artifact. The expected compressor is
+4,057,131 bytes, SHA-256
+`8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a`.
 
-## Source and dependencies
+## Source
 
-Download the [v1.0 source tarball](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/ex-girlfriend-1.0-source.tar.gz)
-and [SHA256SUMS](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/SHA256SUMS)
-into the same directory, then verify and extract the source:
-
-```sh
-grep '  ex-girlfriend-1.0-source.tar.gz$' SHA256SUMS | sha256sum -c -
-tar -xzf ex-girlfriend-1.0-source.tar.gz
-cd ex-girlfriend-1.0
-```
-
-Alternatively, from a checkout of the release source, export the Git tree so
-the compiler works without repository metadata:
+Download the [v2.0 source tarball](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/ex-girlfriend-2.0-source.tar.gz)
+and [SHA256SUMS](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/SHA256SUMS)
+into the same directory, then verify and extract:
 
 ```sh
-mkdir ../ex-girlfriend-1.0
-git archive HEAD | tar -x -C ../ex-girlfriend-1.0
-cd ../ex-girlfriend-1.0
+grep '  ex-girlfriend-2.0-source.tar.gz$' SHA256SUMS | sha256sum -c -
+tar -xzf ex-girlfriend-2.0-source.tar.gz
+cd ex-girlfriend-2.0
 ```
 
-The target is Linux x86-64-v3 (AVX2 and FMA). The checked compiler family is
-Ubuntu clang/LLVM/lld 18.1.3-1ubuntu1 with GNU binutils 2.42. The inherited
-`install.sh` records package versions and Ubuntu snapshot `20260927T160000Z`.
-It installs packages and can fall back to different versions with warnings;
-successful installation alone does not establish byte-identical reconstruction.
-Use an Ubuntu 24.04 build environment for that package reference, and inspect
-the script before running it: this step installs system packages and needs
-network access plus root or sudo. From the extracted source directory:
+Or export the tagged tree from a clone, so the build sees no repository
+metadata:
+
+```sh
+git clone https://github.com/rlanday/ex-girlfriend.git
+mkdir ex-girlfriend-2.0
+git -C ex-girlfriend archive v2.0 | tar -x -C ex-girlfriend-2.0
+cd ex-girlfriend-2.0
+```
+
+## Dependencies
+
+The target is Linux x86-64-v3 (AVX2 and FMA). The checked toolchain is
+Ubuntu 24.04 with clang/LLVM/lld **18.1.3-1ubuntu1**, GCC **13.3.0**
+(`g++-13`, `libstdc++-13-dev`) and GNU binutils **2.42**. The inherited
+`install.sh` records package versions and an Ubuntu snapshot. It installs
+system packages, so it needs network access and root or sudo; read it before
+running it. It can fall back to other versions with a warning, and a
+successful installation alone does not make the build byte-identical.
 
 ```sh
 bash install.sh
 ```
 
-Read its package-version comparison and any fallback warnings. It does not
-force an already-installed newer package to match the reference. For an exact
-reconstruction, resolve version differences before building; the final checksum
-is the acceptance check. The dependency installer has not been independently
-tested in a pristine Ubuntu environment for this release.
+Required commands: `make`, `clang++-18`, `clang-18`, `ld.lld-18`,
+`llvm-profdata-18`, `llvm-strip-18`, `llvm-objcopy-18`, GNU `objcopy`, `gawk`,
+`python3`, `gcc` and `tar`, plus the LLVM profile runtime archive.
+`build.sh` checks them before it starts.
 
-Required commands include
-`make`, `clang++-18`, `clang-18`, `ld.lld-18`, `llvm-profdata-18`, `llvm-strip-18`,
-`llvm-objcopy-18`, GNU `objcopy`, `gawk`, `python3`, `gcc` and `tar`, plus the
-LLVM profile runtime archive.
-
-`environment.cmix-neif.txt` is upstream's environment record, including its
-original artifact hashes. Those hashes are not Ex-Girlfriend's hashes.
+**Pitfall: a second GCC installation.** clang picks the newest GCC directory
+under `/usr/lib/gcc/x86_64-linux-gnu/`. On our build host a
+`libgcc-14-dev` package had been installed without `libstdc++-14-dev`, so
+clang chose GCC 14 and failed with `fatal error: 'vector' file not found`.
+If that happens, remove the stray GCC 14 development packages, or make
+`clang-18` and `clang++-18` on `PATH` wrappers that pass
+`--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/13`. We used the wrapper for
+the release rebuild; it changes only where headers and libraries are found,
+and the final checksum below is the acceptance test.
 
 ## Construct the compressor
 
-Use a new output directory. `build.sh` clears `.build/` there, copies its source
-and runs the constructor with an empty environment and a fixed system PATH.
-It requires no network or root access once dependencies are installed.
-The matching tools must be available on its fixed PATH (normally `/usr/bin` or
-`/usr/local/bin`); exporting a custom toolchain PATH alone does not override it.
-The constructor runs native helper programs and unrestricted `make -j`, so
-use an executable filesystem and allow for parallel compiler memory use.
+Use a new output directory. `build.sh` copies the source into `.build/`
+there, runs the constructor under an empty environment with a fixed system
+`PATH`, and leaves only `comp9`. It needs no network or root access.
 
 ```sh
 mkdir ../ex-girlfriend-build
 cd ../ex-girlfriend-build
-bash ../ex-girlfriend-1.0/build.sh
+bash ../ex-girlfriend-2.0/build.sh
 printf '%s  %s\n' \
-  952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67 comp9 \
+  8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a comp9 \
   | sha256sum -c -
 ```
 
-The build includes native compilation, constructor helper runs for hint/order
-blocks, packing and full/cut self-extractor checks. It is not just compiling a
-single source file. The historical local reconstruction used the same pinned
-LLVM tools installed privately and placed first in PATH by a wrapper; the
-retained [build log](../verification/build.log) and
-[source-identity receipt](../verification/source_identity.json) document that
-scope. The runtime, constructor and asset files in this repository match that
-checked source tree byte for byte; the publication changes are documentation
-and evidence. This demonstrates local byte-for-byte reproduction, not a test
-of every distribution or compiler combination. A new build on another system
-must satisfy the compressor checksum. Do not treat a different hash as the
-verified release, even if compilation succeeds.
+Because the `PATH` inside the build is fixed, the tools must be in
+`/usr/bin` or `/usr/local/bin`; putting a private toolchain first on your own
+`PATH` does not reach the build. Our verification rebuild used a copy of
+`build.sh` with the pinned Ubuntu LLVM 18.1.3-1ubuntu1 tools placed first on
+that fixed `PATH`, and `make -j2` instead of `make -j` (the job count does not
+change the output). The constructor compiles the program, runs helper builds
+that code the article-order and dictionary-hint blocks, packs the executable
+and checks the cut decoder stub. Allow for parallel compiler memory use.
 
-The make target is named `prof_use`, but FINAL removes all `-fprofile-use`
-flags and keeps LTO. Retain `pgo_data/default.profdata`: its presence avoids the
-constructor's profiling branch. Keep the dictionary, hint source, article-order
-residual, weight container, encoder linker script, export map and packer source.
-Changing compiler flags, source line positions or math implementations can change
-the executable or coded stream. The fixed assets have their own manifest.
+The build uses no profile-guided optimization: every `-fprofile-use` flag is
+removed from the `makefile`, and LTO is kept. Keep `pgo_data/default.profdata`
+anyway; its presence skips the constructor's profiling branch. `src/port_cfg.h`
+sets `PORT_ENTRY 1`, which compiles the 2.0 recipe in as constants. Changing
+compiler flags, line positions or math implementations can change the
+executable or the coded stream. Do not treat a different hash as the verified
+release, even if the build succeeds.
 
 ## Full encode and fresh decode
 
-Obtain enwik9 independently. Its required SHA-256 is
-`159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc`
-and its size is exactly 1,000,000,000 bytes. Provide at least 25 GB of free
-working space, writable temporary storage and memory above the ~10 GiB process
-RSS measured on our host. PPM uses a sparse paging file, so disk availability
-and cache pressure matter independently of RSS.
+Obtain enwik9 independently (1,000,000,000 bytes, SHA-256
+`159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc`). Provide
+at least 32 GiB of RAM and 30 GB of free disk. Each direction took about 95
+hours on our machine.
 
 ```sh
-./comp9 -e /absolute/path/to/enwik9 archive9
+mkdir ../ex-girlfriend-encode && cd ../ex-girlfriend-encode
+cp ../ex-girlfriend-build/comp9 .
+ln -s /absolute/path/to/enwik9 enwik9
+./comp9                      # no arguments; writes archive9
 printf '%s  %s\n' \
-  a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c archive9 \
+  0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3 archive9 \
   | sha256sum -c -
 mkdir ../ex-girlfriend-decode
 cp archive9 ../ex-girlfriend-decode/
 cd ../ex-girlfriend-decode
 chmod +x archive9
-./archive9
+./archive9                   # writes enwik9_uncompressed
 cmp /absolute/path/to/enwik9 enwik9_uncompressed
-sha256sum enwik9_uncompressed
 ```
 
-Decoder startup extracts the embedded assets itself; do not prepopulate the
-fresh directory with weights or dictionaries. The artifact is CPU-only and
-does not need the training environment. The release verification used this
-no-argument SFX path and exact full-file comparison, not a shortened test.
+The decoder extracts its embedded assets itself; do not put weights or
+dictionaries in the decode directory. The release verification used exactly
+this no-argument path for both directions and a full-file comparison.

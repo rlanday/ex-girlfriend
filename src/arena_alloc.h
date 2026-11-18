@@ -1,6 +1,7 @@
 
 #ifndef ARENA_ALLOC_H_
 #define ARENA_ALLOC_H_
+#include "meld.h"
 
 #define ARENA_MALLOC(n) malloc(n)
 #define ARENA_FREE(p)   free(p)
@@ -40,7 +41,7 @@ struct Bump {
     n = (n + kPmd - 1) & ~(kPmd - 1);
     char* raw = (char*)mmap(nullptr, n + kPmd, PROT_READ | PROT_WRITE,
                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (raw == MAP_FAILED) { perror("arena mmap"); abort(); }
+    if (raw == MAP_FAILED) { msg_note(40); abort(); }
     char* base = (char*)(((size_t)raw + kPmd - 1) & ~(kPmd - 1));
     if (base > raw) munmap(raw, (size_t)(base - raw));
     size_t hinten = (size_t)(raw + n + kPmd - (base + n));
@@ -105,6 +106,6 @@ struct Row {
 };
 static_assert(sizeof(Row<float>) == 16, "row must be 16 B");
 
-}
+}  // namespace arena
 
 #endif

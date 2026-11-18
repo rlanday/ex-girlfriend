@@ -1,3 +1,4 @@
+#include "../meld.h"
 #include "direct.h"
 #include "../page_registry.h"
 
@@ -7,7 +8,7 @@
 static void* DirectMap(unsigned long long n) {
   void* p = mmap(nullptr, (size_t)n, PROT_READ | PROT_WRITE,
                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (p == MAP_FAILED) { perror("direct mmap"); abort(); }
+  if (p == MAP_FAILED) { msg_note(5); abort(); }
   return p;
 }
 Direct::Direct(const unsigned long long& byte_context,

@@ -6,6 +6,8 @@ namespace ppmd_meta {
 // last byte of the block; models/ppmd.cpp::ByteUpdate() reads it and
 // restarts the model at the next model byte.
 inline bool block_fertig = false;
+
+inline bool zeile_fertig = false;
 }
 
 #endif

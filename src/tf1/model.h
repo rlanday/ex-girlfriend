@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/model.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // fx2-cmix transformer: single-thread streaming inference (SPEC.md section 6)
 #pragma once
 
@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 
+#include "tf1_config.h"
 #include "tf1_paket.h"
 
 namespace fx2 {

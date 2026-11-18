@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "tf1_engine.h"   // separator sequence (SeparatorIndices/-Length)
+#include "tf1_prior0.h"   // the stamped prior0 table
 
 // Link context ("z3"): for each article, text around earlier links to its
 // title is fed to the transformer as a prefix behind the title.  The training
@@ -62,20 +63,32 @@ struct Window {
 // unclipped chain matches the training side exactly.
 constexpr int kIndexKeyTokens = 4;
 
-// Memory layout.  The three tables live in anonymous
-// mappings of their own, not in std::vector or malloc:
-//   * entries_/next_ grow by mremap (the pages move, nothing is copied).  A
-//     vector doubles by allocate-copy-free, so old and new buffer were resident
-//     at the same time: at 2^23 anchors (full enwik9: 10.7 M) that was +96 MiB,
-//     and the munmap of the old buffer put the spike into ru_maxrss.
-//   * head_ is unmapped BEFORE it is rebuilt one size up; it is derived from
-//     entries_ and carries nothing of its own.
-//   * load factor 2 (chains of about two links) halves head_ (-32 MiB at the
-//     end of enwik9).  The bucket count cannot change a result: Lookup() walks
-//     the whole chain, keeps the entries with the full 32-bit tag (same tag =
-//     same bucket under every mask) and returns them in insertion order.
-// Own mappings and not malloc+realloc: glibc may serve a large request from
-// free heap space below the brk top, and a realloc there copies again.
+// The mentions depend on the 32-bit fold of the key, (key >> 32) ^ key, not
+// only on the key: a fan-out lookup (BuildPrefixNow, needle of 2 or 3 tokens)
+// took an anchor once for every fan-out key with the same fold, and the needle
+// comparison keeps all of these copies (377 over enwik9).  The index
+// compares 24 bits of the fold; BuildPrefixNow checks the whole fold against
+// the stream (FoldOf), so the copies stay what they were.
+//
+// Memory layout: one 64-bit word per anchor and a fixed head table, both in
+// anonymous mappings of their own (not std::vector or malloc: glibc may serve
+// a large request from free heap below the brk top, and a realloc there
+// copies):
+//   * word = position (bits 0-29) | link (bits 30-53) | fifth token (bits
+//     54-61) | tag (bits 62-63).  The link is 1 + the index of the previous
+//     entry of the same bucket, 0 ends the chain.  Bucket = low 22 bits of the
+//     fold, tag = the next 2 bits.
+//   * the fifth token behind the link opener (the key holds four) rejects a
+//     candidate of a needle of five or more tokens without reading the stream:
+//     over enwik9 1.65 G candidates had the key of their needle, 1.39 G of
+//     them differed in the fifth token.  An anchor goes into the
+//     index when its fifth token is there.
+//   * entries_ grows by mremap (the pages move, nothing is copied; a vector
+//     would hold old and new buffer at the same time, +96 MiB in ru_maxrss).
+//   * head_ has a fixed 2^22 buckets (16 MiB): about two anchors per bucket
+//     at the end of enwik9 (9.9 M).  Zero = empty, so the fresh mapping needs
+//     no initialisation; pages nobody touched are not resident.
+// 8 B per anchor plus 16 MiB, against 12 B plus 32 MiB at the end of enwik9.
 class MentionIndex {
  public:
   MentionIndex() = default;
@@ -84,40 +97,36 @@ class MentionIndex {
   MentionIndex& operator=(const MentionIndex&) = delete;
   void Reserve(size_t n_anchors);
   // Record one mention position (position of the link opener).
-  // `key4` is the key of the four tokens behind it.
-  void Add(uint64_t key4, long long anchor);
-  // All candidates with a matching key, ascending by position.  Never in
-  // table order: the result must not depend on the table layout.
-  void Lookup(uint64_t key, std::vector<long long>* out) const;
+  // `key4` is the key of the four tokens behind it, `t5` the fifth token.
+  void Add(uint64_t key4, long long anchor, unsigned char t5 = 0);
+  // The entries with 24 bits of the fold of `key` (and with fifth token `t5`
+  // unless t5 < 0), ascending by position.  Never in table order: the result
+  // must not depend on the table layout.
+  void Lookup(uint64_t key, std::vector<long long>* out, int t5 = -1) const;
   size_t Size() const { return n_; }
-  size_t Buckets() const { return buckets_; }
+  size_t Buckets() const { return kBuckets; }
   // Approximate RAM demand in bytes (mapped size).
   size_t Bytes() const {
-    return cap_ * (sizeof(Entry) + sizeof(int)) + buckets_ * sizeof(int);
+    return cap_ * sizeof(uint64_t) + kBuckets * sizeof(uint32_t);
   }
 
  private:
-  // Compact and lossless: tag and position as 32 bits each.
-  //   * The tag is only a filter; every candidate is followed by the full
-  //     title comparison.  A 32-bit collision costs one extra discarded
-  //     candidate, not a different result.
-  //   * The coder stream is < 4 GiB, so the position fits in 32 bits; `Add()`
-  //     checks it.
-  // 12 B per anchor instead of 20 (plus head table).
-  struct Entry { uint32_t tag; uint32_t pos; };
-  static constexpr size_t kLoad = 2;   // entries per bucket before head_ grows
-  Entry* entries_ = nullptr;
-  int* next_ = nullptr;        // chain link
-  int* head_ = nullptr;        // bucket -> first entry, -1 = empty
+  static constexpr int kBucketBits = 22;
+  static constexpr size_t kBuckets = (size_t)1 << kBucketBits;
+  static constexpr int kPosBits = 30;    // the coder stream has ~0.5 G tokens
+  static constexpr int kLinkBits = 24;   // anchors: 9.9 M on enwik9
+  static constexpr int kT5 = kPosBits + kLinkBits;   // fifth token, then the tag
+  static_assert(kT5 + 8 + 2 == 64, "one index word: position, link, fifth token, tag");
+  uint64_t* entries_ = nullptr;
+  uint32_t* head_ = nullptr;   // bucket -> 1 + latest entry, 0 = empty
   size_t n_ = 0;               // entries in use
-  size_t cap_ = 0;             // capacity of entries_ and next_
-  size_t buckets_ = 0;         // size of head_, a power of two
-  size_t mask_ = 0;
-  void GrowEntries(size_t cap);
-  void Rebuild(size_t buckets);
+  size_t cap_ = 0;             // capacity of entries_
+  void Grow(size_t cap);
 };
 
 uint64_t KeyHash(const unsigned char* seq, int len);
+// the 32-bit fold of the key of four tokens
+inline uint32_t FoldOf(uint64_t key) { return (uint32_t)(key >> 32) ^ (uint32_t)key; }
 uint64_t KeyOf(const unsigned char* seq);             // length >= 4
 uint64_t KeyOfShort(const unsigned char* title3, unsigned char fourth);
 
@@ -131,16 +140,12 @@ int TitleLength(const Window& win, long long start, long long next_boundary);
 void ChunkForMention(const Window& win, long long m0, long long m1,
     const Params& p, long long limit, long long* out_a, long long* out_b);
 
-// Selection of an article's chunks (budget, overlap, order).
-// `mentions` are ascending positions of the link opener.
-// `get_chunk(m0, m1, limit, &a, &b)` yields the chunk per mention; the caller
-// provides the window needed for it.  Return value: number of chunks taken,
-// in selection order (most recent first);
-// -1 = the causality guard fired.
 template <class ChunkFn>
 int SelectChunks(const std::vector<long long>& mentions, int title_len,
     long long article_start, const Params& p, ChunkFn get_chunk,
-    long long* taken_a, long long* taken_b) {
+    long long* taken_a, long long* taken_b
+    , const unsigned char* kurz = nullptr
+    ) {
   const int sep_len = transformer::SeparatorLength();
   const long long room = (long long)p.budget - sep_len;
   if (room <= 0) return 0;
@@ -148,7 +153,8 @@ int SelectChunks(const std::vector<long long>& mentions, int title_len,
   // earlier mentions: those that end before the article starts
   long long n_earlier = 0;
   for (size_t i = 0; i < mentions.size(); ++i) {
-    if (mentions[i] + p.open_len + title_len <= article_start) ++n_earlier;
+    if (mentions[i] + p.open_len + title_len - (kurz ? kurz[i] : 0)
+        <= article_start) ++n_earlier;
     else break;                                    // sorted ascending
   }
   if (n_earlier == 0) return 0;
@@ -160,7 +166,8 @@ int SelectChunks(const std::vector<long long>& mentions, int title_len,
     const long long idx = n_earlier - 1 - k;
     if (idx < 0) break;
     const long long m0 = mentions[(size_t)idx];
-    const long long m1 = m0 + p.open_len + title_len;
+    const long long m1 = m0 + p.open_len + title_len
+        - (kurz ? kurz[(size_t)idx] : 0);
     long long a = 0, b = 0;
     get_chunk(m0, m1, article_start, &a, &b);
     if (b > article_start) return -1;              // causality guard
@@ -195,7 +202,81 @@ struct Stats {
   unsigned long long prefix_tokens_total = 0;
   unsigned long long chunks_total = 0;
   unsigned long long anchors = 0;
+  unsigned long long anchors_skipped[4] = {0, 0, 0, 0};   // anchors not indexed, by class of OhneTitel()
+  unsigned long long needles_lo = 0;
+  unsigned long long q_seiten = 0;             // pages in the page table
+  unsigned long long q_seiten_redirect = 0;    // of which redirect pages
+  unsigned long long q_seiten_ohne_titel = 0;  // first line empty or > 64 tokens
+  unsigned long long q_gruppen_redirect = 0;    // source groups that are a redirect page
+  unsigned long long q_gruppen_ohne_titel = 0;  // source groups without a title
+  unsigned long long q_gruppen = 0;            // source groups (pages per prefix)
+  unsigned long long q_gruppen_titel = 0;      // groups that got a title
+  unsigned long long q_gruppen_mehr = 0;       // groups with two or more chunks
+  unsigned long long q_titel_token = 0;        // tokens added ("<title>: ")
+  unsigned long long q_max_praefix = 0;        // longest prefix (tokens)
+  unsigned long long q_ueber_budget = 0;       // prefixes longer than the budget
+  unsigned long long q_hist[9] = {0};          // prefixes by number of source pages
+  // the other value, computed alongside (self-report only)
+  unsigned long long q_alt_chunks = 0, q_alt_token = 0, q_alt_titel_token = 0;
+  unsigned long long q_alt_seiten_weniger = 0;   // prefixes with fewer chunks
+  unsigned long long klein_articles = 0;   // pages with a lower-case mention
+  unsigned long long klein_mentions = 0;
+  unsigned long long k_leer = 0;           // chunks with nothing of their own
+  unsigned long long k_erweitert = 0;      // of which got neighbour lines
+  unsigned long long k_zeilen = 0;         // neighbour lines added
+  unsigned long long k_redir = 0;          // redirect lines left out
+  unsigned long long k_dub = 0;            // repeated chunks left out
+  unsigned long long k_kopf = 0;           // chunks in the head of the stream left out
 };
+
+constexpr int kKapMarke = transformer::kByteToIndex[0x40];
+static_assert(kKapMarke >= 0 && kKapMarke < 208,
+    "the capital marker 0x40 is not in the frozen byte set");
+
+template <class ChunkFn, class QuelleFn, class KostenFn>
+int SelectChunksQ(const std::vector<long long>& mentions, int title_len,
+    long long article_start, const Params& p, ChunkFn get_chunk,
+    long long* taken_a, long long* taken_b, const unsigned char* kurz,
+    QuelleFn quelle, KostenFn tkosten) {
+  const int sep_len = transformer::SeparatorLength();
+  const long long room = (long long)p.budget - sep_len;
+  if (room <= 0) return 0;
+  long long n_earlier = 0;
+  for (size_t i = 0; i < mentions.size(); ++i) {
+    if (mentions[i] + p.open_len + title_len - (kurz ? kurz[i] : 0)
+        <= article_start) ++n_earlier;
+    else break;                                    // sorted ascending
+  }
+  if (n_earlier == 0) return 0;
+  int n_taken = 0;
+  long long used = 0, q_letzt = -1;
+  const int cap = p.max_mentions < 64 ? p.max_mentions : 64;
+  for (int k = 0; k < cap; ++k) {
+    const long long idx = n_earlier - 1 - k;
+    if (idx < 0) break;
+    const long long m0 = mentions[(size_t)idx];
+    const long long m1 = m0 + p.open_len + title_len
+        - (kurz ? kurz[(size_t)idx] : 0);
+    long long a = 0, b = 0;
+    get_chunk(m0, m1, article_start, &a, &b);
+    if (b > article_start) return -1;              // causality guard
+    bool overlaps = false;
+    for (int t = 0; t < n_taken; ++t) {
+      if (a < taken_b[t] && taken_a[t] < b) { overlaps = true; break; }
+    }
+    if (overlaps) continue;
+    const long long qs = quelle(a);
+    const long long cost = (b - a) + (n_taken ? 2 : 0)
+        + (qs != q_letzt ? tkosten(qs) : 0);
+    if (used + cost > room) break;
+    taken_a[n_taken] = a;
+    taken_b[n_taken] = b;
+    ++n_taken;
+    used += cost;
+    q_letzt = qs;
+  }
+  return n_taken;
+}
 
 // ---- the coder side ------------------------------------------------------
 // `CoderZ3` runs the causal form during the run.  It sees every coded token
@@ -218,12 +299,14 @@ class CoderZ3 {
   bool TakePrefix(const unsigned char** toks, int* n);
   bool HasPrefix() const { return have_prefix_; }
 
-  // The supplied order-0 row (208 x float16) for the prefix positions.
-  const uint16_t* Prior0() const { return prior0_.data(); }
+  // The supplied order-0 row (208 x float16) for the prefix positions.  In
+  // the package form the stamped table is the only source: no copy.
+  const uint16_t* Prior0() const { return transformer::Prior0Stamped(); }
   bool Prior0Given() const { return prior0_given_; }
 
   void AddFed(unsigned long long n) { fed_ += n; }
   void Report() const;
+  void PageEnd(bool redirect);
 
  private:
   Params p_;
@@ -239,6 +322,7 @@ class CoderZ3 {
   bool have_prefix_ = false;
   std::vector<unsigned char> prefix_;
   std::vector<long long> cand_, ment_;
+  std::vector<unsigned char> kurz_;      // per mention: 1 = lower-case spelling
   std::vector<unsigned char> scratch_;   // window per mention
   std::vector<unsigned char> title_;
   std::vector<uint16_t> prior0_;
@@ -252,8 +336,26 @@ class CoderZ3 {
   void Flush();
   void ReadRange(long long a, long long b, unsigned char* dst);
   void BuildPrefixNow(int title_len);
+  std::vector<uint32_t> s_ab_;          // first token of the page
+  std::vector<unsigned char> s_tl_;     // title length, bit 7 = redirect page
+  long long s_lauf_ab_ = 0;             // first token of the running page
+  int s_lauf_tl_ = -1;
+  std::vector<uint32_t> s_zi_;
+  long long s_lauf_zi_ = -1;
+  // source page of every chunk taken; at most 64 chunks (taken_a/taken_b of
+  // BuildPrefixNow).  A field, not a vector
+  long long q_seite_[64];
+  long long Quelle(long long a) const;  // page that holds position a
+  int TitelKosten(long long s) const;   // tokens of "<title>: ", 0 = none
+  void QuelleTitel(long long s);        // append "<title>: " to prefix_
+  unsigned long long QuelleMehr(int n) const;   // groups of >= 2 chunks
+  void QuelleZaehlen(int n, const long long* a, const long long* b,
+      unsigned long long* gruppen, unsigned long long* titel_tok,
+      unsigned long long* chunk_tok) const;
+  int WaehleK(int title_len, long long* taken_a, long long* taken_b);
+  void NachbarnK(const Window& w, long long s, long long* a, long long* b);
 };
 
-}
+}  // namespace tf_z3
 
 #endif

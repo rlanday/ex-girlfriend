@@ -10,8 +10,7 @@ namespace preprocessor {
 
 typedef enum {DEFAULT, TEXT=7} Filetype;
 
-void Encode(FILE* in, FILE* out, unsigned long long n, const std::string&
-    temp_path, FILE* dictionary);
+void Encode(FILE* in, FILE* out, unsigned long long n, FILE* dictionary);
 
 void NoPreprocess(FILE* in, FILE* out, unsigned long long n);
 

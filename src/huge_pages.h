@@ -25,7 +25,9 @@ const unsigned long kPage = 4096UL;
 struct Merged {
   unsigned long a[256], b[256];
   unsigned char h[256];
-  unsigned int n = 0, built_for = ~0u;
+  // Zero at the start (.bss, no guarded initialisation): with built_for == 0
+  // an empty registry needs no build, any other one is built at first use.
+  unsigned int n, built_for;
 };
 inline const Merged& M() {
   static Merged m;
@@ -59,9 +61,9 @@ inline const Merged& M() {
   return m;
 }
 
-// One pass over the registry.  tag only labels the optional log line.
-inline void Collapse(const char* tag) {
-  static const unsigned long data_lo = pageregistry::DataStart();
+// One pass over the registry.
+inline void Collapse() {
+  const unsigned long data_lo = pageregistry::DataStart();
   const unsigned long heap_hi = (unsigned long)sbrk(0);
   const Merged& m = M();
   unsigned char vec[kPmd / kPage];
@@ -85,7 +87,6 @@ inline void Collapse(const char* tag) {
       (void)rc;
     }
   }
-  (void)tag;
   (void)heap_hi;
 }
 
@@ -100,20 +101,20 @@ inline void Tick(unsigned long long pos) {
       // Move to the next whole MiB mark BEYOND pos: if several marks lie between two
       // progress steps, ONE pass is made, not several.
       naechste = ((pos >> 20) + 1) << 20;
-      Collapse("anlauf");
+      Collapse();
     }
   }
   static unsigned long long next =
       (unsigned long long)16 << 20;
   if (pos >= next) {
     next = pos + ((unsigned long long)16 << 20);
-    Collapse("tick");
+    Collapse();
   }
 }
 
-}
+}  // namespace hugepage
 
-#define HUGEPAGE_COLLAPSE(tag) ::hugepage::Collapse(tag)
+#define HUGEPAGE_COLLAPSE(tag) ::hugepage::Collapse()   // tag: call site, for the reader
 #define HUGEPAGE_TICK(pos) ::hugepage::Tick(pos)
 
 #endif

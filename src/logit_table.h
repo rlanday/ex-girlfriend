@@ -14,6 +14,6 @@ inline unsigned EIndex(float x) {
   if (u >= (uint32_t)kESize) return (unsigned)kESize - 1u;
   return (unsigned)u;
 }
-}
+}  // namespace logit_table
 
 #endif

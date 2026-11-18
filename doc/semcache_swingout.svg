@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1087" width="960" height="1087" role="img" aria-labelledby="t d">
+<title id="t">SEMCACHE at one byte of the page Swingout</title>
+<desc id="d">SEMCACHE at stream byte 46,795,575 of the coder stream, on the page Swingout. The excerpt of the stream with the coded byte (trade), the top 3 of the transformer alone and of SEMCACHE alone, the cost of the byte for the transformer alone, SEMCACHE alone and the whole compressor, and the five strongest neighbours with their earlier place in the stream.</desc>
+<rect x="0.5" y="0.5" width="959" height="1086" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">SEMCACHE at one byte of the page Swingout</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">Stream byte 46,795,575 (9.34 % of the coder stream), in the article text. Values from a compression run of this</text>
+<text x="24" y="70" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">version with a probe that only reads; up to this point of the stream its coded output is identical byte for byte to</text>
+<text x="24" y="86" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">that in the submitted archive9.</text>
+<text x="24" y="116" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">The place in the stream</text>
+<rect x="24" y="124" width="912" height="56" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="607.7" y="134.5" width="36.5" height="15.5" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="36" y="146" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="848.7" lengthAdjust="spacing">&#8230; may stay in place while the follow travels around him or the lead and follow may trade places, by both moving forward on&#8230;</text>
+<text x="36" y="168" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">The byte coded here is the second of the two bytes of the word code of trade; the first is already coded.</text>
+<text x="24" y="210" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Transformer alone, top 3</text>
+<text x="24" y="226" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">its distribution of this byte</text>
+<text x="24" y="250" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">drive</text>
+<rect x="124" y="240" width="179.32" height="12" fill="#5598e7"/>
+<text x="309.322" y="250" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">82 %</text>
+<text x="24" y="272" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#008300" font-weight="600">trade</text>
+<rect x="124" y="262" width="10.76" height="12" fill="#5598e7"/>
+<text x="140.758" y="272" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">5 %</text>
+<text x="24" y="294" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">register</text>
+<rect x="124" y="284" width="8.8" height="12" fill="#5598e7"/>
+<text x="138.8" y="294" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">4 %</text>
+<text x="492" y="210" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">SEMCACHE alone, top 3</text>
+<text x="492" y="226" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">from 32 neighbours at 32 positions, highest cosine 0.972</text>
+<text x="492" y="250" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#008300" font-weight="600">trade</text>
+<rect x="592" y="240" width="175.08" height="12" fill="#0e7c86"/>
+<text x="773.076" y="250" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">80 %</text>
+<text x="492" y="272" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">drive</text>
+<rect x="592" y="262" width="34.34" height="12" fill="#0e7c86"/>
+<text x="632.342" y="272" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">16 %</text>
+<text x="492" y="294" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#52514e">market</text>
+<rect x="592" y="284" width="3.5" height="12" fill="#0e7c86"/>
+<text x="601.498" y="294" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">2 %</text>
+<rect x="24" y="310" width="12" height="12" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="42" y="320" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#008300">the true word</text>
+<rect x="147.2" y="310" width="12" height="12" fill="#f3f2ee" rx="2" stroke="#b5b4aa" stroke-width="1"/>
+<text x="165.2" y="320" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">another word</text>
+<rect x="24" y="338" width="3" height="34" fill="#52514e"/>
+<text x="36" y="350" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">The strongest neighbour stands in the same article, 3,273 rows of the transformer back. That is outside its attention window of</text>
+<text x="36" y="366" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">2,048 rows; the linear-attention layers keep a state over the whole article.</text>
+<text x="24" y="404" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Cost of the coded byte</tspan><tspan font-size="12" fill="#52514e" dx="10">in bits, lower is better</tspan></text>
+<text x="24" y="428" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">transformer alone</text>
+<rect x="170" y="417" width="261.3" height="14" fill="#5598e7"/>
+<text x="437.3" y="428" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">4.36 bit</text>
+<text x="24" y="450" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">SEMCACHE alone</text>
+<rect x="170" y="439" width="27.54" height="14" fill="#0e7c86"/>
+<text x="203.54" y="450" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">0.46 bit</text>
+<text x="24" y="472" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">whole compressor</text>
+<rect x="170" y="461" width="52.32" height="14" fill="#52514e"/>
+<text x="228.32" y="472" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">0.87 bit</text>
+<line x1="170" y1="486" x2="650" y2="486" stroke="#b5b4aa" stroke-width="1"/>
+<line x1="170" y1="486" x2="170" y2="490" stroke="#b5b4aa" stroke-width="1"/>
+<text x="170" y="502" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="middle">0</text>
+<line x1="290" y1="486" x2="290" y2="490" stroke="#b5b4aa" stroke-width="1"/>
+<text x="290" y="502" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="middle">2</text>
+<line x1="410" y1="486" x2="410" y2="490" stroke="#b5b4aa" stroke-width="1"/>
+<text x="410" y="502" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="middle">4</text>
+<line x1="530" y1="486" x2="530" y2="490" stroke="#b5b4aa" stroke-width="1"/>
+<text x="530" y="502" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="middle">6</text>
+<line x1="650" y1="486" x2="650" y2="490" stroke="#b5b4aa" stroke-width="1"/>
+<text x="650" y="502" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="middle">8 bit</text>
+<text x="24" y="524" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">The whole compressor mixes the transformer with all its other models (PPMd, match and context models), and BITLSTM corrects the</text>
+<text x="24" y="540" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">mix. SEMCACHE enters as an input of the mixers, as four inputs of BITLSTM and through the end stage, so the distance of the</text>
+<text x="24" y="556" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">whole compressor to the transformer alone comes from all models together and cannot be read as the gain of SEMCACHE. Of these</text>
+<text x="24" y="572" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">three paths only the end stage was measured on its own, with 0.97 bit in front of it and 0.82 bit behind it (-0.15 bit); the</text>
+<text x="24" y="588" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">top-1 stage behind it, which reads nothing of SEMCACHE, gives the 0.87 bit.</text>
+<text x="24" y="630" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">The five strongest neighbours and their earlier place in the stream</text>
+<circle cx="32" cy="652" r="8" fill="#0e7c86"/>
+<text x="32" y="656" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">1</text>
+<text x="48" y="656" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Swingout</tspan><tspan fill="#52514e">, same article, outside the attention window, 3,221 B back, cosine 0.972, weight 0.34</tspan></text>
+<text x="48" y="672" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#008300" font-weight="600">followed by trade, the true word</text>
+<rect x="48" y="680" width="888" height="24" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="574.5" y="684.5" width="36.5" height="15.5" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="58" y="696" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="627.9" lengthAdjust="spacing">&#8230; Middle:'' Partners can remain in closed position and continue to spin or trade sides for&#8230;</text>
+<circle cx="32" cy="722" r="8" fill="#0e7c86"/>
+<text x="32" y="726" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">2</text>
+<text x="48" y="726" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Circle (dance move)</tspan><tspan fill="#52514e">, other article, 46,361 B back, cosine 0.971, weight 0.32</tspan></text>
+<text x="48" y="742" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#008300" font-weight="600">followed by trade, the true word</text>
+<rect x="48" y="750" width="888" height="24" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="236.4" y="754.5" width="36.5" height="15.5" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="58" y="766" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="255.3" lengthAdjust="spacing">''Foot Sweeps:'' They can trade foot&#8230;</text>
+<circle cx="32" cy="792" r="8" fill="#0e7c86"/>
+<text x="32" y="796" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">3</text>
+<text x="48" y="796" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Side pass (dance move)</tspan><tspan fill="#52514e">, other article, 18,045 B back, cosine 0.952, weight 0.12</tspan></text>
+<text x="48" y="812" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#008300" font-weight="600">followed by Trade, the same code byte as the true word</text>
+<rect x="48" y="820" width="888" height="24" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="195" y="824.5" width="36.5" height="15.5" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="58" y="836" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="241.5" lengthAdjust="spacing">::''Foot sweep:''&#182;::Trade hands at&#8230;</text>
+<circle cx="32" cy="862" r="8" fill="#0e7c86"/>
+<text x="32" y="866" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">4</text>
+<text x="48" y="866" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Cam'ron</tspan><tspan fill="#52514e">, other article, 6.32 MB back, cosine 0.945, weight 0.09</tspan></text>
+<text x="48" y="882" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">followed by drive, another word</text>
+<rect x="48" y="890" width="888" height="24" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="609" y="894.5" width="36.5" height="15.5" fill="#f3f2ee" rx="2" stroke="#b5b4aa" stroke-width="1"/>
+<text x="58" y="906" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="669.3" lengthAdjust="spacing">&#8230; and once in his left as he was holding the steering wheel, but he was able to drive himself to&#8230;</text>
+<circle cx="32" cy="932" r="8" fill="#0e7c86"/>
+<text x="32" y="936" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">5</text>
+<text x="48" y="936" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b"><tspan font-weight="600">Savoy Ballroom</tspan><tspan fill="#52514e">, other article, 96,359 B back, cosine 0.914, weight 0.02</tspan></text>
+<text x="48" y="952" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#008300" font-weight="600">followed by trade, the true word</text>
+<rect x="48" y="960" width="888" height="24" fill="#ffffff" rx="4" stroke="#d9d8d1"/>
+<rect x="595.2" y="964.5" width="36.5" height="15.5" fill="#e3f2e3" rx="2" stroke="#008300" stroke-width="1"/>
+<text x="58" y="976" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="641.7" lengthAdjust="spacing">&#8230; band rested while the other band played. During a &quot;Battle&quot;, the bands would trade numbers,&#8230;</text>
+<text x="24" y="1006" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">The other neighbours carry the remaining 0.12 of the weight.</text>
+<text x="24" y="1032" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">Excerpts are text of the coder stream with the dictionary codes written out as words; &#182; marks a line feed. A candidate byte that completes a</text>
+<text x="24" y="1047" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">word code is shown as that word. Weight is the share of a neighbour in the total weight of all neighbours. The cost of SEMCACHE alone comes</text>
+<text x="24" y="1062" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">from its probability bit by bit, with a small smoothing in each bit, so it is a little higher than its share of the byte would give.</text>
+</svg>

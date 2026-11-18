@@ -9,7 +9,7 @@ UPDATE_LIMIT="3000"
 CFLAGS_DEFINES="-DSEED=$SEED -DUPDATE_LIMIT=$UPDATE_LIMIT"
 
 # The weight container that gets embedded as the fourth block.
-WEIGHTS_FILE="weights-poc8m_w2048_p15f_v3bf16_gestrichen_v4.c4"
+WEIGHTS_FILE="weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5"
 
 # ---------------------------------------------------------------------------
 # Packaging.  There are no options: the toolchain, the section stripping and
@@ -50,19 +50,51 @@ fi
 # `|| exit 1`: without it the script would continue after a failed make (for
 # example a stop by the section guard) and pack the binary of a previous run.
 make CC="$CXX_BIN" CFLAGS_DEFINES="$CFLAGS_DEFINES" prof_use -j || exit 1
+# Function order (cmstub only): the context-mixing packer codes
+# the image better when functions with similar code lie next to each other.
+# The order is computed from this first link - its stripped image after the
+# packer's address transform and its linker map (symorder.py, deterministic)
+# - and a second build links the functions in that order.  Same code, other
+# layout; 2.327 B in S on cmix-neif-1.0.
+if [[ "$PAK_PACKER" == "cmstub" && "1" == "1" ]]; then
+  PAK_STUB_DIR="./tools_src/packer"
+  cp -f cmix symorder.img
+  "$STRIP_BIN" --strip-all symorder.img
+  objcopy --remove-section=.comment \
+    --remove-section=.note.gnu.property \
+    --remove-section=.note.gnu.build-id \
+    --remove-section=.note.ABI-tag \
+    symorder.img
+  "$OBJCOPY_SS" --strip-sections symorder.img
+  gcc -O2 -w -o symorder_tool "$PAK_STUB_DIR/pack_tool.c" || exit 1
+  ./symorder_tool xform symorder.img symorder.x || exit 1
+  python3 "$PAK_STUB_DIR/symorder.py" symorder.x cmix.map > symbol_order.txt || exit 1
+  rm -f symorder.img symorder.x symorder_tool
+  make CC="$CXX_BIN" CFLAGS_DEFINES="$CFLAGS_DEFINES" prof_use -j \
+    LINK_ORDER="-Wl,--symbol-ordering-file=$PWD/symbol_order.txt -Wl,--no-warn-symbol-ordering" || exit 1
+fi
 # Drop non-runtime ELF metadata before packing. The binary is already linked with
 # -s; these sections are extra loader/comment notes and do not affect behavior.
 # Keep the image WITH section headers for the section guard, which runs in
 # the packer's build_packer.sh (after sstrip, objdump -d no longer works).
 cp -f cmix cmix.cutguard 2>/dev/null || true
+# The map of this link, kept next to the image: the helper build below links
+# again and overwrites cmix.map, so the guard could not be re-run later.
+cp -f cmix.map cmix.unpacked.map 2>/dev/null || true
 "$STRIP_BIN" --strip-all cmix || true
 # This must be GNU objcopy.  GNU objcopy and llvm-objcopy produce different
 # program headers (9 bytes) and therefore different binaries; the GNU result is
 # 64 B smaller once packed (128 B in S), and the release sha256 rests on it.
+# .eh_frame/.eh_frame_hdr: GNU objcopy zeroes them in place (same length,
+# 56 B of headers and content change).  The program has no exceptions and no
+# unwind tables of its own; without a frame table an exception from libstdc++
+# ends in terminate as it does today.
 objcopy --remove-section=.comment \
   --remove-section=.note.gnu.property \
   --remove-section=.note.gnu.build-id \
   --remove-section=.note.ABI-tag \
+  --remove-section=.eh_frame \
+  --remove-section=.eh_frame_hdr \
   cmix 2>/dev/null || true
 
 # sstrip: drop the section header table and .shstrtab.  llvm-objcopy
@@ -78,13 +110,12 @@ if [[ "$PAK_SSTRIP" == "1" ]]; then
   fi
 fi
 # Own self-extractor instead of UPX.  The stub unpacks the image into an
-# anonymous memory file and starts it with memfd_create + execveat
-# (fallback: a file in ./ or /tmp and execve).  The packed stream is cut
-# after the decompressor part (header B5JPAYLOAD_V1), so the decompressor
-# embedded in the archive carries no encoder-only code.  The coder is the
-# context-mixing packer of tools_src/packer; packing needs gcc for the host
-# coder; unpacking takes about 10 s and about 180 MB per start, freed before
-# the execveat.
+# anonymous memory file and starts it with memfd_create + execveat.  The coder
+# is the context-mixing packer of tools_src/packer; packing needs gcc for the
+# host coder; unpacking takes about 50 s and about 1.5 GiB per start on a Zen 2 core, all of it
+# released by the execveat.  Its packed stream is cut after the decompressor
+# part (header: six u32 at file offset 120 of the stub), so the decompressor
+# embedded in the archive carries no encoder-only code.
 PAK_STUB_DIR="./tools_src/packer"
 command -v gcc >/dev/null || { echo "PAK_PACKER=cmstub: gcc is missing (host coder)." >&2; exit 1; }
 if [[ ! -x "$PAK_STUB_DIR/build_packer.sh" ]]; then
@@ -136,27 +167,40 @@ cp ./cmix $DIR/cmix_orig
 pushd $DIR
 # The binary carries, in the dictionary slot, not the compressed dictionary
 # but the hint package (comp_hints); the -e path derives .dict from it plus
-# enwik9 and puts .dict.comp into the archive (src/runner.cpp,
-# src/preprocess/dict_derive.cpp).  The hint package belongs to the
-# dictionary: a different dictionary/english.dic needs a new one.
+# enwik9 (src/runner.cpp, src/preprocess/dict_derive.cpp); the decompressor
+# takes the dictionary from the first article of the stream.  The hint package
+# belongs to the dictionary: a different dictionary/english.dic needs a new one.
 B6_HINTS_FILE="${B6_HINTS_FILE:-$ROOT/dictionary/english.hints}"
 if [[ ! -s "$B6_HINTS_FILE" ]]; then
   echo "hint package '$B6_HINTS_FILE' missing." >&2
-  echo "see training/data/README.md for how it is produced" >&2
+  echo "see section 8 of training/README.md for how it is produced" >&2
+  exit 1
+fi
+# The hint package has the form v2 (four parts, each a varint length and its
+# bytes, nothing after them; src/preprocess/dict_derive.cpp).  A package of an
+# older form would be read as a different dictionary, so it stops the build.
+_hp=$(od -An -v -tu1 "$B6_HINTS_FILE" | awk '{ for (i = 1; i <= NF; i++) b[n++] = $i }
+  END { p = 0; k = 0
+        while (p < n) { v = 0; s = 1
+          do { c = b[p++]; v += (c % 128) * s; s *= 128 } while (c >= 128 && p < n)
+          p += v; k++ }
+        print (p == n) ? k : -1 }')
+if [[ "$_hp" != 4 ]]; then
+  echo "hint package '$B6_HINTS_FILE' is not of form v2 (parts: $_hp, expected 4)" >&2
   exit 1
 fi
 SELFEXTRACT_SRC="$B6_HINTS_FILE"
 SELFEXTRACT_BLOCK=comp_hints
 
-# Reuse the embedded dictionary/order streams by default. PPM mmap/RSS-only
-# changes do not alter compression behavior, and recompressing these payloads
-# costs time without changing the final self-extract contents. Set
-# FORCE_SELFEXTRACT_REBUILD=1 when the dictionary, order, or coder changes.
+# By default the embedded blocks are rebuilt only when they are missing.
+# Coding them again takes time and gives the same blocks as long as the
+# hint package, the article order and the build helper that codes them
+# stay the same.
 if [[ "0" == "1" || ! -s ./$SELFEXTRACT_BLOCK ]]; then
-# The two blocks are not an enwik9 coder stream: 20.5 % (comp_hints) and 7.8 %
-# (comp_order) of their bytes lie outside the stamped 208-value byte set, which
-# the 208-value mode would code at 12 to 14 bits each (+116 KB of S).  Hence the
-# full-alphabet helper; the coding of enwik9 and .dict.comp is not affected.
+# The inputs of the two blocks are coded data and no enwik9 coder stream;
+# about 18 % of their bytes lie outside the stamped 208-value byte set of the
+# coder of enwik9.  Hence the full-alphabet helper; the coding of enwik9
+# itself is not affected.
   build_aux_helper || { echo "error: the build helper does not compile - stopping" >&2; exit 1; }
   "$AUX_BIN" -c "$SELFEXTRACT_SRC" ./$SELFEXTRACT_BLOCK \
     || { echo "ERROR: cmix_aux -c (comp_hints) rc=$? - abort" >&2; exit 1; }
@@ -197,12 +241,10 @@ if [[ -n "${WEIGHTS_FILE:-}" ]]; then
   WEIGHTS_SIZE=$(wc -c < "$WEIGHTS_PATH")
 fi
 
-# creating a header with size of the above files
-if [[ -n "$WEIGHTS_PATH" ]]; then
-  ./cmix_orig -h $(wc -c < ./$SELFEXTRACT_BLOCK) $(wc -c < ./comp_order) 0 "$WEIGHTS_SIZE"
-else
-  ./cmix_orig -h $(wc -c < ./$SELFEXTRACT_BLOCK) $(wc -c < ./comp_order) 0
-fi
+# creating a header with the sizes of the above files: three little-endian
+# int32 (hint package, article order, weight container or 0)
+python3 -c 'import struct, sys; open("header.dat", "wb").write(struct.pack("<3i", *map(int, sys.argv[1:])))' \
+  "$(wc -c < ./$SELFEXTRACT_BLOCK)" "$(wc -c < ./comp_order)" "$WEIGHTS_SIZE"
 
 # merging the above files and setting permissions for the final executable file
 cat ./cmix_orig ./$SELFEXTRACT_BLOCK ./comp_order $WEIGHTS_PATH header.dat > ./cmix

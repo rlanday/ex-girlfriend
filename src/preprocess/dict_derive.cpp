@@ -1,4 +1,5 @@
 
+#include "../meld.h"
 #include "dict_derive.h"
 
 #include <cstdio>
@@ -6,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <malloc.h>
+#include "hd_cm.h"
 
 // Derives the word dictionary at run time from enwik9 plus the hint package:
 // count words, keep the most frequent candidates, apply the hint parts
@@ -21,8 +23,9 @@ const size_t kCountLimit = 0;       // 0 = count the whole stream
 const uint32_t kHashBits = 22;      // 4,194,304 slots for about 1.13 M words
 const uint32_t kHashMask = (1u << kHashBits) - 1;
 
-char* arena;                        // all words, NUL-separated
-size_t arena_len, arena_cap;
+// growing char buffer of NUL-separated words; a word is its offset
+struct Arena { char* p; size_t len, cap; };
+Arena ar;                           // all words
 uint32_t* slot;                     // hash -> entry index+1
 uint32_t* ent_off;                  // entry -> offset in arena
 uint32_t* ent_cnt;                  // entry -> frequency
@@ -32,7 +35,13 @@ const size_t kSnapBytes = 100000000ULL;
 uint32_t* ent_c100;
 int c100_on;
 
-inline const char* W(uint32_t off) { return arena + off; }
+uint32_t* ent_cap;
+uint32_t* ent_df;
+uint32_t* ent_lp;                   // last page that counted the word
+uint32_t g_page;                    // current page number of the count
+int g_cap;                          // token being counted is capitalized
+
+inline const char* W(uint32_t off) { return ar.p + off; }
 
 uint32_t Hash(const char* s, size_t n) {
   uint32_t h = 2166136261u;
@@ -40,15 +49,15 @@ uint32_t Hash(const char* s, size_t n) {
   return h;
 }
 
-uint32_t ArenaPut(const char* s, size_t n) {
-  if (arena_len + n + 1 > arena_cap) {
-    arena_cap = arena_cap * 2 + n + 1;
-    arena = (char*)realloc(arena, arena_cap);
+uint32_t ArenaPut(Arena* a, const char* s, size_t n) {
+  if (a->len + n + 1 > a->cap) {
+    a->cap = a->cap * 2 + n + 1;
+    a->p = (char*)realloc(a->p, a->cap);
   }
-  uint32_t off = (uint32_t)arena_len;
-  memcpy(arena + arena_len, s, n);
-  arena_len += n;
-  arena[arena_len++] = 0;
+  uint32_t off = (uint32_t)a->len;
+  memcpy(a->p + a->len, s, n);
+  a->len += n;
+  a->p[a->len++] = 0;
   return off;
 }
 
@@ -59,20 +68,23 @@ void BumpEx(const char* s, size_t n, int full) {
   for (;;) {
     uint32_t e = slot[h];
     if (!e) {
-      uint32_t off = ArenaPut(s, n);
+      uint32_t off = ArenaPut(&ar, s, n);
       ent_off[n_ent] = off;
-      ent_cnt[n_ent] = full ? 1u : 0u;
-      ent_c100[n_ent] = c100_on ? 1u : 0u;
-      slot[h] = ++n_ent;
-      return;
+      ent_cnt[n_ent] = 0;
+      ent_c100[n_ent] = 0;
+      ent_cap[n_ent] = 0; ent_df[n_ent] = 0; ent_lp[n_ent] = 0xffffffffu;
+      e = slot[h] = ++n_ent;
+    } else {
+      const char* w = W(ent_off[e - 1]);
+      if (strlen(w) != n || memcmp(w, s, n)) { h = (h + 1) & kHashMask; continue; }
     }
-    const char* w = W(ent_off[e - 1]);
-    if (strlen(w) == n && !memcmp(w, s, n)) {
-      if (full) ++ent_cnt[e - 1];
-      if (c100_on) ++ent_c100[e - 1];
-      return;
+    if (full) {
+      ++ent_cnt[e - 1];
+      ent_cap[e - 1] += (uint32_t)g_cap;
+      if (ent_lp[e - 1] != g_page) { ent_lp[e - 1] = g_page; ++ent_df[e - 1]; }
     }
-    h = (h + 1) & kHashMask;
+    if (c100_on) ++ent_c100[e - 1];
+    return;
   }
 }
 inline void Bump(const char* s, size_t n) { BumpEx(s, n, 1); }
@@ -96,7 +108,7 @@ uint32_t CountOf(const char* s, uint32_t* tab) {
 // step 1: counting with the WRT tokenization from Dictionary::Encode.
 void CountWords(const char* path) {
   FILE* f = fopen(path, "rb");
-  if (!f) { fprintf(stderr, "dict_derive: %s missing\n", path); exit(1); }
+  if (!f) { msg_stop(114); exit(1); }
   const size_t kBuf = 1 << 20;
   char* buf = (char*)malloc(kBuf);
   char word[80];
@@ -115,6 +127,13 @@ void CountWords(const char* path) {
         c100_on = 0;
       }
       int c = (unsigned char)buf[i];
+      // page count for the document frequency; the token flushed by this
+      // byte is capitalized if it had exactly one upper-case letter
+      { static const char kPg[] = "<page>";
+        static int pgs = 0;
+        if (c == kPg[pgs]) { if (++pgs == 6) { ++g_page; pgs = 0; } }
+        else pgs = (c == '<');
+        g_cap = (nu == 1); }
       if (c >= 'a' && c <= 'z') {
         if (nu > 1) { if (wl) Bump(word, wl); wl = nu = nl = 0; }
         ++nl;
@@ -137,6 +156,20 @@ void CountWords(const char* path) {
 
 int CmpOff(uint32_t a, uint32_t b) { return strcmp(W(a), W(b)); }
 bool OffLess(uint32_t a, uint32_t b) { return CmpOff(a, b) < 0; }
+
+const uint32_t* g_idx;
+ENC_ONLY bool RankOffLess(uint32_t a, uint32_t b) { return CmpOff(ent_off[g_idx[a]], ent_off[g_idx[b]]) < 0; }
+// words by count descending, then alphabetically
+ENC_ONLY bool CntLess(uint32_t a, uint32_t b) {
+  if (ent_cnt[a] != ent_cnt[b]) return ent_cnt[a] > ent_cnt[b];
+  return CmpOff(ent_off[a], ent_off[b]) < 0;
+}
+// a word of at most three letters as a number below 27^3
+inline uint32_t SKey(const char* w) {
+  uint32_t k = 0;
+  for (; *w; ++w) k = k * 27 + (uint32_t)(*w - 'a' + 1);
+  return k;
+}
 bool ScoreLess(uint32_t a, uint32_t b) {   // score descending, word ascending
   int64_t sa = (int64_t)(ent_cnt[a] - 2) * ((int64_t)strlen(W(ent_off[a])) - 3);
   int64_t sb = (int64_t)(ent_cnt[b] - 2) * ((int64_t)strlen(W(ent_off[b])) - 3);
@@ -155,49 +188,21 @@ bool RevLess(uint32_t a, uint32_t b) {
   return strlen(x) < strlen(y);
 }
 
-// A single sorter (quicksort with median-of-3 + insertion sort) instead of
-// several std::sort instances: all comparisons here are total orders on
-// pairwise distinct words, so the result is unambiguous.
+// One sorter for all index lists, the libc qsort: all comparisons here are
+// total orders on pairwise distinct words (or ids), so every sorting method
+// gives the same list.
 typedef bool (*LessFn)(uint32_t, uint32_t);
-
-void Sort(uint32_t* a, uint32_t n, LessFn less) {
-  struct { uint32_t lo, hi; } stk[64];
-  int sp = 0;
-  stk[sp].lo = 0; stk[sp].hi = n; ++sp;
-  while (sp) {
-    --sp;
-    uint32_t lo = stk[sp].lo, hi = stk[sp].hi;
-    while (hi - lo > 12) {
-      uint32_t mid = lo + (hi - lo) / 2;
-      if (less(a[mid], a[lo])) { uint32_t t = a[mid]; a[mid] = a[lo]; a[lo] = t; }
-      if (less(a[hi - 1], a[mid])) {
-        uint32_t t = a[hi - 1]; a[hi - 1] = a[mid]; a[mid] = t;
-        if (less(a[mid], a[lo])) { t = a[mid]; a[mid] = a[lo]; a[lo] = t; }
-      }
-      uint32_t piv = a[mid];
-      uint32_t i = lo, j = hi - 1;
-      for (;;) {
-        while (less(a[i], piv)) ++i;
-        while (less(piv, a[j])) --j;
-        if (i >= j) break;
-        uint32_t t = a[i]; a[i] = a[j]; a[j] = t;
-        ++i; --j;
-      }
-      if (j + 1 - lo < hi - (j + 1)) {
-        stk[sp].lo = j + 1; stk[sp].hi = hi; ++sp;
-        hi = j + 1;
-      } else {
-        stk[sp].lo = lo; stk[sp].hi = j + 1; ++sp;
-        lo = j + 1;
-      }
-    }
-    for (uint32_t i = lo + 1; i < hi; ++i) {
-      uint32_t v = a[i], j = i;
-      while (j > lo && less(v, a[j - 1])) { a[j] = a[j - 1]; --j; }
-      a[j] = v;
-    }
-  }
+LessFn g_less;
+int LessCmp(const void* a, const void* b) {
+  const uint32_t x = *(const uint32_t*)a, y = *(const uint32_t*)b;
+  return g_less(x, y) ? -1 : g_less(y, x);
 }
+void Sort(uint32_t* a, uint32_t n, LessFn less) {
+  g_less = less;
+  qsort(a, n, sizeof(uint32_t), LessCmp);
+}
+
+}  // namespace
 
 uint64_t ReadVarint(const uint8_t* p, size_t& pos) {
   uint64_t x = 0; int sh = 0;
@@ -208,6 +213,8 @@ uint64_t ReadVarint(const uint8_t* p, size_t& pos) {
     sh += 7;
   }
 }
+
+namespace {
 
 const int kNSeg = 9;
 const int kTopK = 256;              // strongest PPMI features per word
@@ -235,6 +242,8 @@ uint64_t ISqrt64(uint64_t n) {
   return x;
 }
 int ILog2i(uint32_t x) { int r = 0; while (x > 1) { x >>= 1; ++r; } return r; }
+
+}  // namespace
 
 // ascending quicksort on uint64 (in place, no second buffer: the pair list
 // is 700 MB and runs before the predictor)
@@ -272,23 +281,14 @@ void SortU64(uint64_t* a, size_t n) {
   }
 }
 
+namespace {
+
 // --- token table: all [A-Za-z]+ types (case folded) of the stream ----------
 const uint32_t kTBits = 22, kTMask = (1u << kTBits) - 1;
-char* t_ar; size_t t_arlen, t_arcap;
+Arena tar;
 uint32_t* t_slot; uint32_t* t_off; uint32_t* t_cnt; uint32_t* t_cid;
 uint32_t t_n;
 
-uint32_t TArenaPut(const char* s, size_t n) {
-  if (t_arlen + n + 1 > t_arcap) {
-    t_arcap = t_arcap * 2 + n + 1;
-    t_ar = (char*)realloc(t_ar, t_arcap);
-  }
-  uint32_t off = (uint32_t)t_arlen;
-  memcpy(t_ar + t_arlen, s, n);
-  t_arlen += n;
-  t_ar[t_arlen++] = 0;
-  return off;
-}
 // returns the entry index; add==0 -> 0xffffffff if unknown
 uint32_t TFind(const char* s, size_t n, int add) {
   uint32_t h = Hash(s, n) & kTMask;
@@ -296,17 +296,17 @@ uint32_t TFind(const char* s, size_t n, int add) {
     uint32_t e = t_slot[h];
     if (!e) {
       if (!add) return 0xffffffffu;
-      uint32_t off = TArenaPut(s, n);
+      uint32_t off = ArenaPut(&tar, s, n);
       t_off[t_n] = off; t_cnt[t_n] = 0; t_cid[t_n] = 0xffffffffu;
       t_slot[h] = ++t_n;
       return t_n - 1;
     }
-    const char* w = t_ar + t_off[e - 1];
+    const char* w = tar.p + t_off[e - 1];
     if (strlen(w) == n && !memcmp(w, s, n)) return e - 1;
     h = (h + 1) & kTMask;
   }
 }
-bool TOffLess(uint32_t a, uint32_t b) { return strcmp(t_ar + t_off[a], t_ar + t_off[b]) < 0; }
+bool TOffLess(uint32_t a, uint32_t b) { return strcmp(tar.p + t_off[a], tar.p + t_off[b]) < 0; }
 
 // --- word table of bands 3+4 (alphabetically indexed) ----------------------
 const uint32_t kWBits = 18, kWMask = (1u << kWBits) - 1;
@@ -358,6 +358,16 @@ bool CluLess(uint32_t a, uint32_t b) {
   if (v_score[a] != v_score[b]) return v_score[a] > v_score[b];
   return a < b;
 }
+
+}  // namespace
+
+void SortByScore(uint32_t* a, uint32_t n, const int64_t* score) {
+  v_score = (int64_t*)score;
+  Sort(a, n, CluLess);
+}
+
+namespace {
+
 // processing order: whole stream descending, ties by word ascending
 uint32_t* o_cnt; uint32_t* o_off;
 bool OrdLess(uint32_t a, uint32_t b) {
@@ -368,6 +378,15 @@ bool OrdLess(uint32_t a, uint32_t b) {
 // features per word (case/frequency/DF/first occurrence), from enwik9
 int32_t *f_cb, *f_fb, *f_db, *f_pb;
 
+// the token cur[0, l) in lower case into low (0-terminated); returns its length
+__attribute__((noinline)) unsigned Lower(const char* cur, unsigned l, char* low) {
+  unsigned n = l < kMaxTok ? l : kMaxTok - 1;
+  for (unsigned j = 0; j < n; ++j)
+    low[j] = (cur[j] >= 'A' && cur[j] <= 'Z') ? (char)(cur[j] + 32) : cur[j];
+  low[n] = 0;
+  return n;
+}
+
 // one pass: type frequencies + case/DF/first-occurrence statistics.
 // token rule = maximal [A-Za-z] run (the same rule as the hint builder).
 void ScanFeatures(const char* path, uint32_t n3) {
@@ -377,7 +396,7 @@ void ScanFeatures(const char* path, uint32_t n3) {
   int32_t* lastpage = (int32_t*)malloc(4ull * n3);
   for (uint32_t i = 0; i < n3; ++i) { fst[i] = -1; lastpage[i] = -1; }
   FILE* f = fopen(path, "rb");
-  if (!f) { fprintf(stderr, "dict_derive: %s missing\n", path); exit(1); }
+  if (!f) { msg_stop(114); exit(1); }
   const size_t kBuf = 1 << 22;
   char* buf = (char*)malloc(kBuf);
   char cur[kMaxTok], low[kMaxTok];
@@ -396,10 +415,7 @@ void ScanFeatures(const char* path, uint32_t n3) {
         if (!l) tokstart = pos;
         if (l < kMaxTok - 1) cur[l++] = (char)c;   // longest run in enwik9: 435
       } else if (l) {
-        unsigned n = l < kMaxTok ? l : kMaxTok - 1;
-        for (unsigned j = 0; j < n; ++j)
-          low[j] = (cur[j] >= 'A' && cur[j] <= 'Z') ? (char)(cur[j] + 32) : cur[j];
-        low[n] = 0;
+        unsigned n = Lower(cur, l, low);
         uint32_t te = TFind(low, n, 1);
         ++t_cnt[te];
         uint32_t k = WFind(low, n);
@@ -426,10 +442,7 @@ void ScanFeatures(const char* path, uint32_t n3) {
     }
   }
   if (l) {   // stream ends mid-token (not the case for enwik9)
-    unsigned n = l < kMaxTok ? l : kMaxTok - 1;
-    for (unsigned j = 0; j < n; ++j)
-      low[j] = (cur[j] >= 'A' && cur[j] <= 'Z') ? (char)(cur[j] + 32) : cur[j];
-    low[n] = 0;
+    unsigned n = Lower(cur, l, low);
     ++t_cnt[TFind(low, n, 1)];
   }
   free(buf);
@@ -449,70 +462,81 @@ void ScanFeatures(const char* path, uint32_t n3) {
   free(c0); free(c1); free(c2); free(c3); free(dfa); free(fst); free(lastpage);
 }
 
+// state of the co-occurrence scan: ring of the last 64 tokens (dictionary
+// word, context id), token count, pair count
+struct PairRing {
+  uint32_t ring[64], ringw[64];
+  int64_t p;
+  size_t np;
+  uint64_t* pairs;
+  uint32_t* used;
+};
+
+// the pairs of the token kWin + 1 places back with its window
+__attribute__((noinline)) void PairEmit(PairRing* z) {
+  int64_t cp = z->p - kWin - 1;
+  if (cp >= 0) {
+    uint32_t wc = z->ringw[cp & 63];
+    if (wc != 0xffffffffu && z->used[wc] < kOccCap) {
+      ++z->used[wc];
+      for (int d = -kWin; d <= kWin; ++d) {
+        if (!d) continue;
+        int64_t q = cp + d;
+        if (q < 0 || q >= z->p) continue;
+        uint32_t cc = z->ring[q & 63];
+        if (cc == 0xffffffffu) continue;
+        if (z->pairs) z->pairs[z->np] = ((uint64_t)wc << 32) | cc;
+        ++z->np;
+      }
+    }
+  }
+}
+
+// one token cur[0, l): into the ring, then PairEmit
+__attribute__((noinline)) void PairPush(PairRing* z, char* cur, unsigned l) {
+  unsigned n = l < kMaxTok ? l : kMaxTok - 1;
+  cur[n] = 0;
+  uint32_t iw = WFind(cur, n);
+  uint32_t te = TFind(cur, n, 0);
+  z->ringw[z->p & 63] = iw;
+  z->ring[z->p & 63] = (te != 0xffffffffu) ? t_cid[te] : 0xffffffffu;
+  ++z->p;
+  PairEmit(z);
+}
+
 // second pass: co-occurrence pairs (the same counting as the hint builder).
 // pairs == 0 -> count only.
 size_t ScanPairs(const char* path, uint32_t n3, uint64_t* pairs, uint32_t* used) {
   memset(used, 0, 4ull * n3);
-  uint32_t ring[64], ringw[64];
-  for (int i = 0; i < 64; ++i) { ring[i] = 0xffffffffu; ringw[i] = 0xffffffffu; }
-  int64_t p = 0;
-  size_t np = 0;
+  PairRing z;
+  for (int i = 0; i < 64; ++i) { z.ring[i] = 0xffffffffu; z.ringw[i] = 0xffffffffu; }
+  z.p = 0;
+  z.np = 0;
+  z.pairs = pairs;
+  z.used = used;
   FILE* f = fopen(path, "rb");
-  if (!f) { fprintf(stderr, "dict_derive: %s missing\n", path); exit(1); }
+  if (!f) { msg_stop(114); exit(1); }
   const size_t kBuf = 1 << 22;
   char* buf = (char*)malloc(kBuf);
   char cur[kMaxTok];
   unsigned l = 0;                     // always < kMaxTok
   size_t got;
-  // lambda-free, so that no STL instance is created
-#define HINT_EMIT()                                                        \
-  do {                                                                       \
-    int64_t cp = p - kWin - 1;                                               \
-    if (cp >= 0) {                                                           \
-      uint32_t wc = ringw[cp & 63];                                          \
-      if (wc != 0xffffffffu && used[wc] < kOccCap) {                         \
-        ++used[wc];                                                          \
-        for (int d = -kWin; d <= kWin; ++d) {                                \
-          if (!d) continue;                                                  \
-          int64_t q = cp + d;                                                \
-          if (q < 0 || q >= p) continue;                                     \
-          uint32_t cc = ring[q & 63];                                        \
-          if (cc == 0xffffffffu) continue;                                   \
-          if (pairs) pairs[np] = ((uint64_t)wc << 32) | cc;                  \
-          ++np;                                                              \
-        }                                                                    \
-      }                                                                      \
-    }                                                                        \
-  } while (0)
-#define HINT_PUSH()                                                        \
-  do {                                                                       \
-    unsigned n = l < kMaxTok ? l : kMaxTok - 1;                              \
-    cur[n] = 0;                                                              \
-    uint32_t iw = WFind(cur, n);                                             \
-    uint32_t te = TFind(cur, n, 0);                                          \
-    ringw[p & 63] = iw;                                                      \
-    ring[p & 63] = (te != 0xffffffffu) ? t_cid[te] : 0xffffffffu;            \
-    ++p;                                                                     \
-    HINT_EMIT();                                                           \
-  } while (0)
   while ((got = fread(buf, 1, kBuf, f)) > 0) {
     for (size_t i = 0; i < got; ++i) {
       int c = (unsigned char)buf[i];
       if (c >= 'A' && c <= 'Z') c += 32;
       if (c >= 'a' && c <= 'z') { if (l < kMaxTok - 1) cur[l++] = (char)c; }
-      else if (l) { HINT_PUSH(); l = 0; }
+      else if (l) { PairPush(&z, cur, l); l = 0; }
     }
   }
-  if (l) { HINT_PUSH(); l = 0; }
+  if (l) { PairPush(&z, cur, l); l = 0; }
   for (int k = 0; k <= kWin; ++k) {
-    ringw[p & 63] = 0xffffffffu; ring[p & 63] = 0xffffffffu; ++p;
-    HINT_EMIT();
+    z.ringw[z.p & 63] = 0xffffffffu; z.ring[z.p & 63] = 0xffffffffu; ++z.p;
+    PairEmit(&z);
   }
-#undef HINT_EMIT
-#undef HINT_PUSH
   free(buf);
   fclose(f);
-  return np;
+  return z.np;
 }
 
 // ---------------------------------------------------------------------------
@@ -521,7 +545,9 @@ size_t ScanPairs(const char* path, uint32_t n3, uint64_t* pairs, uint32_t* used)
 // ---------------------------------------------------------------------------
 bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
                 const uint8_t* head, const uint8_t* seg, const uint8_t* clu,
-                uint32_t* run_of, uint32_t* nruns_out) {
+                uint32_t* run_of, uint32_t* nruns_out
+                , hdcm::Cm* cm
+                ) {
   // --- head: first-occurrence number per dict run -> inversion -------------
   size_t q = 0;
   uint32_t nrun = (uint32_t)ReadVarint(head, q);
@@ -538,7 +564,7 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
   for (uint32_t i = 0; i < n3; ++i) { w_off[i] = sg3[i]; WInsert(i, sg3[i]); }
 
   // --- pass 1: type frequencies + word features ----------------------------
-  t_arcap = 1 << 22; t_ar = (char*)malloc(t_arcap); t_arlen = 0;
+  tar.cap = 1 << 22; tar.p = (char*)malloc(tar.cap); tar.len = 0;
   t_slot = (uint32_t*)calloc((size_t)1 << kTBits, 4);
   t_off = (uint32_t*)malloc(4ull << kTBits);
   t_cnt = (uint32_t*)malloc(4ull << kTBits);
@@ -679,7 +705,6 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
   uint8_t* placed = (uint8_t*)calloc(n3, 1);
   int32_t* dseg = (int32_t*)malloc(4ull * n3);
   uint32_t* dclu = (uint32_t*)malloc(4ull * n3);
-  size_t si = 0, ci = 0;
   uint32_t nopen = 0;
   uint64_t ka[12], kb[12];
   int wt[12];
@@ -708,8 +733,24 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
       while (b2 >= 0 && sc[ordS[b2]] < sc[t3]) { ordS[b2 + 1] = ordS[b2]; --b2; }
       ordS[b2 + 1] = t3;
     }
-    if (seg[si] >= kNSeg) return false;
-    int ds = ordS[seg[si++]];
+    int segsym;
+    { using namespace hdcm;
+      int nz = 0;
+      for (int j = 0; j < kNSeg; ++j) nz += sc[j] != 0;
+      const int64_t s1 = sc[ordS[0]];
+      const int r8 = R8(s1, sc[ordS[1]]), top = ordS[0], sec = ordS[1];
+      cm->lim = 60; cm->lr = 20;
+      const int ys = 0;
+      segsym = 0;
+      while (segsym < kNSeg - 1) {
+        Ctx(cm, 0, K(K(K(11, r8), top), segsym));
+        Ctx(cm, 1, K(K(K(K(12, Lg((uint64_t)s1, 40) / 2), nz < 4 ? nz : 4), sec), segsym));
+        Ctx(cm, 2, K(K(K(K(13, top), sec), r8 / 2), segsym));
+        if (!Bit(cm, ys > segsym, 1 + segsym)) break;
+        ++segsym;
+      }
+      cm->lim = 255; cm->lr = 6; }
+    int ds = ordS[segsym];
     dseg[w] = ds;
     for (int k = 0; k < nk; ++k) SegSlot(ka[k], kb[k])[ds]++;
     // vote
@@ -736,10 +777,24 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
       v_score[touch[k]] = (v_score[touch[k]] * 64) / (fill[touch[k]] + kNormK);
     Sort(touch, nt, CluLess);
     uint32_t cl;
-    uint8_t sym = clu[ci++];
-    if (sym == 253) cl = nopen++;
-    else if (sym == 254) cl = (uint32_t)ReadVarint(clu, ci);
-    else { if (sym >= nt) return false; cl = touch[sym]; }
+    { using namespace hdcm;
+      int ys = 0;
+      const uint32_t ye = 0;
+      const int64_t s1 = nt > 0 ? v_score[touch[0]] : 0;
+      const int r8 = R8(s1, nt > 1 ? v_score[touch[1]] : 0);
+      const int r83 = R8(s1, nt > 2 ? v_score[touch[2]] : 0);
+      const int lnt = Lg(nt, 5), ls = Lg((uint64_t)s1, 40) / 3;
+      Ctx(cm, 0, K(K(21, r8), lnt)); Ctx(cm, 1, K(K(22, ls), lnt)); Ctx(cm, 2, K(23, Lg(nopen, 12)));
+      if (Bit(cm, ys == 253, 10)) cl = nopen++;
+      else {
+        Ctx(cm, 0, K(K(24, r8), lnt)); Ctx(cm, 1, K(25, ls));
+        if (Bit(cm, ys == 254, 11)) cl = (uint32_t)Bits(cm, (int)ye, Lg(nopen, 20), 8);
+        else {
+          ys = Rank(cm, ys, 24, 8, K(K(26, r8), lnt), K(K(27, r83), ls), K(K(28, ds), segsym), 12);
+          if (ys >= (int)nt) return false;
+          cl = touch[ys];
+        }
+      } }
     for (uint32_t k = 0; k < nt; ++k) v_score[touch[k]] = 0;
     if (cl >= nrun) return false;
     dclu[w] = cl; placed[w] = 1; ++fill[cl];
@@ -748,7 +803,7 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
   *nruns_out = nrun;
 
   free(dict_of_first); free(w_slot); free(w_off);
-  free(t_ar); free(t_slot); free(t_off); free(t_cnt); free(t_cid);
+  free(tar.p); free(t_slot); free(t_off); free(t_cnt); free(t_cid);
   free(f_cb); free(f_fb); free(f_db); free(f_pb);
   free(foff); free(ffe); free(fve); free(ioff); free(ivw); free(ivv);
   free(order); free(o_cnt); free(o_off);
@@ -763,7 +818,8 @@ bool DeriveRuns(const char* enwik9_path, const uint32_t* sg3, uint32_t n3,
 bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
                         const char* out_path) {
   // --- load hints ----------------------------------------------------------
-  const int kParts = 8;      // H1 H2 h3exc H4 H5 head seg clu
+  const int kParts = 4;      // v2: H2 h3exc head + coded stream
+  enum { PH2 = 0, PH3 = 1, PHEAD = 2, PCS = 3 };
   FILE* hf = fopen(hints_path, "rb");
   if (!hf) return false;
   fseek(hf, 0, SEEK_END);
@@ -779,14 +835,18 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
       part[i] = hints + pos; plen[i] = ln; pos += ln;
       if (pos > (size_t)hl) return false;
     } }
-  const uint32_t kTotal = (uint32_t)plen[6] + kG1 + kG2;   // seg: one byte per band-3 word
+  hdcm::Cm* cm = (hdcm::Cm*)malloc(sizeof(hdcm::Cm));
+  hdcm::Init(cm, (uint8_t*)part[PCS], plen[PCS], 255, 6);
 
   // --- steps 1+2: candidate set -------------------------------------------
-  arena_cap = 1 << 22; arena = (char*)malloc(arena_cap); arena_len = 0;
+  ar.cap = 1 << 22; ar.p = (char*)malloc(ar.cap); ar.len = 0;
   slot = (uint32_t*)calloc((size_t)1 << kHashBits, 4);
   ent_off = (uint32_t*)malloc(4u << kHashBits);
   ent_cnt = (uint32_t*)malloc(4u << kHashBits);
   ent_c100 = (uint32_t*)malloc(4u << kHashBits);
+  ent_cap = (uint32_t*)malloc(4u << kHashBits);
+  ent_df = (uint32_t*)malloc(4u << kHashBits);
+  ent_lp = (uint32_t*)malloc(4u << kHashBits);
   n_ent = 0;
   CountWords(enwik9_path);
   uint32_t* idx = (uint32_t*)malloc(4ull * n_ent);
@@ -795,44 +855,67 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
   Sort(idx, n_idx, ScoreLess);
   uint32_t nc = n_idx < (uint32_t)kCand ? n_idx : (uint32_t)kCand;
   uint32_t* cand = (uint32_t*)malloc(4ull * nc);        // offsets in arena
-  for (uint32_t i = 0; i < nc; ++i) cand[i] = ent_off[idx[i]];
-  Sort(cand, nc, OffLess);
-  free(idx);
+  // alphabetical order of the score ranks: ridx[i] = rank of candidate i
+  uint32_t* ridx = (uint32_t*)malloc(4ull * nc);
+  for (uint32_t i = 0; i < nc; ++i) ridx[i] = i;
+  g_idx = idx;
+  Sort(ridx, nc, RankOffLess);
+  for (uint32_t i = 0; i < nc; ++i) cand[i] = ent_off[idx[ridx[i]]];
 
   // --- H1: deletion list ---------------------------------------------------
   uint8_t* del = (uint8_t*)calloc(nc, 1);
-  { size_t q = 0;
-    uint64_t nd = ReadVarint(part[0], q), acc = 0;
-    for (uint64_t i = 0; i < nd; ++i) {
-      acc += ReadVarint(part[0], q);
-      if (acc >= nc) return false;
-      del[acc] = 1;
+  { using namespace hdcm;
+    int prev = 0;
+    for (uint32_t i = 0; i < nc; ++i) {
+      const uint32_t e = idx[ridx[i]], r = ridx[i] + 1, cnt = ent_cnt[e];
+      size_t len = strlen(W(cand[i]));
+      if (len > 14) len = 14;
+      const int lc = Lg(cnt, 24);
+      Ctx(cm, 0, K(1, r / 2000));
+      Ctx(cm, 1, K(K(2, lc), (uint32_t)len));
+      Ctx(cm, 2, K(K(K(3, r / 8000), (uint32_t)len), prev));
+      Ctx(cm, 3, K(K(4, Q(ent_c100[e], cnt, 8)), lc / 2));
+      Ctx(cm, 4, K(K(5, Q(ent_df[e], cnt, 8)), lc / 2));
+      Ctx(cm, 5, K(K(6, Q(ent_cap[e], cnt, 8)), (uint32_t)len));
+      prev = del[i] = (uint8_t)Bit(cm, del[i], 0);
     } }
+  free(ridx); free(idx);
+  free(ent_cap); free(ent_df); free(ent_lp);
   uint32_t* kept = (uint32_t*)malloc(4ull * nc);
   uint32_t nk = 0;
   for (uint32_t i = 0; i < nc; ++i) if (!del[i]) kept[nk++] = cand[i];
   free(del); free(cand);
+  const uint32_t kShort = 1024;
+  uint32_t* sp = (uint32_t*)malloc(4ull * n_ent);
+  uint32_t nsp = 0;
+  for (uint32_t e = 0; e < n_ent; ++e)
+    if (ent_cnt[e] >= 2 && strlen(W(ent_off[e])) <= 3) sp[nsp++] = e;
+  Sort(sp, nsp, CntLess);
+  if (nsp > kShort) nsp = kShort;
+  uint32_t n_ins;
+  { size_t q = 0; n_ins = (uint32_t)ReadVarint(part[PH2], q); }
+  uint32_t kTotal = nk + n_ins;                            // kept + inserted words
 
   // --- H2: insertions (merge into the final sorted list) -------------------
-  uint32_t* fin = (uint32_t*)malloc(4ull * kTotal);
+  uint32_t* fin = (uint32_t*)malloc(4ull * (kTotal + nsp));
   { size_t q = 0;
-    uint64_t na = ReadVarint(part[1], q), acc = 0;
+    uint64_t na = ReadVarint(part[PH2], q), acc = 0;
     uint32_t src = 0, dst = 0;
     char tmp[80];
     for (uint64_t i = 0; i < na; ++i) {
-      acc += ReadVarint(part[1], q);
+      acc += ReadVarint(part[PH2], q);
       while (dst < acc) {
         if (src >= nk) return false;
         fin[dst++] = kept[src++];
       }
-      uint32_t lcp = part[1][q++];
+      uint32_t lcp = part[PH2][q++];
       const char* prev = dst > 0 ? W(fin[dst - 1]) : "";
       if (lcp > strlen(prev) || lcp >= sizeof(tmp)) return false;
       memcpy(tmp, prev, lcp);
       size_t k = lcp;
-      while (part[1][q]) { if (k + 1 >= sizeof(tmp)) return false; tmp[k++] = (char)part[1][q++]; }
+      while (part[PH2][q]) { if (k + 1 >= sizeof(tmp)) return false; tmp[k++] = (char)part[PH2][q++]; }
       ++q;
-      fin[dst++] = ArenaPut(tmp, k);
+      fin[dst++] = ArenaPut(&ar, tmp, k);
     }
     while (dst < kTotal) {
       if (src >= nk) return false;
@@ -840,6 +923,21 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
     }
     if (src != nk) return false; }
   free(kept);
+  { using namespace hdcm;
+    uint8_t* inl = (uint8_t*)calloc(27 * 27 * 27, 1);
+    uint32_t nm = 0;
+    for (uint32_t i = 0; i < nsp; ++i) {
+      const char* w = W(ent_off[sp[i]]);
+      Ctx(cm, 0, K(7, Lg(i + 1, 12)));
+      Ctx(cm, 1, K(K(8, (uint32_t)strlen(w)), Lg(i + 1, 12) / 2));
+      if (Bit(cm, inl[SKey(w)], 2)) {
+        fin[kTotal + nm++] = ent_off[sp[i]];
+      }
+    }
+    kTotal += nm;
+    Sort(fin, kTotal, OffLess);
+    free(inl); }
+  free(sp);
 
   uint8_t* band = (uint8_t*)malloc(kTotal);
   { uint32_t* ord = (uint32_t*)malloc(4ull * kTotal);
@@ -854,11 +952,11 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
       band[ord[i]] = (uint8_t)(i < (uint32_t)kG1 ? 0 : (i < (uint32_t)(kG1 + kG2) ? 1 : 2));
     free(ord); free(o_cnt); free(o_off); }
   { size_t q = 0;
-    uint64_t ne = ReadVarint(part[2], q), acc = 0;
+    uint64_t ne = ReadVarint(part[PH3], q), acc = 0;
     for (uint64_t i = 0; i < ne; ++i) {
-      acc += ReadVarint(part[2], q);
+      acc += ReadVarint(part[PH3], q);
       if (acc >= kTotal) return false;
-      band[acc] = part[2][q++];
+      band[acc] = part[PH3][q++];
     } }
 
   // --- H3/H4/H5: groups and ranks -----------------------------------------
@@ -873,23 +971,22 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
     else sg3[n3++] = fin[i];
   }
   free(band);
-  if (n1 != kG1 || n2 != kG2 || plen[3] != kG1 || plen[4] != 2u * n2 ||
-      plen[6] != n3) return false;
+  if (n1 != kG1 || n2 != kG2) return false;
   uint32_t* g1 = (uint32_t*)malloc(4ull * kG1);
   uint32_t* g2 = (uint32_t*)malloc(4ull * kG2);
-  for (uint32_t i = 0; i < kG1; ++i) g1[part[3][i]] = sg1[i];
+  uint32_t* rk = (uint32_t*)malloc(4ull * kG2);
+  hdcm::Perm(cm, rk, kG1);
+  for (uint32_t i = 0; i < kG1; ++i) g1[rk[i]] = sg1[i];
   uint32_t* ord2 = (uint32_t*)malloc(4ull * n2);
   memcpy(ord2, sg2, 4ull * n2);
   Sort(ord2, n2, RevLess);
-  for (uint32_t i = 0; i < n2; ++i) {
-    uint32_t r = ((uint32_t)part[4][2 * i] << 8) | part[4][2 * i + 1];
-    if (r >= kG2) return false;
-    g2[r] = ord2[i];
-  }
+  hdcm::Perm(cm, rk, n2);
+  for (uint32_t i = 0; i < n2; ++i) g2[rk[i]] = ord2[i];
+  free(rk);
 
   uint32_t* rid32 = (uint32_t*)malloc(4ull * n3);
   uint32_t nruns = 0;
-  if (!DeriveRuns(enwik9_path, sg3, n3, part[5], part[6], part[7], rid32, &nruns))
+  if (!DeriveRuns(enwik9_path, sg3, n3, part[PHEAD], 0, 0, rid32, &nruns, cm))
     return false;
   uint32_t* start = (uint32_t*)calloc(nruns + 1, 4);
   for (uint32_t i = 0; i < n3; ++i) ++start[rid32[i] + 1];
@@ -900,6 +997,7 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
     for (uint32_t i = 0; i < n3; ++i) g3[fillp[rid32[i]]++] = sg3[i];
     free(fillp); }
   free(rid32);
+  free(cm);
 
   // --- output --------------------------------------------------------------
   FILE* of = fopen(out_path, "wb");
@@ -918,7 +1016,7 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
   free(out); free(g3); free(start);
   free(g1); free(g2); free(ord2); free(sg1); free(sg2); free(sg3);
   free(fin); free(hints);
-  free(arena); arena = NULL; arena_len = arena_cap = 0;
+  free(ar.p); ar.p = NULL; ar.len = ar.cap = 0;
   free(slot); slot = NULL;
   free(ent_off); ent_off = NULL;
   free(ent_cnt); ent_cnt = NULL;
@@ -929,6 +1027,116 @@ bool BuildDictFromInput(const char* enwik9_path, const char* hints_path,
 }
 
 }  // namespace dict_derive
+
+// The coder of hd_cm.h (hint package and order residual, both read in the
+// compression path only).  The squash table with its interpolation, stretch
+// as its inverse, the binary arithmetic coder and the counter rate
+// 1/(n + 1.5) follow lpaq1 by Matt Mahoney (GPL); entry 24 of the table is
+// 4024 here, 4022 in lpaq1.
+namespace hdcm {
+namespace {
+int16_t g_stretch[4096];
+ENC_ONLY int Squash(int d) {       // 4096 / (1 + e^(-d/256)), interpolated
+  static const int16_t T[33] = {1, 2, 3, 6, 10, 16, 27, 45, 73, 120, 194, 310, 488, 747, 1101, 1546,
+      2047, 2549, 2994, 3348, 3607, 3785, 3901, 3975, 4024, 4050, 4068, 4079, 4085, 4089, 4092, 4093, 4094};
+  if (d > 2047) d = 2047;
+  if (d < -2047) d = -2047;
+  int w = d & 127;
+  d = (d >> 7) + 16;
+  return (T[d] * (128 - w) + T[d + 1] * w + 64) >> 7;
+}
+}  // namespace
+
+ENC_ONLY void Init(Cm* c, uint8_t* buf, size_t len, int lim, int lr) {
+  int pi = 0;
+  for (int x = -2047; x <= 2047; ++x) {        // stretch = inverse of squash
+    int v = Squash(x);
+    for (int i = pi; i <= v; ++i) g_stretch[i] = (int16_t)x;
+    pi = v + 1;
+  }
+  for (int i = pi; i < 4096; ++i) g_stretch[i] = 2047;
+  for (int i = 0; i < (1 << kTabBits); ++i) c->t[i] = 0x80000000u;
+  for (int s = 0; s < 32; ++s)
+    for (int i = 0; i <= kIn; ++i) c->w[s][i] = 19661;      // 0.3
+  c->n = 0; c->lim = lim; c->lr = lr;
+  c->x1 = 0; c->x2 = 0xffffffffu; c->x = 0;
+  c->p = buf; c->end = buf + len;
+  for (int i = 0; i < 4; ++i) c->x = (c->x << 8) | (c->p < c->end ? *c->p++ : 0);
+}
+
+// one binary decision with probability pr/4096 of a 1 (arithmetic coder)
+ENC_ONLY int Code(Cm* c, int y, int pr) {
+  const uint32_t xmid = c->x1 + (uint32_t)(((uint64_t)(c->x2 - c->x1) * (uint32_t)pr) >> 12);
+  y = c->x <= xmid;
+  y ? (c->x2 = xmid) : (c->x1 = xmid + 1);
+  while (((c->x1 ^ c->x2) & 0xff000000u) == 0) {
+    c->x1 <<= 8; c->x2 = (c->x2 << 8) | 255;
+    c->x = (c->x << 8) | (c->p < c->end ? *c->p++ : 0);
+  }
+  return y;
+}
+
+ENC_ONLY void Perm(Cm* c, uint32_t* r, uint32_t n) {
+  uint8_t* used = (uint8_t*)calloc(n, 1);
+  for (uint32_t i = 0; i < n; ++i) {
+    uint32_t v = 0;                     // free values below r[i] (writer)
+    uint32_t lo = 0, hi = n - i;        // v uniform in [lo, hi): binary split
+    while (hi - lo > 1) {
+      const uint32_t mid = lo + (hi - lo) / 2;
+      if (Code(c, v >= mid, (int)(((uint64_t)(hi - mid) << 12) / (hi - lo)))) lo = mid;
+      else hi = mid;
+    }
+    uint32_t j = 0;
+    for (;; ++j) if (!used[j] && !lo--) break;
+    r[i] = j; used[j] = 1;
+  }
+  free(used);
+}
+
+ENC_ONLY int Bit(Cm* c, int y, int ws) {
+  const int n = c->n;
+  int64_t dot = 0;
+  for (int i = 0; i < n; ++i) {
+    c->st[i] = g_stretch[c->t[c->ix[i]] >> 20];
+    dot += (int64_t)c->st[i] * c->w[ws][i];
+  }
+  c->st[n] = 256;
+  dot += (int64_t)256 * c->w[ws][n];
+  int pr = Squash((int)(dot >> 16));
+  if (pr < 1) pr = 1;
+  if (pr > 4095) pr = 4095;
+  y = Code(c, y, pr);
+  const int err = ((y << 12) - pr) * c->lr;
+  for (int i = 0; i <= n; ++i) c->w[ws][i] += (c->st[i] * err) >> 14;
+  for (int i = 0; i < n; ++i) {               // counters: rate 1/(k + 1.5)
+    uint32_t& e = c->t[c->ix[i]];
+    int p = (int)(e >> 16), k = (int)(e & 255);
+    p += ((y ? 65535 : 0) - p) * 2 / (2 * k + 3);
+    if (k < c->lim) ++k;
+    e = ((uint32_t)p << 16) | (uint32_t)k;
+  }
+  c->n = 0;
+  return y;
+}
+
+ENC_ONLY int Bits(Cm* c, int v, int nb, uint32_t base) {
+  int r = 1;
+  for (int b = nb - 1; b >= 0; --b) {
+    Ctx(c, 0, K(base, (uint32_t)r));
+    r = r * 2 + Bit(c, (v >> b) & 1, 31);
+  }
+  return r - (1 << nb);
+}
+
+ENC_ONLY int Rank(Cm* c, int r, int kmax, int nbesc, uint32_t a, uint32_t b, uint32_t d, int ws0) {
+  for (int i = 0; i < kmax; ++i) {
+    Ctx(c, 0, K(a, i)); Ctx(c, 1, K(b, i)); Ctx(c, 2, K(d, i));
+    if (!Bit(c, r > i, ws0 + (i < 7 ? i : 7))) return i;
+  }
+  return kmax + Bits(c, r - kmax, nbesc, 7);
+}
+
+}  // namespace hdcm
 
 #ifdef DICT_DERIVE_MAIN
 #include <ctime>

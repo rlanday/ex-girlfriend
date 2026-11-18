@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define DM_BITCAST(d, s, n) __builtin_memcpy(d, s, n)
+
 namespace {
 
 const double kLn2Hi   = 6.93147180369123816490e-01;   /* 0x3FE62E42FEE00000 */
@@ -19,7 +21,7 @@ inline double Scale2(double x, int k) {           /* x * 2^k, |k| < 1000 */
   if (k < -1022) { x *= 2.2250738585072014e-308; k += 1022;
                    if (k < -1022) { x *= 2.2250738585072014e-308; k += 1022; if (k < -1022) k = -1022; } }
   uint64_t bits = (uint64_t)(k + 1023) << 52;
-  double p; memcpy(&p, &bits, 8);
+  double p; DM_BITCAST(&p, &bits, 8);
   return x * p;
 }
 
@@ -54,17 +56,17 @@ double LogCore(double x) {
   if (x != x) return x;
   if (x < 0.0) return (x - x) / 0.0;                 /* NaN */
   if (x == 0.0) return -1.0 / 0.0;
-  uint64_t b; memcpy(&b, &x, 8);
+  uint64_t b; DM_BITCAST(&b, &x, 8);
   int e = (int)((b >> 52) & 0x7FF);
   if (e == 0) {                                      /* subnormal */
-    x *= 9007199254740992.0; memcpy(&b, &x, 8);
+    x *= 9007199254740992.0; DM_BITCAST(&b, &x, 8);
     e = (int)((b >> 52) & 0x7FF) - 53;
   } else if (e == 0x7FF) {
     return x;                                        /* inf */
   }
   e -= 1023;
   b = (b & 0x000FFFFFFFFFFFFFULL) | 0x3FF0000000000000ULL;
-  double m; memcpy(&m, &b, 8);                       /* m in [1,2) */
+  double m; DM_BITCAST(&m, &b, 8);                 /* m in [1,2) */
   if (m > 1.4142135623730951) { m = m * 0.5; e += 1; }
   double s = (m - 1.0) / (m + 1.0);                  /* |s| <= 0.1716 */
   double z = s * s;

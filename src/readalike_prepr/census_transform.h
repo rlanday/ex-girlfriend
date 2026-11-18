@@ -1,6 +1,10 @@
 
 #ifndef CENSUS_TRANSFORM_H_
 #define CENSUS_TRANSFORM_H_
+#include "../meld.h"
+#include "../enc_only.h"
+#include "page_stream.h"
+#include "censblock_seite.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,8 +37,12 @@
 #define CEN_DK(c) (CEN_D(c) || (c) == ',')                 /* [\d,]  */
 #define CEN_DP(c) (CEN_D(c) || (c) == '.')                 /* [\d.]  */
 
-// Literal at position i? -> position after it, else -1.
-#define CEN_AT(h, n, i, lit) (((i) >= 0 && (i) + (long)(sizeof(lit) - 1) <= (n) && memcmp((h) + (i), (lit), sizeof(lit) - 1) == 0) ? (i) + (long)(sizeof(lit) - 1) : -1L)
+// Literal at position i? -> position after it, else -1.  One function instead
+// of the compare inlined at every site.
+__attribute__((noinline)) static long cen_at(const char* h, long n, long i, const char* lit, long len) {
+  return (i >= 0 && i + len <= n && memcmp(h + i, lit, (size_t)len) == 0) ? i + len : -1L;
+}
+#define CEN_AT(h, n, i, lit) cen_at((h), (n), (i), (lit), (long)(sizeof(lit) - 1))
 
 #define CEN_MAXG 10
 typedef struct { long s[CEN_MAXG], e[CEN_MAXG]; } CenM;
@@ -44,16 +52,7 @@ static void cen_clear(CenM* m) {
 }
 
 static long cen_find(const char* h, long n, long from, const char* nd, long m) {
-  if (from < 0) from = 0;
-  if (m <= 0) return from <= n ? from : -1;
-  while (from + m <= n) {
-    const char* p = (const char*)memchr(h + from, nd[0], (size_t)(n - from - m + 1));
-    if (!p) return -1;
-    long i = (long)(p - h);
-    if (memcmp(h + i, nd, (size_t)m) == 0) return i;
-    from = i + 1;
-  }
-  return -1;
+  return page_find(h, n, from, nd, m);
 }
 
 static long cen_run_dc(const char* p, long n, long i) { while (i < n && CEN_DC(p[i])) ++i; return i; }
@@ -98,6 +97,10 @@ static int cen_parse(const char* p, long n, double* out) {
   buf[m] = 0;
   *out = strtod(buf, 0);
   return 1;
+}
+// cen_parse of group k of a match (one call instead of the group bounds at every site)
+__attribute__((noinline)) static int cen_pg(const char* p, const CenM* m, int k, double* out) {
+  return cen_parse(p + m->s[k], m->e[k] - m->s[k], out);
 }
 
 // '%.<nd>f' % x  (glibc and CPython both round correctly, ties-to-even)
@@ -186,15 +189,20 @@ static double cen_dens_val(double pred, long res) { return pred + (double)res / 
 static double cen_dens_res(double v, double pred) { return (v - pred) * 10.0; }
 // M8: water = total - land
 static double cen_minus(double a, double b) { return a - b; }
-
+// M9B: housing density = population density * housing units / population.
+// Both densities rest on the same (high-precision, unstated) area, which
+// therefore cancels out.  Evaluation strictly left to right ((a*b)/c);
+// encoder and decoder call the same function, and the precise float_control
+// block of the file forbids the compiler to reorder.
 static double cen_wdens(double pdens, double hu, double pop) {
   return pdens * hu / pop;
 }
-
+// M6 with a residual: last percentage = (100 - sum of the others) + r/10^nd.
 static double cen_pct_val(double rest, long r, double scale) {
   return rest + (double)r / scale;
 }
-
+// Formula value with +-1 in the last (and only) decimal place: the same
+// back-calculation as M9 (cen_dens_val) with fixed r = +-1.
 static long cen_fmt1_pm(double base, long r, char* out) {
   return cen_fmt1(cen_dens_val(cen_pyround(base, 1), r), out);
 }
@@ -236,54 +244,16 @@ static int cen_is_census(const char* p, long n) {
   return 0;
 }
 
-// there (are|were) ([\d,]+) people, ([\d,]+) households, and ([\d,]+) families residing
-static int cen_m_phf(const char* p, long n, CenM* m) {
+// there (are|were) ([\d,]+) people, ([\d,]+) households, and ([\d,]+) families residing;
+// dec: the decoder variant ([\d,\x01]+) at group 2
+__attribute__((noinline)) static int cen_m_phf(const char* p, long n, CenM* m, int dec) {
   long q = 0;
   while ((q = cen_find(p, n, q, "there ", 6)) >= 0) {
     long i = q + 6;
     long j = CEN_AT(p, n, i, "are ");
     if (j < 0) j = CEN_AT(p, n, i, "were ");
     if (j >= 0) {
-      long a1 = j, b1 = cen_run_dk(p, n, a1);
-      if (b1 > a1) {
-        long k1 = CEN_AT(p, n, b1, " people, ");
-        if (k1 >= 0) {
-          long a2 = k1, b2 = cen_run_dk(p, n, a2);
-          if (b2 > a2) {
-            long k2 = CEN_AT(p, n, b2, " households, and ");
-            if (k2 >= 0) {
-              long a3 = k2, b3 = cen_run_dk(p, n, a3);
-              if (b3 > a3) {
-                long k3 = CEN_AT(p, n, b3, " families residing");
-                if (k3 >= 0) {
-                  cen_clear(m);
-                  m->s[0] = q;  m->e[0] = k3;
-                  m->s[1] = i;  m->e[1] = j - 1;
-                  m->s[2] = a1; m->e[2] = b1;
-                  m->s[3] = a2; m->e[3] = b2;
-                  m->s[4] = a3; m->e[4] = b3;
-                  return 1;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    ++q;
-  }
-  return 0;
-}
-
-// Decoder variant: ([\d,\x01]+) at group 2
-static int cen_m_phf_d(const char* p, long n, CenM* m) {
-  long q = 0;
-  while ((q = cen_find(p, n, q, "there ", 6)) >= 0) {
-    long i = q + 6;
-    long j = CEN_AT(p, n, i, "are ");
-    if (j < 0) j = CEN_AT(p, n, i, "were ");
-    if (j >= 0) {
-      long a1 = j, b1 = cen_run_dk1(p, n, a1);
+      long a1 = j, b1 = dec ? cen_run_dk1(p, n, a1) : cen_run_dk(p, n, a1);
       if (b1 > a1) {
         long k1 = CEN_AT(p, n, b1, " people, ");
         if (k1 >= 0) {
@@ -444,14 +414,11 @@ static int cen_m_dms(const char* p, long n, CenM* m, int marker) {
         else        be = cen_run_d(p, n, as);
         if (be <= as) { ok = 0; break; }
         g[gi][0] = as; g[gi][1] = be;
-        long k;
-        switch (gi) {
-          case 2: k = CEN_AT(p, n, be, "'"); break;
-          case 3: k = CEN_AT(p, n, be, "&quot; North, "); break;
-          case 4: k = CEN_AT(p, n, be, "&amp;deg;"); break;
-          case 5: k = CEN_AT(p, n, be, "'"); break;
-          default: k = CEN_AT(p, n, be, "&quot; West ("); break;
-        }
+        // the literal behind group gi (CEN_AT on a table instead of five inlined compares)
+        static const char kSep[] = "'\0&quot; North, \0&amp;deg;\0'\0&quot; West (";
+        static const unsigned char kOff[5] = {0, 2, 17, 27, 29}, kLen[5] = {1, 14, 9, 1, 13};
+        static_assert(sizeof(kSep) == 29 + 13 + 1, "kSep offsets");
+        const long k = cen_at(p, n, be, kSep + kOff[gi - 2], kLen[gi - 2]);
         if (k < 0) { ok = 0; break; }
         cur = k;
       }
@@ -815,19 +782,22 @@ static int cen_pm1_sub(const char* p, long ms, long me, double base) {
   return 0;
 }
 
+// fmt1(base) equals the text -> 0x01, else the +-1 ladder (cen_pm1_sub).
+static int cen_eq_pm1(const char* p, long ms, long me, double base) {
+  char b[64];
+  long bl = cen_fmt1(base, b);
+  if (bl == me - ms && memcmp(b, p + ms, (size_t)bl) == 0) {
+    char one[1]; one[0] = CEN_EQ;
+    return cen_try_sub(ms, me, one, 1);
+  }
+  return cen_pm1_sub(p, ms, me, base);
+}
+
 static int cen_wdens_sub(const char* p, long ms, long me,
                          double pdens, double hu, double pop) {
   if (!(pdens > 0.0) || !(hu > 0.0) || !(pop > 0.0)) return 0;
   if (me - ms < 2) return 0;
-  char b[64];
-  long bl = cen_fmt1(cen_wdens(pdens, hu, pop), b);
-  if (bl != me - ms || memcmp(b, p + ms, (size_t)bl) != 0) {
-    if (cen_pm1_sub(p, ms, me, cen_wdens(pdens, hu, pop))) {return 1; }
-    return 0;
-  }
-  char one[1]; one[0] = CEN_EQ;
-  if (!cen_try_sub(ms, me, one, 1)) return 0;
-  return 1;
+  return cen_eq_pm1(p, ms, me, cen_wdens(pdens, hu, pop));
 }
 
 // M9 helper function (dens_sub of the reference)
@@ -854,17 +824,52 @@ static void cen_dens_sub(const char* p, long ms, long me, double base) {
 
 static void cen_dens_ladder(const char* p, long ms, long me, double base) {
   if (!(base > 0.0)) return;
-  char b[80];
-  long bl = cen_fmt1(base, b);
-  if (bl == me - ms && memcmp(b, p + ms, (size_t)bl) == 0) {
-    if (me - ms >= 2) { char one[1]; one[0] = CEN_EQ; cen_try_sub(ms, me, one, 1); return; }
-  }
-  if (cen_pm1_sub(p, ms, me, base)) return;
+  if (cen_eq_pm1(p, ms, me, base)) return;
   cen_dens_sub(p, ms, me, base);
 }
 
+// M5: the six DMS values (d, m, s of latitude and longitude) from the decimal
+// coordinate of a match (encoder and decoder); 0 == not parseable.
+__attribute__((noinline)) static int cen_dms6(const char* p, const CenM* dms, long* v) {
+  double lat, lon;
+  if (!cen_pg(p, dms, 7, &lat) || !cen_pg(p, dms, 8, &lon)) return 0;
+  cen_dms(lat, &v[0], &v[1], &v[2]);
+  cen_dms(lon, &v[3], &v[4], &v[5]);
+  return 1;
+}
+
+// M6: the percentage fields of the race (key 0) or age block (key 1) into ps
+// (encoder and decoder, dec as in cen_m_pct); -1 == no block.
+__attribute__((noinline)) static long cen_pct_list(const char* p, long n, int key, CenM* mm,
+                                                   long (*ps)[2], int dec) {
+  int have = key ? cen_m_age(p, n, mm) : cen_m_racial(p, n, mm);
+  if (!have) return -1;
+  long cnt = 0, i = mm->s[1], endp = mm->e[1], ge;
+  while (cnt < 512) {
+    long gs = cen_m_pct(p, i, endp, &ge, dec);
+    if (gs < 0) break;
+    ps[cnt][0] = gs; ps[cnt][1] = ge; ++cnt;
+    i = ge + 1;                          /* continue past the '%' (non-overlapping) */
+  }
+  return cnt;
+}
+
+// The page with the sorted substitutions cen_subs spliced in, into cen_ob
+// (encoder and decoder); returns the length.
+__attribute__((noinline)) static long cen_splice(const char* p, long n) {
+  long o = 0, prev = 0;
+  for (long t = 0; t < cen_nsub; ++t) {
+    long s = cen_subs[t].s;
+    if (s > prev) { memcpy(cen_ob + o, p + prev, (size_t)(s - prev)); o += s - prev; }
+    memcpy(cen_ob + o, cen_subs[t].nb, (size_t)cen_subs[t].nl); o += cen_subs[t].nl;
+    prev = cen_subs[t].e;
+  }
+  if (n > prev) { memcpy(cen_ob + o, p + prev, (size_t)(n - prev)); o += n - prev; }
+  return o;
+}
+
 // Returns the transformed page in cen_ob (length *outn). 0 == unchanged.
-static int cen_encode_page(const char* p, long n, long* outn) {
+static ENC_ONLY int cen_encode_page(const char* p, long n, long* outn) {
   CenM phf, in_, hh, lw, kmmi, pd, ho, geo, mp, dms, rac, age;
   int has_phf, has_in, has_hh, has_lw, has_pd, has_ho, has_geo, has_mp, has_dms;
   char one[1]; one[0] = CEN_EQ;
@@ -874,7 +879,7 @@ static int cen_encode_page(const char* p, long n, long* outn) {
   memset(cen_used, 0, (size_t)n + 1);
   cen_nsub = 0;
 
-  has_phf = cen_m_phf(p, n, &phf);
+  has_phf = cen_m_phf(p, n, &phf, 0);
   has_in  = cen_m_intro(p, n, &in_);
   has_hh  = cen_m_hhrep(p, n, &hh, 0);
   has_lw  = cen_m_landw(p, n, &lw, 0);
@@ -900,15 +905,10 @@ static int cen_encode_page(const char* p, long n, long* outn) {
       }
     } else {
       double tk, lk, wk;
-      if (cen_parse(p + lw.s[1], lw.e[1] - lw.s[1], &tk) &&
-          cen_parse(p + lw.s[5], lw.e[5] - lw.s[5], &lk) &&
-          cen_parse(p + lw.s[8], lw.e[8] - lw.s[8], &wk)) {
-        char b[64];
-        long bl = cen_fmt1(cen_minus(tk, lk), b);
-        if (bl == lw.e[8] - lw.s[8] && memcmp(b, p + lw.s[8], (size_t)bl) == 0) {
-          cen_try_sub(lw.s[8], lw.e[8], one, 1);
-        }
-        else if (cen_pm1_sub(p, lw.s[8], lw.e[8], cen_minus(tk, lk))) {}
+      if (cen_pg(p, &lw, 1, &tk) &&
+          cen_pg(p, &lw, 5, &lk) &&
+          cen_pg(p, &lw, 8, &wk)) {
+        cen_eq_pm1(p, lw.s[8], lw.e[8], cen_minus(tk, lk));
       }
     }
   }
@@ -918,15 +918,9 @@ static int cen_encode_page(const char* p, long n, long* outn) {
     while ((st = cen_m_kmmi(p, n, pos, &kmmi, 0)) >= 0) {
       pos = kmmi.e[0];
       double km;
-      if (cen_parse(p + kmmi.s[1], kmmi.e[1] - kmmi.s[1], &km) &&
+      if (cen_pg(p, &kmmi, 1, &km) &&
           kmmi.e[4] == kmmi.s[4]) {                    /* group 4 != '/' */
-        char b[64];
-        long bl = cen_fmt1(cen_div(km, kCenKm2), b);
-        if (bl == kmmi.e[3] - kmmi.s[3] &&
-            memcmp(b, p + kmmi.s[3], (size_t)bl) == 0) {
-          cen_try_sub(kmmi.s[3], kmmi.e[3], one, 1);
-        }
-        else if (cen_pm1_sub(p, kmmi.s[3], kmmi.e[3], cen_div(km, kCenKm2))) {}
+        cen_eq_pm1(p, kmmi.s[3], kmmi.e[3], cen_div(km, kCenKm2));
       }
     }
   }
@@ -935,25 +929,25 @@ static int cen_encode_page(const char* p, long n, long* outn) {
     double land_km = 0, land_mi = 0, pop = 0, hu = 0;
     int hlk = 0, hlm = 0, hp = 0;
     if (has_lw) {
-      hlk = cen_parse(p + lw.s[5], lw.e[5] - lw.s[5], &land_km) && land_km != 0.0;
-      hlm = cen_parse(p + lw.s[6], lw.e[6] - lw.s[6], &land_mi) && land_mi != 0.0;
+      hlk = cen_pg(p, &lw, 5, &land_km) && land_km != 0.0;
+      hlm = cen_pg(p, &lw, 6, &land_mi) && land_mi != 0.0;
     }
-    if (has_phf) hp = cen_parse(p + phf.s[2], phf.e[2] - phf.s[2], &pop) && pop != 0.0;
+    if (has_phf) hp = cen_pg(p, &phf, 2, &pop) && pop != 0.0;
     has_pd = cen_m_popdens(p, n, &pd, 0);
     if (has_pd && hp && hlk) cen_dens_ladder(p, pd.s[2], pd.e[2], cen_div(pop, land_km));
     if (has_pd) {
       double dkl;
-      if (cen_parse(p + pd.s[2], pd.e[2] - pd.s[2], &dkl) && dkl > 0.0)
+      if (cen_pg(p, &pd, 2, &dkl) && dkl > 0.0)
         cen_dens_ladder(p, pd.s[3], pd.e[3], dkl * kCenKm2);
     }
     has_ho = cen_m_housing(p, n, &ho, 0);
-    if (has_ho && cen_parse(p + ho.s[1], ho.e[1] - ho.s[1], &hu) && hu != 0.0) {
+    if (has_ho && cen_pg(p, &ho, 1, &hu) && hu != 0.0) {
       int done2 = 0, done3 = 0;
       if (has_pd && hp) {
         double pdk, pdm;
-        if (cen_parse(p + pd.s[2], pd.e[2] - pd.s[2], &pdk))
+        if (cen_pg(p, &pd, 2, &pdk))
           done2 = cen_wdens_sub(p, ho.s[2], ho.e[2], pdk, hu, pop);
-        if (cen_parse(p + pd.s[3], pd.e[3] - pd.s[3], &pdm))
+        if (cen_pg(p, &pd, 3, &pdm))
           done3 = cen_wdens_sub(p, ho.s[3], ho.e[3], pdm, hu, pop);
       }
       if (hlk) {
@@ -976,12 +970,8 @@ static int cen_encode_page(const char* p, long n, long* outn) {
   /* M5: DMS from the decimal coordinate */
   has_dms = cen_m_dms(p, n, &dms, 0);
   if (has_dms) {
-    double lat, lon;
-    if (cen_parse(p + dms.s[7], dms.e[7] - dms.s[7], &lat) &&
-        cen_parse(p + dms.s[8], dms.e[8] - dms.s[8], &lon)) {
-      long v[6];
-      cen_dms(lat, &v[0], &v[1], &v[2]);
-      cen_dms(lon, &v[3], &v[4], &v[5]);
+    long v[6];
+    if (cen_dms6(p, &dms, v)) {
       int all = 1;
       char b[32];
       for (int gi = 0; gi < 6; ++gi) {
@@ -996,16 +986,8 @@ static int cen_encode_page(const char* p, long n, long* outn) {
   for (int key = 0; key < 2; ++key) {
     CenM* mm = key ? &age : &rac;
     int ndec = key ? 1 : 2;
-    int have = key ? cen_m_age(p, n, mm) : cen_m_racial(p, n, mm);
-    if (!have) continue;
     long ps[512][2];
-    long cnt = 0, i = mm->s[1], endp = mm->e[1], ge;
-    while (cnt < 512) {
-      long gs = cen_m_pct(p, i, endp, &ge, 0);
-      if (gs < 0) break;
-      ps[cnt][0] = gs; ps[cnt][1] = ge; ++cnt;
-      i = ge + 1;                          /* continue past the '%' (non-overlapping) */
-    }
+    long cnt = cen_pct_list(p, n, key, mm, ps, 0);   /* -1: no block */
     if (cnt < 4) continue;
     double vals[512];
     int bad = 0;
@@ -1042,15 +1024,7 @@ static int cen_encode_page(const char* p, long n, long* outn) {
   if (cen_nsub == 0) return 0;
   qsort(cen_subs, (size_t)cen_nsub, sizeof(CenSub), cen_subcmp);
   if (!cen_grow((void**)&cen_ob, &cen_obcap, n + 16, 1)) return 0;
-  long o = 0, prev = 0;
-  for (long t = 0; t < cen_nsub; ++t) {
-    long s = cen_subs[t].s;
-    if (s > prev) { memcpy(cen_ob + o, p + prev, (size_t)(s - prev)); o += s - prev; }
-    memcpy(cen_ob + o, cen_subs[t].nb, (size_t)cen_subs[t].nl); o += cen_subs[t].nl;
-    prev = cen_subs[t].e;
-  }
-  if (n > prev) { memcpy(cen_ob + o, p + prev, (size_t)(n - prev)); o += n - prev; }
-  *outn = o;
+  *outn = cen_splice(p, n);
   return 1;
 }
 
@@ -1071,6 +1045,26 @@ static int cen_rep(long s, long e, const char* nb, long nl) {
 
 static int cen_is_mark(const char* p, long s, long e, char mk) {
   return (e - s == 1 && p[s] == mk);
+}
+
+// One derived field [s,e): 0x01 -> fmt1(bq), 0x04/0x05 -> fmt1(bq) +-1 last
+// digit (both need okq), 0x03<r>; -> M9 residual on bd (needs okd).  A literal
+// field is parsed into *out when out is given.  Returns whether *out is set.
+static int cen_dfld(const char* p, long s, long e, int okq, double bq,
+                    int okd, double bd, double* out) {
+  char b[64];
+  long bl, r = 0;
+  if (e > s && p[s] == CEN_DENS) {
+    if (!okd) return 0;
+    bl = cen_fmt1(cen_dens_val(cen_pyround(bd, 1), strtol(p + s + 1, 0, 10)), b);
+  } else if (e - s == 1 && (p[s] == CEN_EQ || cen_pm1_of(p[s], &r))) {
+    if (!okq) return 0;
+    bl = r ? cen_fmt1_pm(bq, r, b) : cen_fmt1(bq, b);
+  } else {
+    return out ? cen_parse(p + s, e - s, out) : 0;
+  }
+  cen_rep(s, e, b, bl);
+  return out ? cen_parse(b, bl, out) : 0;
 }
 
 static int cen_decode_page(const char* p, long n, long* outn) {
@@ -1095,66 +1089,19 @@ static int cen_decode_page(const char* p, long n, long* outn) {
   /* M7/M8 + M1 inside landw */
   has_lw = cen_m_landw(p, n, &lw, 1);
   if (has_lw) {
-    long rpm;
-    h_tot = cen_parse(p + lw.s[1], lw.e[1] - lw.s[1], &tot_km);
-    if (cen_is_mark(p, lw.s[3], lw.e[3], CEN_EQ) && h_tot) {
-      bl = cen_fmt1(cen_div(tot_km, kCenKm2), b);
-      cen_rep(lw.s[3], lw.e[3], b, bl);
-    }
-    else if (lw.e[3] - lw.s[3] == 1 && cen_pm1_of(p[lw.s[3]], &rpm) && h_tot) {
-      bl = cen_fmt1_pm(cen_div(tot_km, kCenKm2), rpm, b);
-      cen_rep(lw.s[3], lw.e[3], b, bl);
-    }
+    h_tot = cen_pg(p, &lw, 1, &tot_km);
+    cen_dfld(p, lw.s[3], lw.e[3], h_tot, cen_div(tot_km, kCenKm2), 0, 0.0, 0);
     if (cen_is_mark(p, lw.s[5], lw.e[5], CEN_EQ)) {
       land_km = tot_km; h_lkm = h_tot;
       cen_rep(lw.s[5], lw.e[5], p + lw.s[1], lw.e[1] - lw.s[1]);
     } else {
-      h_lkm = cen_parse(p + lw.s[5], lw.e[5] - lw.s[5], &land_km);
+      h_lkm = cen_pg(p, &lw, 5, &land_km);
     }
-    if (cen_is_mark(p, lw.s[6], lw.e[6], CEN_EQ)) {
-      if (h_lkm) {
-        bl = cen_fmt1(cen_div(land_km, kCenKm2), b);
-        h_lmi = cen_parse(b, bl, &land_mi);
-        cen_rep(lw.s[6], lw.e[6], b, bl);
-      }
-    }
-    else if (lw.e[6] - lw.s[6] == 1 && cen_pm1_of(p[lw.s[6]], &rpm)) {
-      if (h_lkm) {
-        bl = cen_fmt1_pm(cen_div(land_km, kCenKm2), rpm, b);
-        h_lmi = cen_parse(b, bl, &land_mi);
-        cen_rep(lw.s[6], lw.e[6], b, bl);
-      }
-    }
-    else {
-      h_lmi = cen_parse(p + lw.s[6], lw.e[6] - lw.s[6], &land_mi);
-    }
+    h_lmi = cen_dfld(p, lw.s[6], lw.e[6], h_lkm, cen_div(land_km, kCenKm2), 0, 0.0, &land_mi);
     if (lw.s[8] >= 0) {
-      double wk = 0; int h_wk = 0;
-      if (cen_is_mark(p, lw.s[8], lw.e[8], CEN_EQ)) {
-        if (h_tot && h_lkm) {
-          bl = cen_fmt1(cen_minus(tot_km, land_km), b);
-          h_wk = cen_parse(b, bl, &wk);
-          cen_rep(lw.s[8], lw.e[8], b, bl);
-        }
-      }
-      else if (lw.e[8] - lw.s[8] == 1 && cen_pm1_of(p[lw.s[8]], &rpm)) {
-        if (h_tot && h_lkm) {
-          bl = cen_fmt1_pm(cen_minus(tot_km, land_km), rpm, b);
-          h_wk = cen_parse(b, bl, &wk);
-          cen_rep(lw.s[8], lw.e[8], b, bl);
-        }
-      }
-      else {
-        h_wk = cen_parse(p + lw.s[8], lw.e[8] - lw.s[8], &wk);
-      }
-      if (cen_is_mark(p, lw.s[9], lw.e[9], CEN_EQ) && h_wk) {
-        bl = cen_fmt1(cen_div(wk, kCenKm2), b);
-        cen_rep(lw.s[9], lw.e[9], b, bl);
-      }
-      else if (lw.e[9] - lw.s[9] == 1 && cen_pm1_of(p[lw.s[9]], &rpm) && h_wk) {
-        bl = cen_fmt1_pm(cen_div(wk, kCenKm2), rpm, b);
-        cen_rep(lw.s[9], lw.e[9], b, bl);
-      }
+      double wk = 0;
+      int h_wk = cen_dfld(p, lw.s[8], lw.e[8], h_tot && h_lkm, cen_minus(tot_km, land_km), 0, 0.0, &wk);
+      cen_dfld(p, lw.s[9], lw.e[9], h_wk, cen_div(wk, kCenKm2), 0, 0.0, 0);
     }
   }
   /* remaining km->mi pairs */
@@ -1162,107 +1109,52 @@ static int cen_decode_page(const char* p, long n, long* outn) {
     long pos = 0, st;
     while ((st = cen_m_kmmi(p, n, pos, &kmmi, 1)) >= 0) {
       pos = kmmi.e[0];
-      double km;
-      if (cen_parse(p + kmmi.s[1], kmmi.e[1] - kmmi.s[1], &km)) {
-        long s = kmmi.s[0] + (kmmi.e[1] - kmmi.s[1]) + 1 + (kmmi.e[2] - kmmi.s[2]) + 2;
-        long rpm;
-        if (cen_pm1_of(p[s], &rpm)) bl = cen_fmt1_pm(cen_div(km, kCenKm2), rpm, b);
-        else                        bl = cen_fmt1(cen_div(km, kCenKm2), b);
-        cen_rep(s, s + 1, b, bl);
-      }
+      double km = 0;
+      int hk = cen_pg(p, &kmmi, 1, &km);
+      cen_dfld(p, kmmi.s[3], kmmi.e[3], hk, cen_div(km, kCenKm2), 0, 0.0, 0);
     }
   }
   /* M3: intro population */
   has_in  = cen_m_intro(p, n, &in_);
-  has_phf = cen_m_phf_d(p, n, &phf);
+  has_phf = cen_m_phf(p, n, &phf, 1);
   if (has_phf) {
     if (cen_is_mark(p, phf.s[2], phf.e[2], CEN_EQ)) {
       if (has_in) {
         cen_rep(phf.s[2], phf.e[2], p + in_.s[1], in_.e[1] - in_.s[1]);
-        h_pop = cen_parse(p + in_.s[1], in_.e[1] - in_.s[1], &pop);
+        h_pop = cen_pg(p, &in_, 1, &pop);
       }
     } else {
-      h_pop = cen_parse(p + phf.s[2], phf.e[2] - phf.s[2], &pop);
+      h_pop = cen_pg(p, &phf, 2, &pop);
     }
     hh_s = phf.s[3]; hh_e = phf.e[3];
   }
   /* M2: Households */
   has_hh = cen_m_hhrep(p, n, &hh, 1);
   if (has_hh && hh_s >= 0) cen_rep(hh.s[2], hh.e[2], p + hh_s, hh_e - hh_s);
-  /* M9: densities */
+  /* M9: densities.  The population density is the reference of the housing
+     density (rule M9B): it is carried here as a number, whether it appears
+     literally in the stream or was just produced from the M9 residual; the
+     same holds for the mi^2 density, whose base it is.  Order is mandatory:
+     km^2 first, then mi^2. */
   double pdens_km = 0, pdens_mi = 0;
   int h_pdk = 0, h_pdm = 0;
   has_pd = cen_m_popdens(p, n, &pd, 1);
   if (has_pd) {
-    long rr2 = 0, rr3 = 0;
-    int m2 = (pd.e[2] - pd.s[2] > 0 && p[pd.s[2]] == CEN_DENS);
-    int m3 = (pd.e[3] - pd.s[3] > 0 && p[pd.s[3]] == CEN_DENS);
-    int e2 = (pd.e[2] - pd.s[2] == 1 && p[pd.s[2]] == CEN_EQ);
-    int e3 = (pd.e[3] - pd.s[3] == 1 && p[pd.s[3]] == CEN_EQ);
-    int q2 = (pd.e[2] - pd.s[2] == 1 && cen_pm1_of(p[pd.s[2]], &rr2));
-    int q3 = (pd.e[3] - pd.s[3] == 1 && cen_pm1_of(p[pd.s[3]], &rr3));
-    if ((m2 || e2 || q2) && h_pop && h_lkm) {
-      double base = cen_div(pop, land_km);
-      if (m2)      bl = cen_fmt1(cen_dens_val(cen_pyround(base, 1), strtol(p + pd.s[2] + 1, 0, 10)), b);
-      else if (e2) bl = cen_fmt1(base, b);
-      else         bl = cen_fmt1_pm(base, rr2, b);
-      cen_rep(pd.s[2], pd.e[2], b, bl);
-      h_pdk = cen_parse(b, bl, &pdens_km);
-    } else if (!(m2 || e2 || q2)) {
-      h_pdk = cen_parse(p + pd.s[2], pd.e[2] - pd.s[2], &pdens_km);
-    }
-    if ((m3 || e3 || q3) && h_pdk && pdens_km > 0.0) {
-      double base = pdens_km * kCenKm2;
-      if (m3)      bl = cen_fmt1(cen_dens_val(cen_pyround(base, 1), strtol(p + pd.s[3] + 1, 0, 10)), b);
-      else if (e3) bl = cen_fmt1(base, b);
-      else         bl = cen_fmt1_pm(base, rr3, b);
-      cen_rep(pd.s[3], pd.e[3], b, bl);
-      h_pdm = cen_parse(b, bl, &pdens_mi);
-    } else if (!(m3 || e3 || q3)) {
-      h_pdm = cen_parse(p + pd.s[3], pd.e[3] - pd.s[3], &pdens_mi);
-    }
+    int ok = h_pop && h_lkm;
+    double base = cen_div(pop, land_km);
+    h_pdk = cen_dfld(p, pd.s[2], pd.e[2], ok, base, ok, base, &pdens_km);
+    ok = h_pdk && pdens_km > 0.0;
+    base = pdens_km * kCenKm2;
+    h_pdm = cen_dfld(p, pd.s[3], pd.e[3], ok, base, ok, base, &pdens_mi);
   }
   has_ho = cen_m_housing(p, n, &ho, 1);
-  if (has_ho) {
-    int m2 = (ho.e[2] - ho.s[2] > 0 && p[ho.s[2]] == CEN_DENS);
-    int m3 = (ho.e[3] - ho.s[3] > 0 && p[ho.s[3]] == CEN_DENS);
-    int e2 = (ho.e[2] - ho.s[2] == 1 && p[ho.s[2]] == CEN_EQ);
-    int e3 = (ho.e[3] - ho.s[3] == 1 && p[ho.s[3]] == CEN_EQ);
-    long r2 = 0, r3 = 0;
-    int q2 = (ho.e[2] - ho.s[2] == 1 && cen_pm1_of(p[ho.s[2]], &r2));
-    int q3 = (ho.e[3] - ho.s[3] == 1 && cen_pm1_of(p[ho.s[3]], &r3));
-#define CEN_HO_ANY (m2 || m3 || e2 || e3 || q2 || q3)
-    double hu;
-    if (CEN_HO_ANY && cen_parse(p + ho.s[1], ho.e[1] - ho.s[1], &hu)) {
-      if (e2 && h_pdk && h_pop) {
-        bl = cen_fmt1(cen_wdens(pdens_km, hu, pop), b);
-        cen_rep(ho.s[2], ho.e[2], b, bl);
-      }
-      if (e3 && h_pdm && h_pop) {
-        bl = cen_fmt1(cen_wdens(pdens_mi, hu, pop), b);
-        cen_rep(ho.s[3], ho.e[3], b, bl);
-      }
-      if (q2 && h_pdk && h_pop) {
-        bl = cen_fmt1_pm(cen_wdens(pdens_km, hu, pop), r2, b);
-        cen_rep(ho.s[2], ho.e[2], b, bl);
-      }
-      if (q3 && h_pdm && h_pop) {
-        bl = cen_fmt1_pm(cen_wdens(pdens_mi, hu, pop), r3, b);
-        cen_rep(ho.s[3], ho.e[3], b, bl);
-      }
-      if (m2 && h_lkm) {
-        long res = strtol(p + ho.s[2] + 1, 0, 10);
-        bl = cen_fmt1(cen_dens_val(cen_pyround(cen_div(hu, land_km), 1), res), b);
-        cen_rep(ho.s[2], ho.e[2], b, bl);
-      }
-      if (m3 && h_lmi) {
-        long res = strtol(p + ho.s[3] + 1, 0, 10);
-        bl = cen_fmt1(cen_dens_val(cen_pyround(cen_div(hu, land_mi), 1), res), b);
-        cen_rep(ho.s[3], ho.e[3], b, bl);
-      }
-    }
+  double hu = 0;
+  if (has_ho && cen_pg(p, &ho, 1, &hu)) {
+    cen_dfld(p, ho.s[2], ho.e[2], h_pdk && h_pop, cen_wdens(pdens_km, hu, pop),
+             h_lkm, cen_div(hu, land_km), 0);
+    cen_dfld(p, ho.s[3], ho.e[3], h_pdm && h_pop, cen_wdens(pdens_mi, hu, pop),
+             h_lmi, cen_div(hu, land_mi), 0);
   }
-#undef CEN_HO_ANY
   /* M4: Mapit */
   has_geo = cen_m_geo(p, n, &geo);
   has_mp  = cen_m_mapit(p, n, &mp, 1);
@@ -1276,12 +1168,8 @@ static int cen_decode_page(const char* p, long n, long* outn) {
   /* M5: DMS */
   has_dms = cen_m_dms(p, n, &dms, 1);
   if (has_dms) {
-    double lat, lon;
-    if (cen_parse(p + dms.s[7], dms.e[7] - dms.s[7], &lat) &&
-        cen_parse(p + dms.s[8], dms.e[8] - dms.s[8], &lon)) {
-      long v[6];
-      cen_dms(lat, &v[0], &v[1], &v[2]);
-      cen_dms(lon, &v[3], &v[4], &v[5]);
+    long v[6];
+    if (cen_dms6(p, &dms, v)) {
       for (int gi = 1; gi <= 6; ++gi) {
         int k = snprintf(b, sizeof b, "%ld", v[gi-1]);
         cen_rep(dms.s[gi], dms.e[gi], b, k);
@@ -1292,17 +1180,9 @@ static int cen_decode_page(const char* p, long n, long* outn) {
   for (int key = 0; key < 2; ++key) {
     CenM* mm = key ? &age : &rac;
     int ndec = key ? 1 : 2;
-    int have = key ? cen_m_age(p, n, mm) : cen_m_racial(p, n, mm);
-    if (!have) continue;
     long ps[512][2];
-    long cnt = 0, i = mm->s[1], endp = mm->e[1], ge;
-    while (cnt < 512) {
-      long gs = cen_m_pct(p, i, endp, &ge, 1);
-      if (gs < 0) break;
-      ps[cnt][0] = gs; ps[cnt][1] = ge; ++cnt;
-      i = ge + 1;
-    }
-    if (cnt == 0) continue;
+    long cnt = cen_pct_list(p, n, key, mm, ps, 1);   /* -1: no block */
+    if (cnt <= 0) continue;
     long ls = ps[cnt-1][0], le = ps[cnt-1][1];
     if (le - ls != 1) continue;
     long r6;
@@ -1328,15 +1208,7 @@ static int cen_decode_page(const char* p, long n, long* outn) {
   long need = n + 16;
   for (long t = 0; t < cen_nsub; ++t) need += cen_subs[t].nl;
   if (!cen_grow((void**)&cen_ob, &cen_obcap, need, 1)) return 0;
-  long o = 0, prev = 0;
-  for (long t = 0; t < cen_nsub; ++t) {
-    long s = cen_subs[t].s;
-    if (s > prev) { memcpy(cen_ob + o, p + prev, (size_t)(s - prev)); o += s - prev; }
-    memcpy(cen_ob + o, cen_subs[t].nb, (size_t)cen_subs[t].nl); o += cen_subs[t].nl;
-    prev = cen_subs[t].e;
-  }
-  if (n > prev) { memcpy(cen_ob + o, p + prev, (size_t)(n - prev)); o += n - prev; }
-  *outn = o;
+  *outn = cen_splice(p, n);
   return 1;
 }
 
@@ -1347,67 +1219,28 @@ static int cen_gate(const char* p, long n) {
   return 0;
 }
 
-static int census_stream(FILE* in, FILE* out, int enc) {
-  const long CH = 1 << 20;
-  long cap = 4 * CH, n = 0, pos;
-  char* buf = (char*)malloc((size_t)cap);
-  if (!buf) return 0;
-  int inside = 0, eof = 0;
-  while (!eof) {
-    if (n + CH > cap) {
-      long nc = (n + CH) * 2;
-      char* q = (char*)realloc(buf, (size_t)nc);
-      if (!q) { free(buf); return 0; }
-      buf = q; cap = nc;
-    }
-    size_t got = fread(buf + n, 1, (size_t)CH, in);
-    if (got == 0) eof = 1;
-    n += (long)got;
-    pos = 0;
-    for (;;) {
-      if (!inside) {
-        long s = cen_find(buf, n, pos, "<page>", 6);
-        if (s < 0) {
-          long keep = eof ? 0 : 5;
-          long upto = n - keep;
-          if (upto < pos) upto = pos;
-          if (upto > pos) fwrite(buf + pos, 1, (size_t)(upto - pos), out);
-          pos = upto;
-          break;
-        }
-        if (s > pos) fwrite(buf + pos, 1, (size_t)(s - pos), out);
-        pos = s;
-        inside = 1;
-      } else {
-        long e = cen_find(buf, n, pos, "</page>", 7);
-        if (e < 0) break;
-        e += 7;
-        long pl = e - pos, ol = 0;
-        int changed;
-        if (enc) changed = cen_gate(buf + pos, pl) ? cen_encode_page(buf + pos, pl, &ol) : 0;
-        else     changed = cen_decode_page(buf + pos, pl, &ol);
-        if (changed) fwrite(cen_ob, 1, (size_t)ol, out);
-        else         fwrite(buf + pos, 1, (size_t)pl, out);
-        pos = e;
-        inside = 0;
-      }
-    }
-    if (pos > 0) { memmove(buf, buf + pos, (size_t)(n - pos)); n -= pos; }
-  }
-  if (n > 0) fwrite(buf, 1, (size_t)n, out);
-  free(buf);
-  return 1;
+// The two page functions of the shared page loop (page_stream.h); the
+// encoder one runs only in the compression path (enc_only.h).
+static int cen_dec_cb(const char* p, long n, long* outn, const char** ob) {
+  const int changed = cen_decode_page(p, n, outn);
+  *ob = cen_ob;
+  return changed;
+}
+static ENC_ONLY int cen_enc_cb(const char* p, long n, long* outn, const char** ob) {
+  if (census_block::Nimmt(p, n)) return 0;
+  const int changed = cen_gate(p, n) ? cen_encode_page(p, n, outn) : 0;
+  *ob = cen_ob;
+  return changed;
 }
 
-static int census_file(const char* inpath, const char* outpath, int enc) {
-  FILE* in = fopen(inpath, "rb");
-  if (!in) { fprintf(stderr, "census: cannot read %s\n", inpath); return 0; }
-  FILE* out = fopen(outpath, "wb");
-  if (!out) { fclose(in); fprintf(stderr, "census: cannot write %s\n", outpath); return 0; }
-  int ok = census_stream(in, out, enc);
-  fclose(in);
-  if (fclose(out) != 0) ok = 0;
-  return ok;
+template <int enc>
+static DIR_INLINE int census_file(const char* inpath, const char* outpath) {
+  return page_file(inpath, outpath, enc ? cen_enc_cb : cen_dec_cb, 0);
+}
+
+// The encoder direction (compression path only), see enc_only.h.
+static ENC_ONLY int census_file_enc(const char* inpath, const char* outpath) {
+  return census_file<1>(inpath, outpath);
 }
 
 #if defined(__clang__)

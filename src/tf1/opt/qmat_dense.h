@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/qmat_dense.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // Dense GEMV kernels over the qmat.h row-major arenas (AVX2, Zen 2 tuned).
 // All kernels produce int32 dots that are bit-identical to the naive scalar
 // reference (kernels.cpp dot_i8 on the signed ints); the fp32 epilogues use
@@ -50,6 +50,14 @@ void qgemv_i32(const QDense& m, const uint8_t* act, int32_t* out);
 
 // benchmark ablation variant of (a) with software prefetch disabled
 void qgemv_f32_nopf(const QDense& m, const uint8_t* act, float* out);
+
+void qgemm(const QDense& m, const uint8_t* act0, ptrdiff_t astr, float* out0,
+           ptrdiff_t ostr, int n, bool add);
+void qgemm_relu2q(const QDense& m, const uint8_t* act0, ptrdiff_t astr,
+                  float s_next, uint8_t* q_out0, uint16_t* idx_out0,
+                  int* nnz0, ptrdiff_t ostr, int n);
+void qgemm_quant_bias(const QDense& m, const uint8_t* act0, ptrdiff_t astr,
+                      float s_next, uint8_t* q_out0, ptrdiff_t ostr, int n);
 
 // -------- packed int4 alternative (epilogue (a) + test i32 only) --------
 // act is SIGNED int8, zero-padded to m.stride4; corr7 = 7 * sum_i qa[i].

@@ -18,7 +18,7 @@ inline bool Teilstring(const unsigned char* n, int nn,
   }
   return false;
 }
-}
+}  // namespace alias_substring_dedup
 
 namespace alias_substring_dedup {
 
@@ -32,6 +32,6 @@ inline unsigned long long g_syn_ges = 0;
 inline unsigned long long g_p1_ges = 0;
 inline unsigned long long g_p2_ges = 0;
 
-}
+}  // namespace alias_substring_dedup
 
 #endif

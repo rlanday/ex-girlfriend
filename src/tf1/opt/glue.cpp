@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/glue.cpp.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 #include "glue.h"
 #include "../../cold_size.h"
 
@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "vec_math.h"
+#include "../tf1_config.h"
 
 namespace fx2 {
 namespace opt {
@@ -108,14 +109,9 @@ float rms_denom192(const float* x) { return rms_denom(x, 192); }
 
 void rms_norm_quant192_multi(const float* x, float* xn, const float* s, int m,
                              uint8_t* q) {
-  switch (m) {
-    case 1: rms_norm_quant_impl<1>(x, xn, s, q, 192); return;
-    case 2: rms_norm_quant_impl<2>(x, xn, s, q, 192); return;
-    case 3: rms_norm_quant_impl<3>(x, xn, s, q, 192); return;
-    case 4: rms_norm_quant_impl<4>(x, xn, s, q, 192); return;
-    case 5: rms_norm_quant_impl<5>(x, xn, s, q, 192); return;
-    default: break;
-  }
+  // fused for m = 5, the only value its callers pass (KDA layer: q, k, v and
+  // the two gate inputs); any other m takes the generic path below
+  if (m == 5) { rms_norm_quant_impl<5>(x, xn, s, q, 192); return; }
   assert(m > 0 && m <= 8);
   rms_norm192(x, xn);
   for (int k = 0; k < m; k++) quant192_u8(xn, s[k], q + k * 192);
@@ -377,6 +373,78 @@ void head_softcap_softmax(float* l, float* probs) {
   }
   // den = hsum(acc0 + acc1), 8-lane tree order (documented divergence from
   // the naive scalar-serial sum: <= ~1 ulp on den)
+  const float den = hsum256_naive(_mm256_add_ps(acc0, acc1));
+  const __m256 vden = _mm256_set1_ps(den);
+  for (int i = 0; i < 208; i += 8)
+    _mm256_storeu_ps(probs + i,
+                     _mm256_div_ps(_mm256_loadu_ps(probs + i), vden));
+}
+
+// The per-token prior head of pysrc compute_logits (prior_logit_mixing of
+// Ivanov's fx2-cmix-transformer); implementation adapted from
+// cmix-neif-beehive (Vladimir Malinovskii, 2026, 92c07c0b, glue.cpp
+// head_plm_softcap_softmax).
+static_assert(208 == 208 && 208 == 208,
+              "the prior head runs over 208 entries without pads");
+void head_plm_softcap_softmax(float* l, const float* prior, float hdot,
+                              float* probs) {
+  const __m256 v15 = _mm256_set1_ps(15.0f);
+  // softcap: the same operations as head_softcap_softmax
+  alignas(32) float a[208];
+  for (int i = 0; i < 208; i += 8)
+    _mm256_store_ps(a + i, _mm256_div_ps(_mm256_loadu_ps(l + i), v15));
+  for (int i = 0; i < 208; i += 16) {
+    _mm256_storeu_ps(l + i, _mm256_mul_ps(v15, tanh256_ps(_mm256_load_ps(a + i))));
+    _mm256_storeu_ps(l + i + 8,
+                     _mm256_mul_ps(v15, tanh256_ps(_mm256_load_ps(a + i + 8))));
+  }
+  // c = max(log p, -12); p = 0 goes in as FLT_MIN (log256_ps needs a positive
+  // normal input), log = -87.3, clamped to -12
+  const __m256 vmin = _mm256_set1_ps(1.17549435e-38f);
+  const __m256 vcap = _mm256_set1_ps(-12.0f);
+  alignas(32) float c[208];
+  __m256 cs0 = _mm256_setzero_ps();
+  __m256 cs1 = _mm256_setzero_ps();
+  for (int i = 0; i < 208; i += 16) {
+    __m256 c0 = _mm256_max_ps(
+        log256_ps(_mm256_max_ps(_mm256_loadu_ps(prior + i), vmin)), vcap);
+    __m256 c1 = _mm256_max_ps(
+        log256_ps(_mm256_max_ps(_mm256_loadu_ps(prior + i + 8), vmin)), vcap);
+    _mm256_store_ps(c + i, c0);
+    _mm256_store_ps(c + i + 8, c1);
+    cs0 = _mm256_add_ps(cs0, c0);
+    cs1 = _mm256_add_ps(cs1, c1);
+  }
+  const __m256 vmean =
+      _mm256_set1_ps(hsum256_naive(_mm256_add_ps(cs0, cs1)) / 208.0f);
+  // prior weight = softplus(hdot + softplus^-1(1)), the same in every lane
+  const __m256 vw =
+      softplus256_ps(_mm256_set1_ps(hdot + 0.5413248546129181f));
+  __m256 vmax0 = _mm256_set1_ps(-INFINITY);
+  __m256 vmax1 = vmax0;
+  for (int i = 0; i < 208; i += 16) {
+    __m256 l0 = _mm256_fmadd_ps(vw, _mm256_sub_ps(_mm256_load_ps(c + i), vmean),
+                                _mm256_loadu_ps(l + i));
+    __m256 l1 = _mm256_fmadd_ps(
+        vw, _mm256_sub_ps(_mm256_load_ps(c + i + 8), vmean),
+        _mm256_loadu_ps(l + i + 8));
+    _mm256_storeu_ps(l + i, l0);
+    _mm256_storeu_ps(l + i + 8, l1);
+    vmax0 = _mm256_max_ps(vmax0, l0);
+    vmax1 = _mm256_max_ps(vmax1, l1);
+  }
+  // softmax: the same operations as head_softcap_softmax
+  const __m256 vm = _mm256_set1_ps(hmax256(_mm256_max_ps(vmax0, vmax1)));
+  __m256 acc0 = _mm256_setzero_ps();
+  __m256 acc1 = _mm256_setzero_ps();
+  for (int i = 0; i < 208; i += 16) {
+    __m256 e0 = exp256_ps(_mm256_sub_ps(_mm256_loadu_ps(l + i), vm));
+    __m256 e1 = exp256_ps(_mm256_sub_ps(_mm256_loadu_ps(l + i + 8), vm));
+    _mm256_storeu_ps(probs + i, e0);
+    _mm256_storeu_ps(probs + i + 8, e1);
+    acc0 = _mm256_add_ps(acc0, e0);
+    acc1 = _mm256_add_ps(acc1, e1);
+  }
   const float den = hsum256_naive(_mm256_add_ps(acc0, acc1));
   const __m256 vden = _mm256_set1_ps(den);
   for (int i = 0; i < 208; i += 8)

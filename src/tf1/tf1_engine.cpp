@@ -2,7 +2,9 @@
 // fx2-cmix-transformer/src/predictor.cpp (Vladimir Ivanov, GPL-3); see
 // tf1_engine.h.
 
+#include "../meld.h"
 #include "tf1_engine.h"
+#include "../census_title.h"
 
 #include "../alias_title_subst.h"
 
@@ -22,14 +24,34 @@
 #include "tf1_load_oz.h"
 #include "../redirect_table.h"
 #include "../alias_table.h"
+#include "../rule_view.h"
 #include "tf1_z3.h"      // link context of the current article
 #include "tf1_prompt.h"  // prompt rows (article number, synonyms, headings)
 #include "tf1_gate.h"    // gate zones
 
 #include "model.h"          // fp32 reference engine (Ivanov, cpp_infer/src)
 #include "opt/model_opt.h"  // optimized engine  (Ivanov, cpp_infer/src/opt)
+static_assert(300 >= 0 && 300 <= 10000,
+              "is the floor in units of 1e-10 (0 = 1e-6)");
+// Floor of the transformer row handed to its slot.  The row arrives as float16
+// values, and about half of its entries are 0 there (output below 3e-8).  The
+// inherited floor 1e-6 lifted all of them; the transformer is calibrated down
+// to its float16 resolution, so the floor is 3e-8.  The fast-weight row keeps
+// 1e-6 (together with the 1e-6 clamp of the mixer inputs a lower floor there
+// cost rate).
 
 namespace transformer {
+
+int g_b2i[256];
+// fills g_b2i before main (number of set bytes below i = the rank of a set byte);
+// the empty asm keeps the loop from being evaluated into .data
+__attribute__((constructor, cold, minsize, noinline)) static void FuelleB2i() {
+  int k = 0;
+  for (int i = 0; i < 256; ++i) {
+    __asm__("" ::: "memory");
+    g_b2i[i] = InSet(i) ? k++ : k;
+  }
+}
 
 namespace {
 const size_t kHalfBufferSize = 1 << 22;  // 4M halfs = 8 MB per buffer
@@ -39,9 +61,9 @@ const size_t kHalfBufferSize = 1 << 22;  // 4M halfs = 8 MB per buffer
 LOAD_PATH_ATTR void Fail(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  fprintf(stderr, "\ntransformer error: ");
+  putc('\n', stderr);
   vfprintf(stderr, fmt, args);
-  fprintf(stderr, "\n");
+  putc('\n', stderr);
   va_end(args);
   exit(1);
 }
@@ -124,51 +146,51 @@ void HalvesToFloats(const uint16_t* src, float* dst, size_t n) {
   for (; i < n; ++i) dst[i] = HalfToFloat(src[i]);
 }
 
-// ---------------------------------------------------------------------------
-LOAD_PATH_ATTR HalfFileWriter::HalfFileWriter(const std::string& path) : path_(path),
-    buffer_(kHalfBufferSize) {
-  file_ = fopen(path.c_str(), "wb");
-  if (!file_) Fail("cannot open %s for writing", path.c_str());
+// One out-of-line copy each of the float16 rounding of a full row and of the
+// row floor: inlined into Step() and FwRow(), every call site carried its own
+// fully unrolled loop.  Same conversions and comparisons as above.
+static_assert(208 % 8 == 0, "a row is a whole number of 8-lane groups");
+__attribute__((noinline)) static void RowToHalves(const float* src, uint16_t* dst) {
+#ifdef __F16C__
+#pragma nounroll
+  for (int i = 0; i < 208; i += 8)
+    _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + i),
+        _mm256_cvtps_ph(_mm256_loadu_ps(src + i), _MM_FROUND_TO_NEAREST_INT));
+#else
+  FloatsToHalves(src, dst, 208);
+#endif
 }
-
-HalfFileWriter::~HalfFileWriter() {
-  Flush();
-  if (file_) fclose(file_);
+__attribute__((noinline)) static void RowToFloats(const uint16_t* src, float* dst) {
+#ifdef __F16C__
+#pragma nounroll
+  for (int i = 0; i < 208; i += 8)
+    _mm256_storeu_ps(dst + i, _mm256_cvtph_ps(
+        _mm_loadu_si128(reinterpret_cast<const __m128i*>(src + i))));
+#else
+  HalvesToFloats(src, dst, 208);
+#endif
 }
-
-LOAD_PATH_ATTR void HalfFileWriter::Write(const float* values, size_t n) {
-  if (used_ + n > buffer_.size()) Flush();
-  FloatsToHalves(values, buffer_.data() + used_, n);
-  used_ += n;
-}
-
-LOAD_PATH_ATTR void HalfFileWriter::WriteHalves(const uint16_t* values, size_t n) {
-  if (used_ + n > buffer_.size()) Flush();
-  memcpy(buffer_.data() + used_, values, n * sizeof(uint16_t));
-  used_ += n;
-}
-
-LOAD_PATH_ATTR void HalfFileWriter::Flush() {
-  if (used_ == 0) return;
-  if (fwrite(buffer_.data(), sizeof(uint16_t), used_, file_) != used_) {
-    Fail("failed writing to %s (disk full?)", path_.c_str());
-  }
-  used_ = 0;
+// entries below lo (and NaN) become lo
+__attribute__((noinline)) static void RowFloor(float* p, float lo) {
+  for (int i = 0; i < 208; ++i)
+    if (!(p[i] >= lo)) p[i] = lo;
 }
 
 // ---------------------------------------------------------------------------
-LOAD_PATH_ATTR void CheckVocabSubset(const std::vector<bool>& vocab) {
-  // Element by element, not by cardinality: a stream with the right number of
-  // distinct bytes but a different set would silently shift every token index.
-  int n = 0;
-  for (int i = 0; i < 256; ++i) {
-    if (!vocab[i]) continue;
-    ++n;
-    if (!InSet(i)) {
-      Fail("byte 0x%02x is not in the frozen %d-byte set", i, kSetSize);
-    }
-  }
+// The fixed engine opens no float16 sink (the prior and
+// probability dumps exist only in the dump builds), but predictor.cpp
+// still names Write() and the destructor of its always empty unique_ptr.  Traps
+// instead of the bodies drop the out-of-line FloatsToHalves; a tool that builds
+// such a sink in this form anyway stops at the constructor.
+LOAD_PATH_ATTR HalfFileWriter::HalfFileWriter(const std::string& path) {
+  Fail("float16 sink %s: not in the fixed-engine build", path.c_str());
 }
+HalfFileWriter::~HalfFileWriter() { __builtin_trap(); }
+void HalfFileWriter::Write(const float*, size_t) { __builtin_trap(); }
+void HalfFileWriter::WriteHalves(const uint16_t*, size_t) { __builtin_trap(); }
+void HalfFileWriter::Flush() { __builtin_trap(); }
+
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 namespace {
@@ -198,74 +220,101 @@ int SeparatorLength() { InitSeparator(); return g_sep_len; }
 static const unsigned long long kMaxArticleTokens = 131072;
 // Rotary-table limit: a document, prompt block included, never exceeds it.
 static const unsigned long long kPieceGrenze =
-    kMaxArticleTokens - (unsigned long long)69;
+    kMaxArticleTokens - (unsigned long long)68;
 static_assert(131072 == 131072,
     "the training data loader cuts long articles at 2^17 tokens.  Changing "
     "the coder's value alone makes the two sides drift apart from the first "
     "long article on; change both and re-export the rotary table.");
 
+// The rows of the engine live in fixed arrays of Impl, and
+// Impl carries no member initialiser: `new Impl()` value-initialises it (all
+// zero), the constructor sets the few non-zero starts and points the rows at
+// their arrays.  In the submission form Impl has then neither a constructor
+// nor a destructor, and the O3 instances of vector::_M_fill_assign are gone.
+// A row is reached through a pointer as before (a fixed array address let
+// clang unroll Step() by 2 KB more); data(), [] and swap() keep the call sites.
+template <class T>
+struct Tf1Row {
+  T* p;
+  T* data() { return p; }
+  const T* data() const { return p; }
+  T& operator[](int i) { return p[i]; }
+  const T& operator[](int i) const { return p[i]; }
+  void swap(Tf1Row& o) {
+    T* t = p;
+    p = o.p;
+    o.p = t;
+  }
+};
+
 struct Tf1Engine::Impl {
-  fx2::opt::TransformerOpt* opt = nullptr;
+  fx2::opt::TransformerOpt* opt;
 
   int byte_to_index[256];
   int vocab_bytes[208];
 
-  std::vector<float> probs;   // V, the row handed to the byte mixer
-  std::vector<float> tf_out;  // V, raw transformer output
-  std::vector<uint16_t> half;
-  std::vector<uint16_t> ppmd_cur;
-  std::vector<uint16_t> ppmd_prev;
-  bool ppmd_prev_gueltig = false;   // "valid": true from the second step on
-  bool ppmd_erster_schritt = true;
+  float probs_v[208];   // the arrays of the rows below (no alignas: an over-aligned Impl would need the aligned operator new)
+  float tf_out_v[208];
+  uint16_t half_v[208];
+  Tf1Row<float> probs;   // V, the row handed to the byte mixer (1.0 from the ctor)
+  Tf1Row<float> tf_out;  // V, raw transformer output
+  Tf1Row<uint16_t> half;
+  uint16_t ppmd_v[2][208];   // the two rows below point here
+  Tf1Row<uint16_t> ppmd_cur;
+  Tf1Row<uint16_t> ppmd_prev;
+  bool ppmd_prev_gueltig;   // "valid": true from the second step on
+  bool ppmd_erster_schritt;   // true from the ctor
   unsigned char window[64];
-  int sep_len = 0;
-  unsigned long long article_tokens = 0;
-  bool doc_begun = false;
-  unsigned long long tokens = 0;
-  double loss_sum = 0.0;
-  bool print_loss = true;
-  HalfFileWriter* probs_writer = nullptr;
-  unsigned long long piece_cuts = 0;
-  unsigned long long pre_verworfen_zone = 0;
+  int sep_len;
+  unsigned long long article_tokens;
+  bool doc_begun;
+  bool ta_doc_auf;
+  unsigned long long tokens;
+  double loss_sum;
+  bool print_loss;   // set in the ctor
+  HalfFileWriter* probs_writer;
+  unsigned long long piece_cuts;
+  unsigned long long pre_verworfen_zone;
 
   enum { SG_VOR = 0, SG_STROM = 1, SG_NACH = 2, SG_Z3 = 3, SG_SEITE = 4,
          SG_ALIAS = 5, SG_N = 6 };
 
-  int pk_prev1 = 216;
-  int pk_prev2 = 216;
-  unsigned long long pk_fed = 0;
-  unsigned long long doc_rows = 0;
-  unsigned long long max_doc_rows = 0;
-  unsigned long long pk_inserted = 0;   // of them: rows the coder inserts
-  unsigned long long pk_documents = 0;
-  long long pk_stream_pos = -1;
+  int pk_prev1;
+  int pk_prev2;
+  unsigned long long pk_fed;
+  unsigned long long doc_rows;
+  unsigned long long max_doc_rows;
+  unsigned long long pk_inserted;   // of them: rows the coder inserts
+  unsigned long long pk_documents;
+  long long pk_stream_pos;   // -1 from the ctor
 
   // Link context (z3).  Only its index is kept in RAM.
-  tf_z3::CoderZ3* z3 = nullptr;
+  tf_z3::CoderZ3* z3;
   // Prompt rows.  They need no stream storage: what they read fits into small
   // running buffers (title, link window, redirect window); RAM is spent only
   // on the title/alias table.
-  tf_prompt::CoderPrompt* prompt = nullptr;
-  tf_gate::CoderGate* gate = nullptr;
-  bool gate_masked = false;
-  unsigned long long alias_rows = 0;
-  bool in_redir_run = false;
-#if PORT_FW
-  // FW pairing (training target rule, training/tf/tree_overlay/zctx/
-  // dumpv2.py: the target of a row is the next STREAM token past all inserted
-  // rows; a document's last row targets its closing token, coded but never
-  // fed).  fw_have: the transformer's FW scratch holds the prediction of a
-  // read row that has not had its target yet (any later read row, inserted
-  // or not, supersedes it).  fw_live: the FW slot row the predictor codes the
-  // next stream token with came from the FW head (not neutral/off/PPMd).  The
+  tf_prompt::CoderPrompt* prompt;
+  tf_gate::CoderGate* gate;
+  bool gate_masked;
+  unsigned long long alias_rows;
+  unsigned long long kopierende_pk;
+  bool in_redir_run;
+  // fast weights after ex-girlfriend 1.0 (Ryan Landay,
+  // GPL-3.0-only).  The target of a row is the next STREAM token past all
+  // inserted rows.  fw_have: the head's scratch holds the second-head
+  // prediction of a read row that has not had its target yet (a later read
+  // row supersedes it).  fw_live: the slot row the coder uses for the next
+  // stream token came from the second head (not neutral/off/PPMd).  The
   // update happens at the start of the next stream Step(), with that token.
-  bool fw_have = false;
-  bool fw_live = false;
-  bool probs_from_tf = false;  // s.probs was taken from tf_out (a read row)
-  std::vector<float> fw_row;
-  std::vector<uint16_t> fw_half;
-#endif
-  void Feed(int tok, const uint16_t* prior, bool inserted, float* out
+  bool fw_have;
+  bool fw_live;
+  bool probs_from_tf;  // `probs` was taken from tf_out (a read row)
+  unsigned long long fw_n_upd, fw_n_live;   // key figures
+  float fw_row_v[208];
+  uint16_t fw_half_v[208];
+  Tf1Row<float> fw_row;   // 1.0 from the ctor
+  Tf1Row<uint16_t> fw_half;
+  __attribute__((noinline)) void Feed(int tok, const uint16_t* prior, bool inserted, float* out
             , bool gelesen
            ) {
     if (opt) opt->set_gelesen(gelesen);
@@ -275,60 +324,60 @@ struct Tf1Engine::Impl {
     ch.match_byte = inserted ? 208 : m_hot;
     ch.match_class = inserted ? 0 : (m_class & 15);
     opt->step((uint8_t)tok, prior, out, ch);
-#if PORT_FW
-    if (gelesen) fw_have = true;
-#endif
     pk_prev2 = pk_prev1;
     pk_prev1 = tok;
-    ++pk_fed;
     ++doc_rows;
     if (doc_rows > max_doc_rows) max_doc_rows = doc_rows;
-    if (inserted) ++pk_inserted;
+    if (inserted) {}
+    if (gelesen) fw_have = true;
   }
 
   void NewDocument() {
     pk_prev1 = 216;
     pk_prev2 = 216;
-    ++pk_documents;
     doc_rows = 0;
   }
 
-  int m_hot = 208;
-  int m_class = 0;
-  int m_raw = 0;
-  bool m_have = false;
-  int m_prev_hot = -1;         // for the hit rate
-  FILE* m_dump_b = nullptr;
-  FILE* m_dump_l = nullptr;
-  std::vector<unsigned char> m_bbuf;
-  std::vector<unsigned char> m_lbuf;
-  unsigned long long m_positions = 0;
-  unsigned long long m_sentinel = 0;
-  unsigned long long m_missing = 0;
-  unsigned long long m_hits = 0;
-  unsigned long long m_hit_base = 0;
-  unsigned long long m_class_hist[16] = {0};
+  int m_hot;
+  int m_class;
+  int m_raw;
+  bool m_have;
+  int m_prev_hot;              // for the hit rate (-1 from the ctor)
+  unsigned long long m_positions;
+  unsigned long long m_sentinel;
+  unsigned long long m_missing;
+  unsigned long long m_hits;
+  unsigned long long m_hit_base;
+  unsigned long long m_class_hist[16];
 };
 
 LOAD_PATH_ATTR Tf1Engine::Tf1Engine(const std::vector<bool>& vocab, const char* weights_path)
     : impl_(new Impl()) {
-  CheckVocabSubset(vocab);
+  (void)vocab;   // See CheckVocabSubset
   for (int i = 0; i < 256; ++i) impl_->byte_to_index[i] = -1;
   for (int i = 0; i < 256; ++i) {
     if (InSet(i)) {
-      impl_->byte_to_index[i] = kByteToIndex[i];
-      impl_->vocab_bytes[kByteToIndex[i]] = i;
+      impl_->byte_to_index[i] = g_b2i[i];
+      impl_->vocab_bytes[g_b2i[i]] = i;
     }
   }
-  impl_->probs.assign(208, 1.0f);  // uniform for the first byte
-  impl_->tf_out.assign(208, 0.0f);
-  impl_->half.assign(208, 0);
-  impl_->ppmd_cur.assign(208, 0);
-  impl_->ppmd_prev.assign(208, 0);
-#if PORT_FW
-  impl_->fw_row.assign(208, 1.0f);
-  impl_->fw_half.assign(208, 0);
-#endif
+  // New Impl() zero-filled everything (tf_out, half, the
+  // PPMD rows, fw_half, counters); the rows and the non-zero starts:
+  impl_->probs.p = impl_->probs_v;
+  impl_->tf_out.p = impl_->tf_out_v;
+  impl_->half.p = impl_->half_v;
+  for (int i = 0; i < 208; ++i) impl_->probs_v[i] = 1.0f;  // uniform for the first byte
+  impl_->fw_row.p = impl_->fw_row_v;
+  impl_->fw_half.p = impl_->fw_half_v;
+  for (int i = 0; i < 208; ++i) impl_->fw_row_v[i] = 1.0f;
+  impl_->ppmd_cur.p = impl_->ppmd_v[0];
+  impl_->ppmd_prev.p = impl_->ppmd_v[1];
+  impl_->ppmd_erster_schritt = true;
+  impl_->pk_prev1 = 216;
+  impl_->pk_prev2 = 216;
+  impl_->pk_stream_pos = -1;
+  impl_->m_hot = 208;
+  impl_->m_prev_hot = -1;
   impl_->sep_len = SeparatorLength();
   if (impl_->sep_len > (int)sizeof(impl_->window)) {
     Fail("article separator longer than the match window");
@@ -340,26 +389,6 @@ LOAD_PATH_ATTR Tf1Engine::Tf1Engine(const std::vector<bool>& vocab, const char* 
   // The coder always runs the optimized int8 engine; the fp32 reference path
   // is not used.
   const bool use_ref = false;
-  // Exactly one stamped container is accepted.  FNV-1a-64 over the file is
-  // enough to catch a swapped or truncated container.
-  {
-    FILE* f = fopen(weights_path, "rb");
-    if (!f) Fail("the stamped weight container %s is not readable", weights_path);
-    unsigned long long h = 14695981039346656037ULL;
-    unsigned char buf[1 << 16];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof buf, f)) > 0) {
-      for (size_t i = 0; i < n; ++i) {
-        h ^= (unsigned long long)buf[i];
-        h *= 1099511628211ULL;
-      }
-    }
-    fclose(f);
-    if (h != WeightsFingerprint()) {
-      Fail("weight container %s does not match the stamped fingerprint (%016llx read, %016llx stamped)",
-           weights_path, h, WeightsFingerprint());
-    }
-  }
   impl_->opt = new fx2::opt::TransformerOpt(weights_path,
       fx2::opt::AttnKind::KVI8);
   {
@@ -375,43 +404,17 @@ LOAD_PATH_ATTR Tf1Engine::Tf1Engine(const std::vector<bool>& vocab, const char* 
     tf_gate::Params gp;
     impl_->gate = new tf_gate::CoderGate(gp);
   }
-  if (const char* p = MatchDumpPath()) {
-    std::string pb = std::string(p) + "match-bytes.uint8";
-    std::string pl = std::string(p) + "match-len.uint8";
-    impl_->m_dump_b = fopen(pb.c_str(), "wb");
-    if (!impl_->m_dump_b) Fail("cannot create %s",
-        pb.c_str());
-    impl_->m_dump_l = fopen(pl.c_str(), "wb");
-    if (!impl_->m_dump_l) Fail("cannot create %s",
-        pl.c_str());
-    impl_->m_bbuf.reserve(1 << 16);
-    impl_->m_lbuf.reserve(1 << 16);
-  }
   impl_->print_loss = false;      // the coder prints no loss report
 }
 
 LOAD_PATH_ATTR Tf1Engine::~Tf1Engine() {
   // Loss report (off unless the constructor enables it).
-  if (impl_->print_loss) ReportLoss();
   // Close the last article before the document-length check below.
   if (impl_->prompt) impl_->prompt->Finish();
   ReportChannels();
-  if (impl_->m_dump_b) {
-    if (!impl_->m_bbuf.empty()) {
-      fwrite(impl_->m_bbuf.data(), 1, impl_->m_bbuf.size(), impl_->m_dump_b);
-    }
-    fclose(impl_->m_dump_b);
-  }
-  if (impl_->m_dump_l) {
-    if (!impl_->m_lbuf.empty()) {
-      fwrite(impl_->m_lbuf.data(), 1, impl_->m_lbuf.size(), impl_->m_dump_l);
-    }
-    fclose(impl_->m_dump_l);
-  }
   delete impl_->z3;
   delete impl_->gate;
   delete impl_->prompt;
-  delete impl_->probs_writer;
   delete impl_->opt;
   delete impl_;
 }
@@ -421,36 +424,46 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
   Impl& s = *impl_;
   if (timestamp_skip::Laeuft()) return s.probs.data();
   if (alias_prompt::Laeuft()) {
+    if (comment_tag::g_j < 2) byte = comment_tag::g_tf[comment_tag::g_j++];
     const int atok = s.byte_to_index[byte];
     if (atok < 0) {
-      Fail("reinjected alias byte 0x%02x is not in the frozen byte set", byte);
+      Fail("E208 %02x", byte);
     }
     // The PPMd row of the token that follows this one.  Only the LAST byte of
     // the block is followed by a real stream token, so only its row carries a
     // stream target; every other alias row gets prior0.
     for (int i = 0; i < 208; ++i) s.probs[i] = ppmd[s.vocab_bytes[i]];
-    FloatsToHalves(s.probs.data(), s.half.data(), 208);
+    RowToHalves(s.probs.data(), s.half.data());
     const uint16_t* aprior = s.half.data();
+    const bool kende = tf_copy_end::g_nach > 0
+        && alias_prompt::g_rest == tf_copy_end::g_nach;
     const bool last_row = alias_prompt::Verbrauche();
     if (!last_row) {
       aprior = s.prompt->Prior0();
     }
+    // The end mark row takes over the prior of this row (the PPMd row if this
+    // was the last byte of the block); this row now predicts the end mark.
+    const uint16_t* kprior = aprior;
+    if (kende) aprior = s.prompt->Prior0();
     s.m_have = false;
-    ++s.alias_rows;
-    s.Feed(atok, aprior, /*inserted=*/true, s.tf_out.data()
-           GATE_ARG(last_row, Impl::SG_ALIAS));
-    FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
-    HalvesToFloats(s.half.data(), s.probs.data(), 208);
-#if PORT_FW
-    s.probs_from_tf = true;
-#endif
-    if (s.probs_writer) s.probs_writer->WriteHalves(s.half.data(), 208);
-    for (int i = 0; i < 208; ++i) {
-      if (!(s.probs[i] >= 1e-6f)) s.probs[i] = 1e-6f;
+    if (s.article_tokens == 0 && !s.ta_doc_auf
+        && !s.doc_begun
+        ) {
+      if (s.opt) s.opt->begin_article();
+      s.ta_doc_auf = true;
     }
+    s.Feed(atok, aprior, /*inserted=*/true, s.tf_out.data()
+           GATE_ARG(last_row && !kende, Impl::SG_ALIAS));
+    if (kende) {
+      s.Feed(208 + 6, kprior, /*inserted=*/true,
+             s.tf_out.data() GATE_ARG(last_row, Impl::SG_ALIAS));
+    }
+    RowToHalves(s.tf_out.data(), s.half.data());
+    RowToFloats(s.half.data(), s.probs.data());
+    s.probs_from_tf = true;
+    RowFloor(s.probs.data(), ((float)(300) * 1e-10f));
     return s.probs.data();
   }
-  ++s.pk_stream_pos;
 
   // (1) no loss is computed; only ReportLoss() would read it, and the coder
   //     does not print that report (print_loss is false), so loss_sum and
@@ -459,7 +472,7 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
   // (2) the PPMd prior, rounded to float16 exactly as the training pipeline
   //     writes it.
   for (int i = 0; i < 208; ++i) s.probs[i] = ppmd[s.vocab_bytes[i]];
-  FloatsToHalves(s.probs.data(), s.half.data(), 208);
+  RowToHalves(s.probs.data(), s.half.data());
   s.ppmd_prev.swap(s.ppmd_cur);
   s.ppmd_prev_gueltig = !s.ppmd_erster_schritt;
   s.ppmd_erster_schritt = false;
@@ -468,15 +481,20 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
 
   int token = s.byte_to_index[byte];
   if (token < 0) {
-    Fail("byte 0x%02x is not in the frozen byte set", byte);
+    Fail("E209 %02x", byte);
   }
-#if PORT_FW
-  // FW target: this stream token, if it was coded with an FW-head row.
-  if (s.fw_have && s.fw_live && s.opt) s.opt->fw_update((uint8_t)token);
+  // The fast-weight target is this stream token, if it was coded
+  // with a second-head row.
+  if (s.fw_have && s.fw_live && s.opt) {
+    s.opt->fw_update((uint8_t)token);
+  }
   s.fw_have = false;
   s.fw_live = false;
-#endif
+  const bool ta_tok = metablock::mk.ImTextanfang();
+  if (!ta_tok) rule_view::Byte((unsigned char)byte);
   redirect_table::tab.Byte((unsigned char)byte);
+  if (ta_tok) alias_table::tab.Pause();
+  else
   alias_table::tab.Byte((unsigned char)byte);
   // Gate: the flag for this token was fixed after the previous one; the
   // automaton never looks forward.  feed = false means the transformer does
@@ -486,25 +504,12 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
   const bool gate_feed = s.gate ? s.gate->Feeds() : true;
   {
     if (!s.m_have) { s.m_hot = 208; s.m_class = 0; s.m_raw = 0;
-                     ++s.m_missing; }
+}
     if (s.m_prev_hot >= 0) {
-      ++s.m_hit_base;
-      if (s.m_prev_hot == token) ++s.m_hits;
+      if (s.m_prev_hot == token) {}
     }
     s.m_prev_hot = s.m_hot;
-    ++s.m_positions;
-    if (s.m_hot == 208) ++s.m_sentinel;
-    ++s.m_class_hist[s.m_class & 15];
-    if (s.m_dump_b) {
-      s.m_bbuf.push_back((unsigned char)s.m_hot);
-      s.m_lbuf.push_back((unsigned char)s.m_raw);
-      if (s.m_bbuf.size() >= (1u << 16)) {
-        fwrite(s.m_bbuf.data(), 1, s.m_bbuf.size(), s.m_dump_b);
-        fwrite(s.m_lbuf.data(), 1, s.m_lbuf.size(), s.m_dump_l);
-        s.m_bbuf.clear();
-        s.m_lbuf.clear();
-      }
-    }
+    if (s.m_hot == 208) {}
     s.m_have = false;
   }
   memmove(s.window, s.window + 1, s.sep_len - 1);
@@ -524,17 +529,29 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
   const bool doc_break = at_separator && !redir_merge;
     const unsigned long long piece_zaehler = s.doc_rows;
   bool teilb_docbreak = false;
+  if (metablock::mk.SchliesstMit((unsigned char)byte) ||
+      metablock::mk.TaEndmarke((unsigned char)byte))
+    teilb_docbreak = true;
   bool piece_faellig = piece_zaehler >= kPieceGrenze;
   const bool last_of_piece = doc_break || teilb_docbreak || piece_faellig;
   const bool piece_cut = last_of_piece && !doc_break && !teilb_docbreak;
-  if (piece_cut) ++s.piece_cuts;
+  if (piece_cut) {}
+  if (!ta_tok)
+  if (rule_view::z3_orig) {
+    const unsigned char* fr = nullptr;
+    const int n = rule_view::Frei(&fr);
+    for (int k = 0; k < n; ++k)
+      s.z3->Observe((unsigned char)s.byte_to_index[fr[k]], k + 1 == n && doc_break);
+  } else
   {
     const unsigned char* alt = nullptr;
     const int n = redirect_table::tab.Alt(&alt);
     for (int k = 0; k < n; ++k)
       s.z3->Observe((unsigned char)s.byte_to_index[alt[k]],
                     k + 1 == n && doc_break);
+    if (redirect_table::tab.FromBytes() && byte == 0x0a) rule_view::z3_orig = true;
   }
+  if (at_separator) s.z3->PageEnd(s.prompt->InRedirect());
   // Show the coded token to the gate automaton (same sequence on both sides).
   // After this call the automaton answers for the next token.
   if (s.gate) {
@@ -545,30 +562,31 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
   // sides).  As for z3, the narrow separator condition, not `last_of_piece`.
   s.prompt->Observe((unsigned char)token, doc_break);
   if (redir_merge) s.prompt->PageBoundary();
-  if (piece_cut) s.prompt->PieceCut();
+  if (piece_cut && !ta_tok) s.prompt->PieceCut();
   if (last_of_piece) {
     // The next token starts a fresh context; its distribution is PPMd's.
-    HalvesToFloats(s.half.data(), s.probs.data(), 208);
-#if PORT_FW
+    RowToFloats(s.half.data(), s.probs.data());
     s.probs_from_tf = false;
-#endif
     s.article_tokens = 0;
     s.NewDocument();
     if (s.opt) s.opt->begin_article();
     s.doc_begun = true;
   } else {
     if (s.article_tokens == 1) {
-      const bool schon = s.doc_begun;
+      const bool ta_schon = s.ta_doc_auf;
+      s.ta_doc_auf = false;
+      const bool seen_list = s.doc_begun;
       s.doc_begun = false;
-      if (!schon)
+      if (!seen_list)
+      if (!ta_schon)
       {
       if (s.opt) s.opt->begin_article();
       }
     }
     // Pre block: fed before this token's model step.  That puts the rows that
     // precede the title (page metadata, or the article number in the form that
-    // has it there) before the title, and the sentinel row before the token
-    // that ends a digit run.  These rows bypass the separator detection.
+    // has it there) before the title.  These rows bypass the separator
+    // detection.
     // vorblock_n (pre-block size) is needed by the guard below.
     int vorblock_n = 0;
     {
@@ -576,11 +594,11 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
       int pn = 0;
       if (s.prompt->TakePre(&ptoks, &pn)) {
         vorblock_n = pn;
-        if (69 > 0
+        if (68 > 0
             && (unsigned long long)pn
-               > (unsigned long long)69) {
-          fprintf(stderr, "\ntransformer: pre-block of %d rows exceeds the reserve %d\n",
-              pn, (int)69);
+               > (unsigned long long)68) {
+          fprintf(stderr, "\nE210 %d %d\n",
+              pn, (int)68);
           fflush(nullptr);
           exit(1);
         }
@@ -596,7 +614,6 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
           }
           s.prompt->AddFed((unsigned long long)pn);
         } else {
-          s.pre_verworfen_zone += (unsigned long long)pn;
         }
       }
     }
@@ -633,7 +650,7 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
         // title end, and no sentinel row is fed inside a title), so it gets a guard
         // instead of an assumption.
         if (vorblock_n > 0) {
-          Fail("pre- and post-block in one cycle (%d and %d tokens), post-block must come first", vorblock_n, pn);
+          Fail("E211 %d %d", vorblock_n, pn);
         }
         const uint16_t* p0 = s.prompt->Prior0();
         for (int i = 0; i < pn; ++i) {
@@ -649,10 +666,8 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
     // comes from the PPMd prior instead of from the transformer.  `s.half`
     // carries that prior, the same row as in the `last_of_piece` branch.
     if (s.prompt->PriorNext()) {
-      HalvesToFloats(s.half.data(), s.probs.data(), 208);
-#if PORT_FW
+      RowToFloats(s.half.data(), s.probs.data());
       s.probs_from_tf = false;
-#endif
     } else {
     // Link-context prefix.  It ends on the separator sequence, the reset
     // trigger, so it is fed directly through `step()`: `window` and
@@ -674,11 +689,9 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
         s.z3->AddFed((unsigned long long)pn);
       }
     }
-    FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
-    HalvesToFloats(s.half.data(), s.probs.data(), 208);
-#if PORT_FW
+    RowToHalves(s.tf_out.data(), s.half.data());
+    RowToFloats(s.half.data(), s.probs.data());
     s.probs_from_tf = true;
-#endif
     }
   }
   if (at_separator) {
@@ -695,27 +708,21 @@ const float* Tf1Engine::Step(const std::valarray<float>& ppmd,
                  GATE_ARG(i + 1 == vn, Impl::SG_SEITE));
         }
         s.prompt->AddFed((unsigned long long)vn);
-        FloatsToHalves(s.tf_out.data(), s.half.data(), 208);
-        HalvesToFloats(s.half.data(), s.probs.data(), 208);
-#if PORT_FW
+        RowToHalves(s.tf_out.data(), s.half.data());
+        RowToFloats(s.half.data(), s.probs.data());
         s.probs_from_tf = true;
-#endif
       } else {
-        s.pre_verworfen_zone += (unsigned long long)vn;
       }
     }
   }
-  if (s.probs_writer) s.probs_writer->WriteHalves(s.half.data(), 208);
-  for (int i = 0; i < 208; ++i) {
-    if (!(s.probs[i] >= 1e-6f)) s.probs[i] = 1e-6f;
-  }
+  RowFloor(s.probs.data(), ((float)(300) * 1e-10f));
   return s.probs.data();
 }
 
 void Tf1Engine::SetMatch(int hot_byte, int raw_len_bits) {
   Impl& s = *impl_;
   s.m_hot = (hot_byte >= 0 && hot_byte < 256 && InSet(hot_byte))
-      ? kByteToIndex[hot_byte] : 208;
+      ? g_b2i[hot_byte] : 208;
   if (raw_len_bits < 0) raw_len_bits = 0;
   if (raw_len_bits > 255) raw_len_bits = 255;
   s.m_raw = raw_len_bits;
@@ -723,18 +730,19 @@ void Tf1Engine::SetMatch(int hot_byte, int raw_len_bits) {
   s.m_have = true;
 }
 
+int Tf1Engine::ZwangByte() const { return impl_->prompt ? impl_->prompt->ZwangByte() : -1; }
+
 bool Tf1Engine::GateMasked() const { return impl_->gate_masked; }
 
-#if PORT_FW
+// fast weights after ex-girlfriend 1.0 (Ryan Landay,
+// GPL-3.0-only): see tf1_engine.h.
 const float* Tf1Engine::FwRow() {
   Impl& s = *impl_;
   if (s.probs_from_tf && s.opt) {
     // the same float16 rounding and 1e-6 floor as the transformer row
-    FloatsToHalves(s.opt->fw_probs(), s.fw_half.data(), 208);
-    HalvesToFloats(s.fw_half.data(), s.fw_row.data(), 208);
-    for (int i = 0; i < 208; ++i) {
-      if (!(s.fw_row[i] >= 1e-6f)) s.fw_row[i] = 1e-6f;
-    }
+    RowToHalves(s.opt->fw_probs(), s.fw_half.data());
+    RowToFloats(s.fw_half.data(), s.fw_row.data());
+    RowFloor(s.fw_row.data(), 1e-6f);
     s.fw_live = true;
   } else {
     memcpy(s.fw_row.data(), s.probs.data(), sizeof(float) * 208);
@@ -744,7 +752,6 @@ const float* Tf1Engine::FwRow() {
 }
 
 void Tf1Engine::FwNeutral() { impl_->fw_live = false; }
-#endif
 
 // Pure observation, see tf1_engine.h.
 const float* Tf1Engine::LastHidden() const {
@@ -753,11 +760,14 @@ const float* Tf1Engine::LastHidden() const {
 int Tf1Engine::HiddenSize() const {
   return impl_->opt ? fx2::opt::TransformerOpt::hidden_size() : 0;
 }
+const float* Tf1Engine::LastKey() const {
+  return impl_->opt ? impl_->opt->last_key() : nullptr;
+}
 
 void Tf1Engine::ReportChannels() const {
   if (impl_->max_doc_rows > kMaxArticleTokens) {
-    fprintf(stderr, "\ntransformer: largest document %llu rows, rope table %llu\n",
-        impl_->max_doc_rows, (unsigned long long)kMaxArticleTokens);
+    __builtin_unreachable()
+;
     fflush(nullptr);
     exit(1);
   }
@@ -767,10 +777,10 @@ void Tf1Engine::ReportLoss() const {
   const Impl& s = *impl_;
   if (s.tokens == 0) return;
   fprintf(stderr, "\r%*s\r", 70, "");
-  printf("transformer loss: %.6f nats/token over %llu tokens\n",
+  printf("E213 %.6f %llu\n",
       s.loss_sum / s.tokens, s.tokens);
   fflush(stdout);
 }
 
-}
+}  // namespace transformer
 

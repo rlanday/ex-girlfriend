@@ -17,7 +17,7 @@
 // first token of a piece, float16 rounding and the 1e-6 floor of each row).
 
 #include "../transformer.h"
-#include "../port_cfg.h"
+#include "tf1_config.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -76,15 +76,17 @@ class Tf1Engine {
   // ByteMixer::SetProbs().
   const float* Step(const std::valarray<float>& ppmd, unsigned int byte);
 
-  // Read-only access to the
-  // transformer's own per-BYTE state, for the BITL head.  `LastHidden` is the
-  // d_model vector the output head reads (nullptr on the reference path,
-  // which has no accessor).  Valid until the next Step().
+  // Read-only access to the transformer's own per-byte state, for the BITLSTM
+  // head.  `LastHidden` is the d_model vector the output head reads (nullptr
+  // on the reference path, which has no accessor).  Valid until the next
+  // Step().
   const float* LastHidden() const;
   int HiddenSize() const;
+  const float* LastKey() const;
 
   // loss report; the coder accumulates no loss (see (1) in Step())
   void ReportLoss() const;
+  int ZwangByte() const;
 
   // Is the row that Step() just returned masked, i.e. is the byte about to be
   // coded in a gated zone?  The compressor asks this instead of looking at the
@@ -97,23 +99,22 @@ class Tf1Engine {
   // End-of-run check: stops if a document exceeded the rotary-table length.
   void ReportChannels() const;
 
-#if PORT_FW
-  // FW-DUAL row for the slot fw_slot_, to be called right after Step() when
-  // the transformer row goes to the slot: the FW-head distribution of the
-  // same read row the Step() row came from (float16-rounded and 1e-6-floored
-  // like that row), or a copy of the Step() row when it came from the PPMd
-  // prior (piece start, title/sentinel prior).  Marks the next stream token
-  // as a target of the FW head iff the row came from the FW head.
+  // fast weights after ex-girlfriend 1.0 (Ryan Landay,
+  // GPL-3.0-only).  FwRow(): the second-head row for its own slot, to be
+  // called right after Step() when the transformer row goes to the slot: the
+  // second-head distribution of the same read row (float16-rounded and
+  // 1e-6-floored like that row), or a copy of the Step() row when that came
+  // from the PPMd prior.  Marks the next stream token as a target of the fast
+  // weights iff the row came from the second head.
   const float* FwRow();
-  // The slot is neutral or off for the next stream token: no FW target.
+  // the slot is neutral or off for the next stream token: no target
   void FwNeutral();
-#endif
 
  private:
   struct Impl;
   Impl* impl_;
 };
 
-}
+}  // namespace transformer
 
 #endif

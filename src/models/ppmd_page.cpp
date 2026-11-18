@@ -1,3 +1,4 @@
+#include "../meld.h"
 #include "ppmd_page.h"
 #include <cstring>
 #include <cerrno>
@@ -13,6 +14,39 @@ int hilfs = 0;
 // The mirror covers the wrap N-1 -> 0.  PPMd touches at most 128 units =
 // 1,536 B at once, so two pages leave ample margin.
 enum { SPIEGEL = 2 };
+
+// Hole map (V.dat): bytes for one bit per heap page, and the mark set after
+// every write-back.
+static inline unsigned long long dat_bytes(void) {
+  return ((V.heapgr >> 12) + 8) >> 3;
+}
+static inline void dat_setze(unsigned long long page_index) {
+  V.dat[page_index >> 3] |= (unsigned char)(1u << (page_index & 7));
+}
+// Set up at start(): out of line, so the profiled shape of start() stays as
+// it is.  A failure is loud.
+__attribute__((noinline, cold)) static void dat_anlegen(void) {
+  V.dat = (unsigned char*)calloc((size_t)dat_bytes(), 1);
+  if (!V.dat) {
+    msg_note(17);
+    abort();
+  }
+}
+// Page-in from the working file.  A page that has not been written to the file
+// since it was created (or cut at a restart) is a hole and reads as zeros, so
+// the frame is cleared here instead: a pread of a hole cost ~17 us and put zero
+// pages into the page cache.  Out of line, so the profiled
+// shape of the slow path stays as it is.  After freigeben() the map is gone
+// and the pread on the closed descriptor aborts as before.
+__attribute__((noinline)) static ssize_t einlesen(unsigned char* rahmen,
+                                                 unsigned long long page_index) {
+  if (V.dat && !((V.dat[page_index >> 3] >> (page_index & 7)) & 1)) {
+    memset(rahmen, 0, SEITE);
+    ++V.loecher;
+    return SEITE;
+  }
+  return pread(V.fd, rahmen, SEITE, (off_t)(page_index << 12));
+}
 
 static int memfd(const char* name) {
 #ifdef SYS_memfd_create
@@ -37,32 +71,32 @@ int start(unsigned long long heapgroesse, unsigned long long pufferbytes,
   //    missed access site faults here loudly.
   V.heap = (unsigned char*)mmap(NULL, heapgroesse, PROT_NONE,
              MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-  if (V.heap == MAP_FAILED) { perror("ppmd page: mmap address space"); return 3; }
+  if (V.heap == MAP_FAILED) { msg_note(7); return 3; }
   V.heapgr = heapgroesse;
 
   // 2) backing file (sparse; a never-written hole reads as zeros - exactly
   //    what a fresh MAP_SHARED mapping delivers).
   V.fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC|O_NOATIME, 0600);
   if (V.fd < 0) V.fd = open(file_name, O_RDWR|O_CREAT|O_TRUNC, 0600);
-  if (V.fd < 0) { perror("ppmd page: open backing file"); return 4; }
+  if (V.fd < 0) { msg_note(8); return 4; }
   if (ftruncate(V.fd, (off_t)heapgroesse) != 0) {
-    perror("ppmd page: ftruncate"); return 5; }
+    msg_note(9); return 5; }
 
   // 3) frame pool in a memfd, so its first pages can be mapped a second
   //    time behind the pool (ring mirror against the wrap).
   const int mf = memfd("ppmd_page");
-  if (mf < 0) { perror("ppmd page: memfd_create"); return 6; }
+  if (mf < 0) { msg_note(10); return 6; }
   if (ftruncate(mf, (off_t)pufferbytes) != 0) {
-    perror("ppmd page: ftruncate memfd"); return 7; }
+    msg_note(11); return 7; }
   const unsigned long long gesamt = pufferbytes + (unsigned long long)SPIEGEL*SEITE;
   unsigned char* b = (unsigned char*)mmap(NULL, gesamt, PROT_NONE,
                        MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-  if (b == MAP_FAILED) { perror("ppmd page: mmap pool range"); return 8; }
+  if (b == MAP_FAILED) { msg_note(12); return 8; }
   if (mmap(b, pufferbytes, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mf, 0)
-      == MAP_FAILED) { perror("ppmd page: mmap pool"); return 9; }
+      == MAP_FAILED) { msg_note(13); return 9; }
   if (mmap(b + pufferbytes, (size_t)SPIEGEL*SEITE, PROT_READ|PROT_WRITE,
            MAP_SHARED|MAP_FIXED, mf, 0) == MAP_FAILED) {
-    perror("ppmd page: mmap mirror"); return 10; }
+    msg_note(14); return 10; }
   V.mf = mf;                 // stays open: the pool has to be able to grow
   V.puffer = b; V.rahmen = N; V.maske = N - 1;
   // Placed by zonen_setze() from InitSubAllocator; until then plain direct.
@@ -82,21 +116,22 @@ int start(unsigned long long heapgroesse, unsigned long long pufferbytes,
   V.statmfd = open("/proc/self/statm", O_RDONLY|O_CLOEXEC);
   if (V.statmfd < 0) {
     V.dyn_aus = 1;
-    fprintf(stderr, "ppmd page: /proc/self/statm unreadable, pool fixed at %llu MiB\n",
-            (N*SEITE)>>20);
+    msg_note(15)
+;
   }
 
   // 4) tables.  The pool is populated up front: its RSS is set from the
   //    first second on and changes only at a resize (dyn_setze).
   V.marke = (unsigned int*)malloc((size_t)N * sizeof(unsigned int));
-  if (!V.marke) { fprintf(stderr, "ppmd page: no memory for the tag table\n");
+  if (!V.marke) { msg_note(16);
     return 11; }
   for (unsigned long long i = 0; i < N; ++i) V.marke[i] = LEER;
   V.schmutz = (unsigned char*)calloc((size_t)N, 1);
-  if (!V.schmutz) { fprintf(stderr, "ppmd page: no memory for the dirty table\n");
+  if (!V.schmutz) { msg_note(17);
     return 11; }
   V.letzte_w = ~(unsigned long long)0;
   V.letzter_w = 0;
+  dat_anlegen();   // the file is empty: no page has data
   V.letzte = ~(unsigned long long)0;   // empty
   V.letzter = 0;
   memset(V.puffer, 0, (size_t)pufferbytes);      // populate
@@ -109,10 +144,10 @@ int start(unsigned long long heapgroesse, unsigned long long pufferbytes,
     volatile unsigned char* a0 = V.puffer;
     volatile unsigned char* a1 = V.puffer + pufferbytes;
     *a0 = 0xA5;
-    if (*a1 != 0xA5) { fprintf(stderr, "ppmd page: ring mirror not mapped\n");
+    if (*a1 != 0xA5) { msg_note(18);
       return 12; }
     *a1 = 0x5A;
-    if (*a0 != 0x5A) { fprintf(stderr, "ppmd page: ring mirror not coherent\n");
+    if (*a0 != 0x5A) { msg_note(19);
       return 13; }
     *a0 = 0;
   }
@@ -133,7 +168,8 @@ static int dyn_setze(unsigned long long N_neu) {
     if (!schreiben) { ++V.gespart; continue; }
     if (pwrite(V.fd, V.puffer + (i << 12), SEITE,
                (off_t)((unsigned long long)m << 12)) != (ssize_t)SEITE) {
-      perror("ppmd page dyn: pwrite"); return -1; }
+      msg_note(20); return -1; }
+    dat_setze(m);
     ++V.rueckschreibung;
     V.dyn_umzug_bytes += SEITE;
   }
@@ -142,22 +178,22 @@ static int dyn_setze(unsigned long long N_neu) {
       neu_bytes + (unsigned long long)SPIEGEL * SEITE;
   munmap(V.puffer, (size_t)alt_gesamt);
   if (ftruncate(V.mf, (off_t)neu_bytes) != 0) {
-    perror("ppmd page dyn: ftruncate"); return -2; }
+    msg_note(21); return -2; }
   unsigned char* b = (unsigned char*)mmap(NULL, neu_gesamt, PROT_NONE,
                        MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-  if (b == MAP_FAILED) { perror("ppmd page dyn: mmap space"); return -3; }
+  if (b == MAP_FAILED) { msg_note(22); return -3; }
   if (mmap(b, neu_bytes, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, V.mf, 0)
-      == MAP_FAILED) { perror("ppmd page dyn: mmap pool"); return -4; }
+      == MAP_FAILED) { msg_note(23); return -4; }
   if (mmap(b + neu_bytes, (size_t)SPIEGEL*SEITE, PROT_READ|PROT_WRITE,
            MAP_SHARED|MAP_FIXED, V.mf, 0) == MAP_FAILED) {
-    perror("ppmd page dyn: mmap mirror"); return -5; }
+    msg_note(24); return -5; }
   unsigned int* mk = (unsigned int*)realloc(V.marke,
                         (size_t)N_neu * sizeof(unsigned int));
-  if (!mk) { fprintf(stderr, "ppmd page dyn: out of memory (tags)\n"); return -6; }
+  if (!mk) { msg_note(25); return -6; }
   V.marke = mk;
   for (unsigned long long i = 0; i < N_neu; ++i) V.marke[i] = LEER;
   unsigned char* sm = (unsigned char*)realloc(V.schmutz, (size_t)N_neu);
-  if (!sm) { fprintf(stderr, "ppmd page dyn: out of memory (dirty)\n"); return -7; }
+  if (!sm) { msg_note(26); return -7; }
   V.schmutz = sm;
   memset(V.schmutz, 0, (size_t)N_neu);
   memset(b, 0, (size_t)neu_bytes);     // populate up front, as at setup
@@ -171,22 +207,37 @@ static int dyn_setze(unsigned long long N_neu) {
   return 0;
 }
 
+// The two numbers of /proc/self/statm without sscanf (the vsscanf
+// import and its forwarder go); strtol, not strtoull (glibc 2.38 redirects
+// that one to a symbol without forwarder).  noinline: dyn_pruefe keeps its
+// one call and its compare, so the PGO hash of dyn_tick stays.
+__attribute__((noinline)) static int ZweiZahlen(const char* b, unsigned long long* a,
+                                                unsigned long long* c) {
+  char* e1 = (char*)b;
+  char* e2 = (char*)b;
+  *a = (unsigned long long)strtol(b, &e1, 10);
+  if (e1 == b) return 0;
+  *c = (unsigned long long)strtol(e1, &e2, 10);
+  return e2 == e1 ? 1 : 2;
+}
 // Choose the pool size: how much room does the rest of the process (fremd_kib)
 // leave under the upper bound minus the safety margin (deckel)?
 static void dyn_pruefe(void) {
   char b[128];
   const ssize_t n = pread(V.statmfd, b, sizeof(b)-1, 0);
   if (n <= 0) { V.dyn_aus = 1;
-    fprintf(stderr, "ppmd page: /proc/self/statm unreadable, pool fixed at %llu MiB\n",
-            (V.rahmen*SEITE)>>20); return; }
+    msg_note(15)
+; return; }
   b[n] = 0;
   unsigned long long ges = 0, res = 0;
-  if (sscanf(b, "%llu %llu", &ges, &res) != 2) return;
+  if (ZweiZahlen(b, &ges, &res) != 2) return;
   const unsigned long long rss_kib = res * 4ULL;
   if (rss_kib > V.dyn_rss_spitze_kib) V.dyn_rss_spitze_kib = rss_kib;
   const unsigned long long eigen_kib = ((V.rahmen + SPIEGEL) * SEITE) >> 10;
   const unsigned long long fremd_kib =
-      rss_kib > eigen_kib ? rss_kib - eigen_kib : 0ULL;
+      (rss_kib > eigen_kib ? rss_kib - eigen_kib : 0ULL)
+      + V.dyn_vorab_kib   // raum(): memory about to become resident
+      ;
   const unsigned long long deckel = DYN_KLEMME_KIB - DYN_ABSTAND_KIB;
   unsigned long long frei_kib = deckel > fremd_kib ? deckel - fremd_kib : 0ULL;
   // Helper cap: never more frames than there have been
@@ -212,7 +263,7 @@ static void dyn_pruefe(void) {
       DYN_MIN_MIB << 10;
   // The upper bound limits the POOL (in frames), not the room; the pool is
   // compared with the room together with its two mirror pages.
-  // The decision is NOT "what is the ideal size" -- recomputing that every
+  // The decision is NOT "what is the ideal size"; recomputing that every
   // poll makes the control flutter, because our own pool is part of the RSS it
   // is computed from.  It is "does the pool we HAVE still fit, and is there
   // room for a larger one".
@@ -274,6 +325,27 @@ void dyn_tick(void) {
   dyn_pruefe();
 }
 
+// Room for a large table that the caller makes resident right after this
+// call (the semantic cache, at the first stream byte).  The poll only sees
+// memory that is already resident and comes 256 model bytes later; a table
+// that fills in one go would push the process past the clamp first
+// (the bucket table of the semantic cache filled at the text start with
+// +902 MB in 100 ms on top of a 4 GiB pool).  So the poll runs here once with `bytes`
+// counted as foreign memory: the pool shrinks at once to the largest step
+// that fits, before the table is touched.  The poll stays the only caller of
+// the resize, so the profiled shape of dyn_tick() stays as it is.  Returns 1
+// if the caller may make the bytes resident now (this process owns the pool
+// and reads its RSS), 0 otherwise (helper, look-ahead coder, dead sensor).
+// The pool size does not change the model output.
+int raum(unsigned long long bytes) {
+  if (V.dyn_aus || hilfs || !V.puffer) return 0;
+  V.dyn_vorab_kib = bytes >> 10;
+  V.dyn_rest = 1;              // the next tick polls
+  dyn_tick();
+  V.dyn_vorab_kib = 0;         // from here on the table is in the RSS itself
+  return V.dyn_aus ? 0 : 1;
+}
+
 // Page-in of ONE frame.  The previous resident is written back unless the
 // dirty bit says it was never written.
 static unsigned char* nachladen(unsigned long long page_index, unsigned long long slot) {
@@ -285,14 +357,15 @@ static unsigned char* nachladen(unsigned long long page_index, unsigned long lon
     if (schreiben) {
       if (pwrite(V.fd, rahmen, SEITE, (off_t)((unsigned long long)alt << 12))
           != (ssize_t)SEITE) {
-        perror("ppmd page: pwrite"); abort(); }
+        msg_note(27); abort(); }
+      dat_setze(alt);
       ++V.rueckschreibung;
     } else {
       ++V.gespart;
     }
   }
-  const ssize_t n = pread(V.fd, rahmen, SEITE, (off_t)(page_index << 12));
-  if (n < 0) { perror("ppmd page: pread"); abort(); }
+  const ssize_t n = einlesen(rahmen, page_index);
+  if (n < 0) { msg_note(28); abort(); }
   if (n < (ssize_t)SEITE) memset(rahmen + n, 0, (size_t)(SEITE - n)); // hole
   V.schmutz[slot] = 0;
   // A cache entry must go if it pointed to THIS frame - it now carries
@@ -324,7 +397,7 @@ static int freigegeben = 0;
 
 void freigeben(void) {
   if (freigegeben) {
-    fprintf(stderr, "ppmd page: release called twice - ignored\n");
+    msg_note(29);
     return;
   }
   freigegeben = 1;
@@ -335,7 +408,7 @@ void freigeben(void) {
       (V.rahmen + (unsigned long long)SPIEGEL) * (unsigned long long)SEITE;
   if (mmap(V.puffer, (size_t)gesamt, PROT_NONE,
            MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE|MAP_FIXED, -1, 0) == MAP_FAILED)
-    perror("ppmd page: release pool");
+    msg_note(30);
   // The dynamic pool keeps its memfd open so it can be resized; as long as a
   // descriptor is open the shmem pages survive the unmapping.  Closing it is
   // what actually returns them.  The statm sensor goes too.
@@ -355,6 +428,7 @@ void freigeben(void) {
   V.z_text = 0; V.z_basis = 0; V.z_ring = 1; V.z_grenze = ~0ULL; V.z_versatz = 0;
   V.z_mf = -1;
   free(V.schmutz); V.schmutz = 0;
+  free(V.dat); V.dat = 0;   // einlesen() then takes the pread on the closed fd
   V.letzte_w = ~(unsigned long long)0; V.letzter_w = 0;
   V.letzte = ~(unsigned long long)0; V.letzter = 0;
 }
@@ -367,18 +441,19 @@ static inline unsigned long long rahmen_von(unsigned long long page_index) {
 // Set the reciprocal AND check the formula against the real modulo for every
 // page of the heap.  A wrong mapping would change the model output; that is
 // the one error that must not happen, so it is excluded, not assumed.
+static_assert((unsigned long long)4096 <= (1ULL << 23),
+              "64-bit reciprocal: at most 2^31 frames of 4 KiB in the pool");
 static void rez_setze(unsigned long long n) {
   unsigned int k = 0; while ((1ULL << k) < n) ++k;   // ceil(log2 n)
   V.z_ring = n;
   V.schieb = 32u + k;
-  V.rez = (unsigned long long)((((unsigned __int128)1) << V.schieb) / n) + 1ULL;
+  V.rez = ((1ULL << V.schieb) / n) + 1ULL;   // n <= 2^31 frames (8 TiB) => shift <= 63
   // the upper band adds its offset (< n) before the modulo
   const unsigned long long seiten = (V.heapgr >> 12) + n;
   for (unsigned long long s = 0; s < seiten; ++s) {
     if (rahmen_von(s) != s % n) {
-      fprintf(stderr, "ppmd page: frame mapping wrong at page %llu"
-              " (N=%llu, reciprocal=%llu, shift=%u)\n",
-              s, n, V.rez, V.schieb);
+      msg_note(31)
+;
       abort();
     }
   }
@@ -397,11 +472,11 @@ static unsigned long long zonen_textrahmen(unsigned long long N) {
 static void t_setze(unsigned long long S) {
   unsigned int k = 0; while ((1ULL << k) < S) ++k;
   V.t_schieb = 32u + k;
-  V.t_rez = (unsigned long long)((((unsigned __int128)1) << V.t_schieb) / S) + 1ULL;
+  V.t_rez = ((1ULL << V.t_schieb) / S) + 1ULL;   // S <= N, shift <= 63 like rez_setze
   V.z_tgroesse = S;
   for (unsigned long long s = 0; s < V.z_ursprung; ++s)
     if (s - ((s * V.t_rez) >> V.t_schieb) * S != s % S) {
-      fprintf(stderr, "ppmd page: text mapping wrong at page %llu\n", s);
+      msg_note(32);
       abort();
     }
 }
@@ -411,14 +486,14 @@ static void spiegel_setze(unsigned long long basis) {
   unsigned char* hinter = V.puffer + V.rahmen * SEITE;
   if (mmap(hinter, (size_t)SPIEGEL * SEITE, PROT_READ|PROT_WRITE,
            MAP_SHARED|MAP_FIXED, V.z_mf, (off_t)(basis * SEITE)) == MAP_FAILED) {
-    perror("ppmd page: mmap mirror"); abort(); }
+    msg_note(14); abort(); }
   volatile unsigned char* a0 = V.puffer + basis * SEITE;
   volatile unsigned char* a1 = hinter;
   const unsigned char alt = *a0;
   *a0 = 0xA5;
-  if (*a1 != 0xA5) { fprintf(stderr, "ppmd page: mirror not mapped\n"); abort(); }
+  if (*a1 != 0xA5) { msg_note(33); abort(); }
   *a1 = alt;
-  if (*a0 != alt) { fprintf(stderr, "ppmd page: mirror not coherent\n"); abort(); }
+  if (*a0 != alt) { msg_note(34); abort(); }
 }
 // Layout for the CURRENT N.  Must run with an empty pool.  Text area [0, S);
 // units ring [S, N) of R frames; the upper band is shifted so that the last
@@ -456,16 +531,42 @@ static void umordnen(void) {
     if (!schreiben) { ++V.gespart; V.marke[i] = LEER; continue; }
     if (pwrite(V.fd, V.puffer + (i << 12), SEITE,
                (off_t)((unsigned long long)m << 12)) != (ssize_t)SEITE) {
-      perror("ppmd page: pwrite"); abort(); }
+      msg_note(27); abort(); }
+    dat_setze(m);
     ++V.rueckschreibung;
     V.marke[i] = LEER;
   }
   V.letzte = ~(unsigned long long)0; V.letzter = 0;
   V.letzte_w = ~(unsigned long long)0; V.letzter_w = 0;
 }
+// A PPMd restart (StartModelRare -> InitSubAllocator) builds the new model
+// from the same origins and writes every byte before it reads it (checked: no
+// page read by the new model before it wrote it, at both restarts), so the
+// old content is worthless.  Without this the old dirty
+// frames were written back at the next resize (census metablock end: about
+// 200 MiB) and read back when the new model reached their pages.  The pool,
+// the working file and the hole map are reset to the state of a fresh start:
+// every frame becomes empty without write-back (LEER is all ones), both
+// translation caches are emptied, the file is cut to zero length and extended
+// again (its old pages become holes, their page cache goes without
+// write-back), and the hole map is cleared.  Every old page then reads as
+// zeros, resident or not, so the content never depends on the pool size.
+// Runs between two model bytes, before the new model allocates anything.
+static void verwerfen(void) {
+  static_assert(LEER == 0xFFFFFFFFu, "the tag table is emptied bytewise");
+  memset(V.marke, 0xFF, (size_t)V.rahmen * sizeof(unsigned int));
+  V.letzte = ~(unsigned long long)0; V.letzter = 0;
+  V.letzte_w = ~(unsigned long long)0; V.letzter_w = 0;
+  if (ftruncate(V.fd, 0) != 0 || ftruncate(V.fd, (off_t)V.heapgr) != 0) {
+    msg_note(9); abort(); }
+  memset(V.dat, 0, (size_t)dat_bytes());
+}
 void zonen_setze(unsigned long long unitsstart_off) {
   const unsigned long long u = unitsstart_off >> 12;
-  if (u == V.z_ursprung) return;               // a restart: nothing moves
+  if (u == V.z_ursprung) {                     // a restart: nothing moves,
+    verwerfen();                               // the old content is worthless
+    return;
+  }
   umordnen();
   V.z_ursprung = u;
   zonen_rechne();
@@ -499,7 +600,7 @@ unsigned char* langsam(unsigned char* a, unsigned long long len) {
   if (letzte != page_index
       && (page_index < V.z_text
           || (V.z_versatz && page_index < V.z_grenze && letzte >= V.z_grenze))) {
-    fprintf(stderr, "ppmd page: object spans a band boundary\n");
+    msg_note(35);
     abort();
   }
   for (unsigned long long t = page_index + 1; t <= letzte; ++t) {
@@ -533,10 +634,13 @@ void schluss(void) {
   if (V.fd >= 0) close(V.fd);
   free(V.marke);
   free(V.schmutz);
+  free(V.dat);
   memset(&V, 0, sizeof(V)); V.fd = -1;
 }
 
-}
+} // namespace ppmd_page
+
+// ---- helpers for the proxy pointers (ppmd_page_ptr.h) -----------------------
 #include "ppmd_page_ptr.h"
 
 namespace ppmd_page {
@@ -557,4 +661,4 @@ void kopiere(unsigned char* ziel, const unsigned char* quelle, unsigned long lon
   }
 }
 
-}
+} // namespace ppmd_page

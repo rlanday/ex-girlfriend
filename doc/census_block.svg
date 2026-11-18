@@ -1,0 +1,493 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1335" width="960" height="1335" role="img" aria-labelledby="t d">
+<title id="t">Layout of the census metadata block</title>
+<desc id="d">The census metadata block of the 2.0 coder stream to scale, with the head with the forms of the eight kinds of place, a run with one byte per page, and the records sorted by kind; one real record as byte boxes with the fed bytes, the estimates of some of its values, a list flag of a second record, and how the decoder restores the page.</desc>
+<rect x="0.5" y="0.5" width="959" height="1334" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">Layout of the census metadata block</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">9,280,775 B of the coder stream behind the metadata block, one record for each of 36,148 census pages that follow the template form</text>
+<rect x="64" y="100" width="4.77" height="28" fill="#6b4800"/>
+<rect x="69.77" y="100" width="117.38" height="28" fill="#a56f00"/>
+<text x="128.46" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">county</text>
+<rect x="188.65" y="100" width="222.41" height="28" fill="#a56f00"/>
+<text x="299.86" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">city</text>
+<rect x="412.56" y="100" width="192.69" height="28" fill="#a56f00"/>
+<text x="508.91" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">town</text>
+<rect x="606.76" y="100" width="79.82" height="28" fill="#a56f00"/>
+<text x="646.67" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">village</text>
+<rect x="688.08" y="100" width="105.12" height="28" fill="#a56f00"/>
+<text x="740.64" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">CDP</text>
+<rect x="794.7" y="100" width="91.71" height="28" fill="#a56f00"/>
+<text x="840.56" y="118.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="600">township</text>
+<rect x="887.91" y="100" width="28.17" height="28" fill="#a56f00"/>
+<line x1="902" y1="97" x2="902" y2="78" stroke="#6f6e69" stroke-width="1"/>
+<text x="898" y="75" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e" text-anchor="end">borough</text>
+<rect x="917.58" y="100" width="16.92" height="28" fill="#a56f00"/>
+<line x1="926.04" y1="97" x2="926.04" y2="92" stroke="#6f6e69" stroke-width="1"/>
+<text x="932.04" y="89" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e" text-anchor="end">other</text>
+<line x1="65" y1="96" x2="65" y2="86" stroke="#6f6e69" stroke-width="1"/>
+<text x="62" y="82" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">head with the forms 5,438 B and the run 55,931 B, then the records 9.22 MB, by kind of place, each kind in page order</text>
+<line x1="64" y1="128" x2="64" y2="135" stroke="#6f6e69" stroke-width="1"/>
+<text x="64" y="147" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#6f6e69">3,743,139  end of the metadata block</text>
+<line x1="936" y1="128" x2="936" y2="135" stroke="#6f6e69" stroke-width="1"/>
+<text x="936" y="147" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#6f6e69" text-anchor="end">text start  13,023,914</text>
+<text x="24" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">kind of place</text>
+<text x="243" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">county</text>
+<text x="340" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">city</text>
+<text x="437" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">town</text>
+<text x="534" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">village</text>
+<text x="631" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">CDP</text>
+<text x="728" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">township</text>
+<text x="825" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">borough</text>
+<text x="922" y="170" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end" font-weight="600">other</text>
+<text x="24" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">records</text>
+<text x="243" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2,972</text>
+<text x="340" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">9,854</text>
+<text x="437" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">7,936</text>
+<text x="534" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">3,826</text>
+<text x="631" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">4,879</text>
+<text x="728" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">4,832</text>
+<text x="825" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">1,229</text>
+<text x="922" y="186" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">620</text>
+<text x="24" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">MB of records</text>
+<text x="243" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">1.27</text>
+<text x="340" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2.38</text>
+<text x="437" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2.07</text>
+<text x="534" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">0.87</text>
+<text x="631" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">1.13</text>
+<text x="728" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">0.99</text>
+<text x="825" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">0.32</text>
+<text x="922" y="202" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">0.20</text>
+<text x="24" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">positions of the form</text>
+<text x="243" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">201</text>
+<text x="340" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">57</text>
+<text x="437" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">83</text>
+<text x="534" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">46</text>
+<text x="631" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">45</text>
+<text x="728" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">40</text>
+<text x="825" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">70</text>
+<text x="922" y="218" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">134</text>
+<text x="24" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">variants</text>
+<text x="243" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">452</text>
+<text x="340" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">216</text>
+<text x="437" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">207</text>
+<text x="534" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">118</text>
+<text x="631" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">120</text>
+<text x="728" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">92</text>
+<text x="825" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">119</text>
+<text x="922" y="234" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">179</text>
+<line x1="24" y1="174" x2="936" y2="174" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="24" y1="252" x2="936" y2="252" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="262" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="274" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Head</tspan><tspan fill="#52514e" dx="8">per kind its positions, per position its variants, per variant its value fields</tspan></text>
+<rect x="24" y="300" width="112" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="42.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">7A</text>
+<text x="67.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">63</text>
+<text x="92.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">62</text>
+<text x="117.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="24" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">magic</text>
+<text x="24" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">zcb3</text>
+<text x="142" y="317.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">county form 1,443 B</text>
+<rect x="281" y="300" width="62" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="299.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="324.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">B9</text>
+<text x="281" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">positions</text>
+<text x="281" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">57 (city)</text>
+<rect x="349" y="300" width="98" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="385.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="410.5" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">84</text>
+<text x="349" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">variants</text>
+<text x="349" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">4 at position 0</text>
+<rect x="453" y="300" width="40.4" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="473.2" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="453" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">values</text>
+<text x="453" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">1</text>
+<rect x="499.4" y="300" width="40.4" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="519.6" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BF</text>
+<text x="499.4" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">field</text>
+<text x="499.4" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">county</text>
+<rect x="545.8" y="300" width="162" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="564.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="589.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BF</text>
+<text x="614.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="639.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BF</text>
+<text x="664.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="689.3" y="317.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BF</text>
+<text x="545.8" y="295" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">variants 2 to 4</text>
+<text x="545.8" y="340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">the same</text>
+<text x="713.8" y="317.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<text x="740.8" y="317.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">1,503 variants;</text>
+<text x="740.8" y="331.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">their texts are in the</text>
+<text x="740.8" y="345.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">census pseudo article</text>
+<rect x="24" y="354" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="366" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Run</tspan><tspan fill="#52514e" dx="8">one byte per page from the first to the last page with a record, the kind of place of its record or none</tspan></text>
+<rect x="24" y="392" width="87" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="42.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">90</text>
+<text x="67.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">AF</text>
+<text x="92.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BA</text>
+<text x="24" y="387" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">first page</text>
+<text x="24" y="432" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">164,758</text>
+<rect x="117" y="392" width="87" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="135.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="160.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">BB</text>
+<text x="185.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">99</text>
+<text x="117" y="387" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">pages</text>
+<text x="117" y="432" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">55,925</text>
+<text x="210" y="409.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<rect x="237" y="392" width="337" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="255.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="280.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="305.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="330.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="355.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="380.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<rect x="393.5" y="395" width="24" height="20" fill="none" rx="3" stroke="#6b4800" stroke-width="1.6"/>
+<text x="405.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="430.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="455.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="480.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="505.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="530.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="555.5" y="409.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">85</text>
+<text x="237" y="387" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">pages 203,103 to 203,115</text>
+<text x="405.5" y="432" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b" text-anchor="middle">page 203,109</text>
+<text x="580" y="409.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<text x="607" y="402.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">80 county, 81 city, ..., 85 township, 87 other,</text>
+<text x="607" y="416.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">88 no record (19,777 pages)</text>
+<line x1="24" y1="440" x2="936" y2="440" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="450" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="462" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Record of Pleasant Lake, Minnesota</tspan><tspan fill="#52514e" dx="8">page 203,109 (city), 217 B at 6,131,815</tspan></text>
+<rect x="706" y="451" width="18" height="12" fill="#ffffff" rx="3" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="730" y="462" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">fed to the models, not coded</text>
+<rect x="24" y="488" width="59.6" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="53.8" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">96</text>
+<text x="24" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">state</text>
+<text x="24" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">Minnesota</text>
+<rect x="89.6" y="488" width="59.6" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="119.4" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="89.6" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">type word</text>
+<text x="89.6" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">none</text>
+<rect x="155.2" y="488" width="104.4" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="182.4" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">9C</text>
+<text x="207.4" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">BC</text>
+<text x="232.4" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">0B</text>
+<text x="155.2" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="155.2" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">revision id, day</text>
+<text x="155.2" y="542" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">of the page</text>
+<rect x="265.6" y="488" width="40.4" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="285.8" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">80</text>
+<text x="265.6" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="265.6" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">pos. 0</text>
+<rect x="312" y="488" width="59.6" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="341.8" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="312" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">flag</text>
+<text x="312" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">variant 1</text>
+<rect x="377.6" y="488" width="40.4" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="397.8" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">81</text>
+<text x="377.6" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="377.6" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">pos. 1</text>
+<rect x="424" y="488" width="40.4" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="444.2" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="424" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">flag</text>
+<text x="424" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">absent</text>
+<rect x="470.4" y="488" width="40.4" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="490.6" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">82</text>
+<text x="470.4" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="470.4" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">pos. 2</text>
+<rect x="516.8" y="488" width="59.6" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="546.6" y="505.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="516.8" y="483" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">flag</text>
+<text x="516.8" y="528" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">variant 1</text>
+<text x="582.4" y="505.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">... one flag for each of the 57 positions</text>
+<text x="24" y="573" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">the 57 flags</text>
+<rect x="118" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<text x="123.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">0</text>
+<rect x="131" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="144" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="157" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="170" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="183" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="196" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="209" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="222" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="235" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="248" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<text x="253.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">10</text>
+<rect x="261" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="274" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="287" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="300" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="313" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="326" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="339" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="352" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="365" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="378" y="562" width="11" height="14" fill="#6b4800" rx="2"/>
+<text x="383.5" y="573" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#ffffff" text-anchor="middle" font-weight="600">2</text>
+<text x="383.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">20</text>
+<rect x="391" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="404" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="417" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="430" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="443" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="456" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="469" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="482" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="495" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="508" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<text x="513.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">30</text>
+<rect x="521" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="534" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="547" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="560" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="573" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="586" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="599" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="612" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="625" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="638" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<text x="643.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">40</text>
+<rect x="651" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="664" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="677" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="690" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="703" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="716" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<rect x="729" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="742" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="755" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="768" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<text x="773.5" y="558" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" fill="#6f6e69" text-anchor="middle">50</text>
+<rect x="781" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="794" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="807" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="820" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="833" y="562" width="11" height="14" fill="#ffffff" rx="2" stroke="#c9a35a" stroke-width="1"/>
+<rect x="846" y="562" width="11" height="14" fill="#a56f00" rx="2"/>
+<text x="865" y="573" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">26 present</text>
+<line x1="123.5" y1="578" x2="123.5" y2="586" stroke="#6f6e69" stroke-width="1"/>
+<text x="119.5" y="597" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">intro sentence</text>
+<line x1="383.5" y1="578" x2="383.5" y2="586" stroke="#6f6e69" stroke-width="1"/>
+<text x="379.5" y="597" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">census sentence, variant 2</text>
+<line x1="721.5" y1="578" x2="721.5" y2="586" stroke="#6f6e69" stroke-width="1"/>
+<text x="717.5" y="597" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e" text-anchor="end">category of the county</text>
+<line x1="851.5" y1="578" x2="851.5" y2="586" stroke="#6f6e69" stroke-width="1"/>
+<text x="847.5" y="597" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e" text-anchor="end">interwiki link</text>
+<rect x="24" y="628" width="137" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="42.5" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="67.5" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="92.5" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="117.5" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="142.5" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="24" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">gap digits</text>
+<text x="24" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">27 bits, each XOR</text>
+<text x="24" y="682" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">a predicted bit</text>
+<rect x="167" y="628" width="78.8" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="193.9" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">81</text>
+<text x="218.9" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">93</text>
+<text x="167" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="167" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">field, scale</text>
+<rect x="251.8" y="628" width="137" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="270.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">2D</text>
+<text x="295.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">32</text>
+<text x="320.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">30</text>
+<text x="345.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">36</text>
+<text x="370.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="251.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">population</text>
+<text x="251.8" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">-206</text>
+<rect x="394.8" y="628" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="413.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">82</text>
+<text x="438.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">92</text>
+<text x="394.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="462.8" y="628" width="37" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="481.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="462.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">again</text>
+<text x="462.8" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">empty</text>
+<rect x="505.8" y="628" width="37" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="524.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">BF</text>
+<text x="505.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="548.8" y="628" width="62" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="567.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="592.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="548.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">county</text>
+<text x="548.8" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">1</text>
+<rect x="616.8" y="628" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="635.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">97</text>
+<text x="660.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">9A</text>
+<text x="616.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="684.8" y="628" width="112" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="703.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="728.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">37</text>
+<text x="753.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">38</text>
+<text x="778.3" y="645.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="684.8" y="623" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">density</text>
+<text x="684.8" y="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">378</text>
+<text x="802.8" y="645.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<text x="24" y="719.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<rect x="51" y="702" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="69.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">9E</text>
+<text x="94.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">92</text>
+<text x="51" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="119" y="702" width="112" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="137.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">67</text>
+<text x="162.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">2D</text>
+<text x="187.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="212.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="119" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">white %</text>
+<text x="119" y="742" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">g-3</text>
+<rect x="237" y="702" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="255.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">AC</text>
+<text x="280.5" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">91</text>
+<text x="237" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="305" y="702" width="91.6" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="338.3" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">2A</text>
+<text x="363.3" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="305" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">household size</text>
+<text x="305" y="742" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">*</text>
+<rect x="402.6" y="702" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="421.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">B7</text>
+<text x="446.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">8B</text>
+<text x="402.6" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="470.6" y="702" width="237" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="489.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">2D</text>
+<text x="514.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="539.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="564.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">2F</text>
+<text x="589.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="614.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">33</text>
+<text x="639.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">34</text>
+<text x="664.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">36</text>
+<text x="689.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="470.6" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">household income</text>
+<text x="470.6" y="742" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">-11/1346</text>
+<text x="713.6" y="719.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<rect x="740.6" y="702" width="62" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="759.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">BE</text>
+<text x="784.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">8B</text>
+<text x="740.6" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<rect x="808.6" y="702" width="87" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="827.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">31</text>
+<text x="852.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">38</text>
+<text x="877.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">09</text>
+<text x="808.6" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">last value</text>
+<text x="808.6" y="742" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">18</text>
+<rect x="901.6" y="702" width="37" height="26" fill="#ecebe6" rx="4" stroke="#b5b4aa" stroke-width="1.1"/>
+<text x="920.1" y="719.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">0B</text>
+<text x="901.6" y="697" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">end</text>
+<text x="24" y="758" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">48 values in the order of the number coder. All gap bits of this record are predicted; 8 of them mark kept text in the stub.</text>
+<line x1="24" y1="776" x2="936" y2="776" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="786" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="798" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Values of this record</tspan><tspan fill="#52514e" dx="8">estimate from the values coded before, true value, token</tspan></text>
+<text x="24" y="822" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">value</text>
+<text x="250" y="822" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">estimate</text>
+<text x="400" y="822" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">true value</text>
+<text x="590" y="822" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">token</text>
+<text x="690" y="822" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">token form</text>
+<line x1="24" y1="827" x2="936" y2="827" stroke="#e1e0d9" stroke-width="1"/>
+<text x="24" y="844" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">population (intro sentence)</text>
+<text x="250" y="844" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">710</text>
+<text x="400" y="844" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">504</text>
+<text x="590" y="844" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">-206</text>
+<text x="690" y="844" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">steps of 1 from the estimate</text>
+<text x="24" y="861" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">population (census sentence)</text>
+<text x="250" y="861" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">504, the intro value</text>
+<text x="400" y="861" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">504</text>
+<text x="590" y="861" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">empty</text>
+<text x="690" y="861" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">a rule gives the value</text>
+<text x="24" y="878" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">county</text>
+<text x="250" y="878" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">86 county records</text>
+<text x="400" y="878" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">Stearns County</text>
+<text x="590" y="878" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">1</text>
+<text x="690" y="878" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">rank in the candidate order</text>
+<text x="24" y="895" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">population density per sq mi</text>
+<text x="250" y="895" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">603.4</text>
+<text x="400" y="895" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">641.2</text>
+<text x="590" y="895" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">378</text>
+<text x="690" y="895" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">steps of 0.1</text>
+<text x="24" y="912" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">population density per km2</text>
+<text x="250" y="912" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">246.3, computed</text>
+<text x="400" y="912" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">246.3</text>
+<text x="590" y="912" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">empty</text>
+<text x="690" y="912" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">a rule gives the value</text>
+<text x="24" y="929" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">households</text>
+<text x="250" y="929" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">185</text>
+<text x="400" y="929" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">174</text>
+<text x="590" y="929" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">-11</text>
+<text x="690" y="929" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">steps of 1</text>
+<text x="24" y="946" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">white, % of 504 people</text>
+<text x="250" y="946" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">494.1 people</text>
+<text x="400" y="946" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">491 people, 97.42 %</text>
+<text x="590" y="946" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">g-3</text>
+<text x="690" y="946" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">count on the grid of 504</text>
+<text x="24" y="963" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">average household size</text>
+<text x="250" y="963" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">2.79</text>
+<text x="400" y="963" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">2.90</text>
+<text x="590" y="963" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">*</text>
+<text x="690" y="963" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">the special value 504 / 174</text>
+<text x="24" y="980" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">median household income</text>
+<text x="250" y="980" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">83,711 $</text>
+<text x="400" y="980" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">56,346 $</text>
+<text x="590" y="980" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">-11/1346</text>
+<text x="690" y="980" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">2,500 $ brackets, offset in it</text>
+<text x="24" y="1003" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e"><tspan font-weight="600">Estimates.</tspan> A rule gives some values exactly (empty token). The other numbers are estimated by an online ridge regression</text>
+<text x="24" y="1018" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">per kind of place and field over values of the same record and the mean of the field over the 8 nearest earlier places</text>
+<text x="24" y="1033" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">of that kind, with an offset per state.</text>
+<text x="24" y="1048" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e"><tspan font-weight="600">County.</tspan> Its rank in a list of the county records of the state is coded. The name fills the value slot of the intro</text>
+<text x="24" y="1063" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">sentence, and the category line repeats it without a value. Name and state of the place are placeholders.</text>
+<line x1="24" y1="1078" x2="936" y2="1078" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="1088" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="1100" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">A list flag</tspan><tspan fill="#52514e" dx="8">record of Kennett, Missouri, page 200,398, 169 B at 5,887,733</tspan></text>
+<rect x="24" y="1126" width="53.2" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="50.6" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">98</text>
+<text x="24" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">state</text>
+<text x="24" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">Missouri</text>
+<text x="83.2" y="1143.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<rect x="110.2" y="1126" width="46.8" height="26" fill="#ffffff" rx="4" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="133.6" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#52514e" text-anchor="middle">B8</text>
+<text x="110.2" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" font-style="italic">fed</text>
+<text x="110.2" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">pos. 56</text>
+<rect x="163" y="1126" width="53.2" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="189.6" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">E3</text>
+<text x="163" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">flag</text>
+<text x="163" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">99: list</text>
+<rect x="222.2" y="1126" width="62" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="240.7" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="265.7" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">82</text>
+<text x="222.2" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">count</text>
+<text x="222.2" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">2 units</text>
+<rect x="290.2" y="1126" width="46.8" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="313.6" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">81</text>
+<text x="290.2" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">variant</text>
+<text x="290.2" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="343" y="1126" width="46.8" height="26" fill="#f6ecd9" rx="4" stroke="#c9a35a" stroke-width="1.1"/>
+<text x="366.4" y="1143.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" text-anchor="middle">80</text>
+<text x="343" y="1121" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">variant</text>
+<text x="343" y="1166" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="395.8" y="1143.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#6f6e69">...</text>
+<text x="422.8" y="1136.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#0b0b0b">[[io:Kennett, Missouri]] and [[sv:Kennett, Missouri]],</text>
+<text x="422.8" y="1151.5" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">two units of the interwiki position; the names stay in the stub</text>
+<line x1="24" y1="1170" x2="936" y2="1170" stroke="#e1e0d9" stroke-width="1"/>
+<rect x="24" y="1180" width="3" height="16" fill="#a56f00"/>
+<text x="36" y="1192" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b"><tspan font-weight="600">Decoder</tspan><tspan fill="#52514e" dx="8">restores each census page from four parts</tspan></text>
+<rect x="24" y="1206" width="168" height="38" fill="#fbf3e3" rx="5" stroke="#a56f00" stroke-width="1.1"/>
+<text x="34" y="1222" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">record</text>
+<text x="34" y="1237" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">flags, gaps, values</text>
+<text x="201" y="1230" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="15" fill="#52514e" text-anchor="middle" font-weight="600">+</text>
+<rect x="210" y="1206" width="168" height="38" fill="#f2f0fc" rx="5" stroke="#9085e9" stroke-width="1.1"/>
+<text x="220" y="1222" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">variant texts</text>
+<text x="220" y="1237" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">census pseudo article</text>
+<text x="387" y="1230" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="15" fill="#52514e" text-anchor="middle" font-weight="600">+</text>
+<rect x="396" y="1206" width="168" height="38" fill="#fbf3e3" rx="5" stroke="#a56f00" stroke-width="1.1"/>
+<text x="406" y="1222" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">stub of the page</text>
+<text x="406" y="1237" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">names, kept text</text>
+<text x="573" y="1230" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="15" fill="#52514e" text-anchor="middle" font-weight="600">+</text>
+<rect x="582" y="1206" width="168" height="38" fill="#fbf3e3" rx="5" stroke="#a56f00" stroke-width="1.1"/>
+<text x="592" y="1222" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">head and run</text>
+<text x="592" y="1237" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">forms, kind of place</text>
+<line x1="756" y1="1225" x2="782" y2="1225" stroke="#52514e" stroke-width="1.4"/>
+<path d="M790 1225 L782 1229 L782 1221 z" fill="#52514e"/>
+<rect x="796" y="1206" width="118" height="38" fill="#ffffff" rx="5" stroke="#d9d8d1" stroke-width="1.1"/>
+<text x="806" y="1222" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" font-weight="600">the page</text>
+<text x="806" y="1237" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" fill="#52514e">byte for byte</text>
+<text x="24" y="1268" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e"><tspan font-weight="600">Fed to the models, not coded.</tspan> In front of the flags the revision id and the day of the page from the metadata block (coarse),</text>
+<text x="24" y="1283" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">in front of each flag its position, in front of each value its field and a scale class of the estimate, and in front</text>
+<text x="24" y="1298" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">of a value without a field the earlier value of the record that it most likely repeats.</text>
+</svg>

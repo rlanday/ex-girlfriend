@@ -21,23 +21,10 @@ void split4Comp(char const *enwik9_filename) {
   FILE* ofile2 = fopen(".main", "wb");
   FILE* ofile3 = fopen(".coda", "wb");
   int line_count = 0;
-
-  do {
-    int c=getc(ifile);
-    if (c==EOF) break;
-    if (line_count < COMP_INTRO_END_LINE) {
-      putc(c,ofile1);
-    } else if (line_count < COMP_MAIN_END_LINE) {
-      putc(c,ofile2);
-    } else if (line_count < COMP_CODA_END_LINE) {
-      putc(c,ofile3);
-    } else {
-      putc(c,ofile3);
-    }
-    if (c==10)
-    line_count++;
-  }
-  while (!feof(ifile));
+  // one write per byte into the part its line belongs to
+  for (int c; (c = getc(ifile)) != EOF; line_count += (c == 10))
+    putc(c, line_count < COMP_INTRO_END_LINE ? ofile1
+            : line_count < COMP_MAIN_END_LINE ? ofile2 : ofile3);
   fclose(ifile);
   fclose(ofile1);
   fclose(ofile2);
@@ -51,24 +38,10 @@ void split4Decomp() {
   FILE* ofile3 = fopen(".coda_decomp", "wb");
   int line_count = 0;
   const long sh = cmtidx_line_shift(".input_decomp");
-  const long b1 = 13146906 + sh, b2 = 13146935 + sh, b3 = 13147027 + sh;
+  const long b1 = 13146906 + sh, b2 = 13146935 + sh;   // the coda runs to the end
 
-  do {
-      int c=getc(ifile);
-      if (c==EOF) break;
-    if (line_count < b1) {
-      putc(c,ofile2);
-    } else if (line_count < b2) {
-        putc(c,ofile1);
-    } else if (line_count < b3) {
-        putc(c,ofile3);
-    } else {
-        putc(c,ofile3);
-    }
-    if (c==10)
-    line_count++;
-  }
-  while (!feof(ifile));
+  for (int c; (c = getc(ifile)) != EOF; line_count += (c == 10))
+    putc(c, line_count < b1 ? ofile2 : line_count < b2 ? ofile1 : ofile3);
   fclose(ifile);
   fclose(ofile1);
   fclose(ofile2);

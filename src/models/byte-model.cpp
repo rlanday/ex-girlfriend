@@ -3,7 +3,20 @@
 
 #include <numeric>
 
-ByteModel::ByteModel(const std::vector<bool>& vocab) : ex(0),top_(255), mid_(0),
+namespace vocab_bittests {
+unsigned char g_blocked[kBlocked.n];
+// the values of kBlocked.v in ascending order (MakeBlocked), before main; the
+// empty asm keeps the loop from being evaluated into .data
+__attribute__((constructor, cold, minsize, noinline)) static void FuelleBlocked() {
+  int n = 0;
+  for (int i = 0; i < 256; ++i) {
+    __asm__("" ::: "memory");
+    if (!::vocab_frozen::InSet(i)) g_blocked[n++] = (unsigned char)i;
+  }
+}
+}  // namespace vocab_bittests
+
+ByteModel::ByteModel(const std::vector<bool>& vocab) : top_(255), mid_(0),
     bot_(0),  vocab_(vocab), probs_(1.0 / 256, 256) {}
 
  std::valarray<float>& ByteModel::Predict()  {
@@ -37,6 +50,6 @@ void ByteModel::ByteUpdate() {
     }
   } else
   for (int k = 0; k < vocab_bittests::kBlocked.n; ++k) {
-    probs_[vocab_bittests::kBlocked.v[k]] = 0;
+    probs_[vocab_bittests::g_blocked[k]] = 0;
   }
 }

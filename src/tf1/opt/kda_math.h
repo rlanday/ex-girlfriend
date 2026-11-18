@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/kda_math.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // KDA-specific vector math on top of the canonical shared library
 // (vec_math.h): naive-order reductions and a full-range exp for the
 // per-channel decay.

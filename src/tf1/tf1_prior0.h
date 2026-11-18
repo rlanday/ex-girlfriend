@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include "tf1_prior0_set_v9.h"
+#include "tf1_prior0_set_v14.h"
 
 namespace transformer {
 
@@ -27,6 +27,6 @@ inline const char* Prior0Label(bool given) {
                          : (given ? "supplied" : "uniform");
 }
 
-}
+}  // namespace transformer
 
 #endif

@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/weights_io_compressed.cpp.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // weights_io_compressed: decoder for the losslessly compressed weights files
 // written by pysrc/weights_compress.py (must stay in exact sync with it).
 //
@@ -46,7 +46,76 @@
 //      encoding as at the last occurrence of this canonical name"; flag 0
 //      codes them as in v3.  About 3.3 KB on the 8M container.
 // Bit-identical tensors to the v3 container of the same tensor set.
+//
+// format v5, magic FX2TFWC5: v4 plus three encodings (same tensors, only the
+// coder models differ; written by convert_container_v5.py):
+//  ENC_INT4W  int4 values as in ENC_INT4 of v4 (zero-row flag), but through
+//             one of 24 counting trees (limit 4095) chosen by a causal width
+//             context: the bucket of (row mean |q| so far) x (column mean |q|
+//             in the rows above) / (tensor mean |q| so far), integer
+//             arithmetic, same formula as _width_bucket in the writer.
+//  ENC_F32HI  f32 tensors whose low 16 bits are zero (the bf16-rounded raw
+//             tensors): the high 16 bits with hi/lo shift-5 trees of their own.
+//  ENC_BF16C  row scales: hi/lo shift-5 trees of their own per canonical name.
+// About 5.5 KB on the 8M container.
+//
+// v5 with the K extension (release configuration): the reader also knows
+//  ENC_F32HC  f32 tensors as ENC_F32HI, but the high byte through counting
+//             trees (limit 255) per canonical name and column (index within
+//             the row, row = index of dimension 0; columns 4.. share one
+//             tree); the low byte through the shared ENC_F32HI low trees.
+// Written by weights_compress_v3.py and, with option k, by the NP/NP2 writers
+// (tf1_np_codec.cpp, np2_container.py); the magic stays FX2TFWC5, a v5 reader
+// without this encoding stops at the encoding byte.  About 1.9 KB on the 8M container.
+//
+// format v6, magic FX2TFWC6: v5 plus one encoding for weights trained with a
+// row alphabet (no container of this release uses it, and its writer is not included):
+//  ENC_INT4Q  int4 values as ENC_INT4W, plus per coded row its tightest
+//             alphabet (15, 7 or 3 levels; two counting nodes in the context of
+//             the previous row's alphabet); 7- and 3-level rows through width
+//             trees of 3 and 2 bits; the width statistics count |q| in 15-level
+//             units (Q_UNITS in weights_compress_v3.py).  A 1-level row is all
+//             zero and goes through the zero-row flag of v4.
+//
+// format NP, magic FX2TFWN5/FX2TFWN6: v5/v6 plus a carrier of free bits (the
+// writer can code the f32 tensors as ENC_F32HC instead of ENC_F32HI).  The
+// order of the hidden units of a layer is free: the engine computes them with
+// integer dots and per-unit quantisation, so any order gives bit-identical
+// results.  The rows of a key tensor are compared bytewise; the order in which
+// they are stored is a permutation of the sorted order, written in the
+// factorial number system of Laisant (1888), known as the Lehmer code: digit k
+// of a group of n rows is the number of later rows that compare smaller,
+// radix n - k.  The digits of all groups form one mixed-radix number, read in
+// file order (Horner: x = x * radix + digit).  Its K low bytes are the start
+// of the second coder stream, so the container is K bytes shorter: the free
+// choice of the order carries data, the "bits back" argument of Hinton and
+// van Camp (1993).  A build that reads only its stamped container reads it as
+// format NP; a build that compares the magic reads v2 to v6 as well.  Layout:
+//   magic, u32 n_tensors, u32 nA, u32 lenA, u32 K,
+//   stream A (lenA bytes, its zero cache byte not stored): tensors 0..nA-1,
+//     the tensors up to the last one a group touches,
+//   stream B without its zero cache byte and its first K bytes: tensors nA..
+// Stream B continues all models of A except those the order chosen in A can
+// reach (the int4 trees and the per-name trees of the row scales), which start
+// fresh; so its bytes do not depend on that order.  The encoding
+// byte of a key tensor carries 0x40 (one group over all rows) or 0x20 (groups
+// of 64 rows).  The groups: the MLP units of the layers without fast weights,
+// the 64 units of the forget and output gate bottlenecks of the KDA layers
+// and the value dims of each head of the plain attention layers.
+//
+// format NP2, magic FX2TFWP5/FX2TFWP6: format NP plus groups that move f32
+// rows, the key dims (per head) and the value dims (per layer, one order for
+// all heads) of the KDA layers; the engine sums over these dims elementwise or
+// per lane, so another order changes results only at the rounding level.
+// Three differences to NP: stream B starts the f32 models fresh as well (the
+// groups move rows of the short convolutions, dt_bias and the gated output
+// norm); key rows are compared over their bytes (an f32 key tensor has four
+// per element); key flag 0x60 is one group over the first 64 rows of the key
+// tensor (the value dims of a KDA layer: the order of block 0 is that of all
+// three head blocks).  A container of format NP reads as before.  A build
+// that reads only its stamped container reads it as NP2.
 
+#include "../meld.h"
 #include "weights_io.h"
 
 #include <cmath>
@@ -54,6 +123,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 
 namespace fx2 {
 
@@ -62,7 +132,7 @@ namespace {
 [[noreturn]] void die(const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  std::fprintf(stderr, "weights_io_compressed: ");
+  std::fprintf(stderr, "\n");
   std::vfprintf(stderr, fmt, ap);
   std::fprintf(stderr, "\n");
   va_end(ap);
@@ -80,7 +150,7 @@ size_t dtype_size(uint8_t dtype) {
     case DT_I32:
       return 4;
     default:
-      die("unknown dtype code %u", unsigned(dtype));
+      msg_stop(234);
   }
 }
 
@@ -90,7 +160,7 @@ struct Reader {
   const char* path;
 
   void need(size_t n) {
-    if (left < n) die("%s: truncated file (need %zu more bytes)", path, n);
+    if (left < n) msg_stop(235);
   }
   void read(void* dst, size_t n) {
     need(n);
@@ -159,6 +229,10 @@ enum : uint8_t {
   ENC_PLANE4 = 3,
   ENC_ROPE_SIN = 4,
   ENC_ROPE_COS = 5,
+  ENC_INT4W = 6,  // v5: int4 with the width context
+  ENC_F32HI = 7,  // v5: f32 with zero low 16 bits, as bf16
+  ENC_BF16C = 8,  // v5: row scale, trees per canonical name
+  ENC_F32HC = 10,  // v5 + K: f32 high byte per canonical name and column
 };
 
 // --- bit-exact host port of CUDA libdevice __nv_sinf/__nv_cosf --------------
@@ -257,8 +331,7 @@ float sincosf_cuda(float a, int cos_bias) {
 struct CountNode {
   uint16_t n0 = 1, n1 = 1;
 };
-
-// count limits per tree family (as CNT_LIMIT_* in weights_compress_v3.py)
+constexpr bool g_np2 = true;
 enum : uint32_t {
   CNT_LIMIT_INT4 = 1023,
   CNT_LIMIT_NAME = 255,
@@ -266,6 +339,8 @@ enum : uint32_t {
   CNT_LIMIT_PLANE01 = 1023,  // v4: byte planes 0 and 1 of ENC_PLANE4
   CNT_LIMIT_ZROW = 1023,     // v4: the zero-row flag of ENC_INT4
   CNT_LIMIT_TMPL = 255,      // v4: the three template flags of name/metadata
+  CNT_LIMIT_INT4W = 4095,    // v5: the 24 width-context int4 trees
+  CNT_LIMIT_F32HC = 255,     // v5 + K: the high-byte trees of ENC_F32HC
 };
 
 struct BinDecoder {
@@ -339,324 +414,345 @@ struct BinDecoder {
   }
 };
 
-// the adaptive model set of the v2/v3 stream (pysrc/weights_compress.py
-// _Models; _ModelsV3 in training/tf/4_export/weights_compress_v3.py).  raw,
-// bf16 and plane are shift-5 trees in BOTH formats; meta, name and int4
-// count in v3.  Only the set the format actually uses is allocated, so v3
-// does not pay for v2's 33.5 MB name table; its name trees are built per
-// context on first use (a real container touches 208 of the 65536 contexts).
-struct Models {
-  uint8_t meta_prev = 0;
-  std::vector<uint16_t> raw;      // order-0 byte tree
-  std::vector<uint16_t> bf16_hi;  // byte tree
-  std::vector<uint16_t> bf16_lo;  // hi byte -> byte tree
-  std::vector<uint16_t> plane;    // 4 byte trees (byte position mod 4)
-  std::vector<uint16_t> meta;     // v2 order-1: prev byte -> byte tree
-  std::vector<uint16_t> name;     // v2 order-2: (prev2, prev1) -> byte tree
-  std::vector<uint16_t> int4;     // v2 4-bit tree, symbols 0..14
-  std::vector<CountNode> cmeta;   // v3 order-1 counting trees
-  std::vector<CountNode> cint4;   // v3 4-bit counting tree
-  std::vector<std::vector<CountNode> > cname;  // v3 order-2, per context
-  std::vector<CountNode> cplane;  // v4: counting trees of byte planes 0 and 1
-  CountNode zrow;                 // v4: zero-row flag of ENC_INT4
-  CountNode tname, tblock, tmeta;  // v4: template flags of name/metadata
+constexpr int kNamenN = 76;
 
-  explicit Models(bool v3)
-      : raw(256, 1024),
-        bf16_hi(256, 1024),
-        bf16_lo(256 * 256, 1024),
-        plane(4 * 256, 1024) {
-    if (v3) {
-      cmeta.resize(256 * 256);
-      cint4.resize(16);
-      cname.resize(65536);
-    } else {
-      meta.assign(256 * 256, 1024);
-      name.assign(size_t(65536) * 256, 1024);
-      int4.assign(16, 1024);
-    }
-  }
-
-  CountNode* cname_tree(uint32_t ctx) {
-    std::vector<CountNode>& t = cname[ctx];
-    if (t.empty()) t.resize(256);
-    return t.data();
-  }
-};
-
-int canon_name(const std::string& name, std::string* canon) {
-  *canon = name;
-  if (name.compare(0, 7, "blocks.") != 0) return -1;
-  size_t j = 7;
-  int n = 0;
-  while (j < name.size() && j < 16 && name[j] >= '0' && name[j] <= '9')
-    n = n * 10 + (name[j++] - '0');
-  size_t k = j - 7;
-  if (k < 1 || j >= name.size() || name[j] != '.' || (k > 1 && name[7] == '0'))
-    return -1;
-  canon->replace(7, k, 1, '#');
-  return n;
+// fresh tree nodes: shift-5 probabilities 1024, counting nodes {1, 1}
+void Frisch16(uint16_t* p, size_t n) {
+  for (size_t i = 0; i < n; i++) p[i] = 1024;
+}
+void FrischCN(CountNode* p, size_t n) {
+  for (size_t i = 0; i < n; i++) p[i] = CountNode();
 }
 
-// v4 is v3 plus counting trees on byte planes 0 and 1 of ENC_PLANE4, the
-// zero-row flag of ENC_INT4 and the name/metadata template.
-WeightsFile load_v2(Reader& r, const char* path, bool v3, bool v4) {
-  uint32_t n_tensors = r.u32();
-  BinDecoder dec(r.p, r.left);
-  Models m(v3);
-  if (v4) m.cplane.resize(2 * 256);
+// the models of load_v2 that this container reaches
+struct ModelleId {
+  uint8_t meta_prev;
+  CountNode zrow, tname, tblock, tmeta;
+  CountNode cmeta[256 * 256];   // order-1 metadata trees
+  CountNode cplane[2 * 256];    // byte planes 0 and 1 of ENC_PLANE4
+  uint16_t plane[4 * 256];      // byte planes 2 and 3 of ENC_PLANE4
+  uint16_t bf16_hi[256];        // ENC_BF16
+  uint16_t bf16_lo[256 * 256];
+  CountNode cint4w[24 * 16];    // ENC_INT4W, 24 width contexts
+  uint16_t f32hl[257 * 256];    // lo trees of ENC_F32HC
+  CountNode* cname[65536];      // order-2 name trees, per context on first use
+  uint16_t* bf16c[kNamenN];     // ENC_BF16C trees per canonical name, on first use
+  CountNode* f32hc[kNamenN];    // ENC_F32HC hi trees per canonical name, on first use
+};
+
+// format NP, end of stream A (np_fresh_values of load_v2): the int4 trees,
+// the zero-row flag, the per-name trees of the row scales and, for NP2, the
+// f32 trees start fresh
+__attribute__((noinline, cold)) void NpFrisch(ModelleId* m) {
+  FrischCN(m->cint4w, 24 * 16);
+  m->zrow = CountNode();
+  Frisch16(m->f32hl, 257 * 256);
+  for (int c = 0; c < kNamenN; c++) {
+    if (m->bf16c[c]) Frisch16(m->bf16c[c], 257 * 256);
+    if (m->f32hc[c]) FrischCN(m->f32hc[c], 5 * 256);
+  }
+}
+
+size_t Elementbytes(uint8_t dtype) { return dtype == DT_I8 ? 1 : (dtype == DT_BF16 ? 2 : 4); }
+
+// format NP2: Lehmer digits of a key tensor folded into the carried number x
+// (np_digits of load_v2)
+__attribute__((noinline, cold)) void NpZiffern(const WTensor& t, uint8_t key, uint32_t* x, size_t nx) {
+  const size_t R = key == 0x60 ? 64 : t.shape[0],
+               C = t.numel * Elementbytes(t.dtype) / t.shape[0], g = key & 0x20 ? 64 : R;
+  const uint8_t* q = t.data;
+  for (size_t b0 = 0; b0 < R; b0 += g)
+    for (size_t k = 0; k < g; k++) {
+      uint64_t c = 0;
+      for (size_t j = k + 1; j < g; j++)
+        c += std::memcmp(q + (b0 + j) * C, q + (b0 + k) * C, C) < 0;
+      for (size_t i = 0; i < nx; i++) {
+        c += uint64_t(x[i]) * (g - k);
+        x[i] = uint32_t(c);
+        c >>= 32;
+      }
+    }
+}
+
+WeightsFile LoadId(Reader& r, const char* path) {
+  const uint32_t n_tensors = r.u32();
+  const uint32_t nA = r.u32(), lenA = r.u32(), K = r.u32();
+  // stream A starts after the header; its zero cache byte is not stored
+  BinDecoder dec(r.p - 1, size_t(lenA) + 1);
+  const size_t nx = K / 4 + 1;
+  uint32_t* x = static_cast<uint32_t*>(std::calloc(nx, sizeof(uint32_t)));   // the carried number
+  uint8_t* bufB = nullptr;   // stream B with its carried head
+  ModelleId* m = static_cast<ModelleId*>(std::calloc(1, sizeof(ModelleId)));
+  m->zrow = m->tname = m->tblock = m->tmeta = CountNode();
+  FrischCN(m->cmeta, 256 * 256);
+  FrischCN(m->cplane, 2 * 256);
+  Frisch16(m->plane, 4 * 256);
+  Frisch16(m->bf16_hi, 256);
+  Frisch16(m->bf16_lo, 256 * 256);
+  FrischCN(m->cint4w, 24 * 16);
+  Frisch16(m->f32hl, 257 * 256);
 
   auto get_meta = [&]() -> uint8_t {
-    size_t ctx = size_t(m.meta_prev) * 256;
-    uint8_t b = uint8_t(v3 ? dec.decode_ctree(&m.cmeta[ctx], 8, CNT_LIMIT_META)
-                           : dec.decode_tree(&m.meta[ctx], 8));
-    m.meta_prev = b;
+    uint8_t b = uint8_t(dec.decode_ctree(&m->cmeta[size_t(m->meta_prev) * 256], 8, CNT_LIMIT_META));
+    m->meta_prev = b;
     return b;
   };
 
   WeightsFile wf;
-  wf.tensors.reserve(n_tensors);
-  // v4 (c): template state, one entry per canonical name in order of
-  // appearance: the successor it had last time (index, -1 = none) and its
-  // metadata bytes at the last occurrence (hlen 0 = none yet).  Sized once,
-  // so the decoder needs no grow path.
-  struct TmplEntry {
-    std::string cn;
-    int succ;
+  wf.t = static_cast<WTensor*>(std::calloc(size_t(kNamenN) * (16 + 1), sizeof(WTensor)));
+  // template state per canonical name (v4 (c) of load_v2); the names as bytes
+  struct Tmpl {
+    const char* cn;
+    uint8_t cnlen;
+    uint8_t isblk;   // "blocks.#." name
     uint8_t hlen;
     uint8_t hdr[35];  // dtype, ndim (<= 8), 4 bytes per dimension, encoding
+    int succ;
   };
-  std::vector<TmplEntry> tmpl(n_tensors);
-  size_t n_cn = 0;
+  Tmpl tmpl[kNamenN];
+  char pool[kNamenN * 256];
+  size_t n_cn = 0, belegt = 0;
+  unsigned long long fnv = 14695981039346656037ULL;   // over the canonical names, E268
   int t_prev = -1, t_prev_blk = -1;
   for (uint32_t i = 0; i < n_tensors; i++) {
-    std::string name, cn;
+    if (i == nA) {
+      // end of stream A: the K low bytes of the carried number are the head of
+      // stream B, in front of it its zero cache byte (skipped unread)
+      const size_t nb = size_t(1) + K + (r.left - lenA);
+      bufB = static_cast<uint8_t*>(std::malloc(nb));
+      std::memcpy(bufB + 1, x, K);
+      std::memcpy(bufB + 1 + K, r.p + lenA, r.left - lenA);
+      dec = BinDecoder(bufB, nb);
+      NpFrisch(m);
+    }
+    size_t ci;
     int blk = -1;
-    if (v4 && dec.decode_cbit(&m.tname, CNT_LIMIT_TMPL)) {
-      if (t_prev < 0 || tmpl[t_prev].succ < 0)
-        die("%s: tensor %u: bad v4 template", path, i);
-      name = cn = tmpl[tmpl[t_prev].succ].cn;
-      if (cn.compare(0, 9, "blocks.#.") == 0) {
-        blk = dec.decode_cbit(&m.tblock, CNT_LIMIT_TMPL) ? t_prev_blk
-                                                        : t_prev_blk + 1;
-        char num[16];
-        int len = std::snprintf(num, sizeof num, "%d", blk);
-        name.replace(7, 1, num, size_t(len));
-      }
+    if (dec.decode_cbit(&m->tname, CNT_LIMIT_TMPL)) {
+      ci = size_t(tmpl[t_prev].succ);
+      if (tmpl[ci].isblk)
+        blk = dec.decode_cbit(&m->tblock, CNT_LIMIT_TMPL) ? t_prev_blk : t_prev_blk + 1;
     } else {
-      uint32_t name_len = get_meta();
-      name.assign(name_len, '\0');
+      char nm[256];
+      size_t len = get_meta();
       uint32_t c2 = 0, c1 = 0;
-      for (uint32_t k = 0; k < name_len; k++) {
-        uint32_t ctx = (c2 << 8) | c1;
-        uint32_t ch = v3 ? dec.decode_ctree(m.cname_tree(ctx), 8, CNT_LIMIT_NAME)
-                         : dec.decode_tree(&m.name[size_t(ctx) * 256], 8);
-        name[k] = char(ch);
+      for (size_t k = 0; k < len; k++) {
+        CountNode*& tree = m->cname[(c2 << 8) | c1];
+        if (!tree) {
+          tree = static_cast<CountNode*>(std::malloc(256 * sizeof(CountNode)));
+          FrischCN(tree, 256);
+        }
+        const uint32_t ch = dec.decode_ctree(tree, 8, CNT_LIMIT_NAME);
+        nm[k] = char(ch);
         c2 = c1;
         c1 = ch;
       }
-      blk = canon_name(name, &cn);
+      // canonical name in place: "blocks.<n>." -> "blocks.#.", blk = n
+      // (canon_name of load_v2)
+      if (len > 7 && std::memcmp(nm, "blocks.", 7) == 0) {
+        size_t j = 7;
+        int n = 0;
+        while (j < len && j < 16 && nm[j] >= '0' && nm[j] <= '9') n = n * 10 + (nm[j++] - '0');
+        const size_t k = j - 7;
+        if (!(k < 1 || j >= len || nm[j] != '.' || (k > 1 && nm[7] == '0'))) {
+          nm[7] = '#';
+          std::memmove(nm + 8, nm + j, len - j);
+          len = len - k + 1;
+          blk = n;
+        }
+      }
+      for (ci = 0; ci < n_cn; ci++)
+        if (tmpl[ci].cnlen == len && std::memcmp(tmpl[ci].cn, nm, len) == 0) break;
+      if (ci == n_cn) {
+        if (n_cn == size_t(kNamenN))
+          msg_stop(268);
+        char* d = pool + belegt;
+        std::memcpy(d, nm, len);
+        belegt += len;
+        for (size_t k = 0; k < len; k++) fnv = (fnv ^ static_cast<unsigned char>(nm[k])) * 1099511628211ULL;
+        fnv *= 1099511628211ULL;   // the terminating zero
+        tmpl[ci].cn = d;
+        tmpl[ci].cnlen = uint8_t(len);
+        tmpl[ci].isblk = blk >= 0;
+        tmpl[ci].hlen = 0;
+        tmpl[ci].succ = -1;
+        n_cn++;
+      }
     }
     // metadata: dtype, ndim, 4 bytes per dimension, encoding
     uint8_t hdr[35];
     size_t hlen;
-    size_t ci = 0;
-    if (v4) {
-      while (ci < n_cn && tmpl[ci].cn != cn) ci++;
-      if (ci == n_cn) {
-        tmpl[n_cn].cn = cn;
-        tmpl[n_cn++].succ = -1;
-      }
-    }
-    if (v4 && dec.decode_cbit(&m.tmeta, CNT_LIMIT_TMPL)) {
+    if (dec.decode_cbit(&m->tmeta, CNT_LIMIT_TMPL)) {
       hlen = tmpl[ci].hlen;
-      if (!hlen) die("%s: tensor %u: bad v4 template", path, i);
       std::memcpy(hdr, tmpl[ci].hdr, hlen);
     } else {
       hdr[0] = get_meta();
       hdr[1] = get_meta();
-      if (hdr[1] > 8)
-        die("%s: %s: absurd ndim %u", path, name.c_str(), unsigned(hdr[1]));
       hlen = 3 + 4 * size_t(hdr[1]);
       for (size_t k = 2; k < hlen; k++) hdr[k] = get_meta();
     }
-    if (v4) {
-      if (t_prev >= 0) tmpl[t_prev].succ = int(ci);
-      tmpl[ci].hlen = uint8_t(hlen);
-      std::memcpy(tmpl[ci].hdr, hdr, hlen);
-      t_prev = int(ci);
-      if (blk >= 0) t_prev_blk = blk;
-    }
+    if (t_prev >= 0) tmpl[t_prev].succ = int(ci);
+    tmpl[ci].hlen = uint8_t(hlen);
+    std::memcpy(tmpl[ci].hdr, hdr, hlen);
+    t_prev = int(ci);
+    if (blk >= 0) t_prev_blk = blk;
 
-    WTensor t;
+    WTensor& t = wf.T(int(ci), blk);
     t.dtype = hdr[0];
-    dtype_size(t.dtype);  // validates the code
-    uint32_t ndim = hdr[1];
-    t.shape.resize(ndim);
+    t.ndim = hdr[1];
     size_t numel = 1;
-    for (uint32_t d = 0; d < ndim; d++) {
+    for (uint32_t d = 0; d < t.ndim; d++) {
       uint32_t v = 0;
       for (int k = 0; k < 4; k++) v |= uint32_t(hdr[2 + 4 * d + k]) << (8 * k);
       t.shape[d] = v;
       numel *= v;
     }
     t.numel = numel;
-    size_t bytes = numel * dtype_size(t.dtype);
-    t.data.resize(bytes);
-    uint8_t encoding = hdr[hlen - 1];
+    const size_t bytes = numel * Elementbytes(t.dtype);
+    t.data = static_cast<uint8_t*>(std::calloc(bytes, 1));
+    const uint8_t npkey = uint8_t(hdr[hlen - 1] & 0x60);  // key tensor of a group
+    const uint8_t encoding = uint8_t(hdr[hlen - 1] & 0x1F);
+    const size_t rows = t.ndim > 1 ? t.shape[0] : 1;
+    const size_t cols = rows ? numel / rows : 0;
 
     switch (encoding) {
-      case ENC_INT4: {
-        if (t.dtype != DT_I8) die("%s: %s: ENC_INT4 on dtype %u", path,
-                                  name.c_str(), unsigned(t.dtype));
-        int8_t* out = reinterpret_cast<int8_t*>(t.data.data());
-        if (v4) {
-          // one flag per row; flag 1 = the row is all zero and not coded
-          size_t rows = ndim > 1 ? t.shape[0] : 1;
-          size_t cols = rows ? numel / rows : 0;
-          for (size_t r0 = 0; r0 < rows; r0++) {
-            int8_t* row = out + r0 * cols;
-            if (dec.decode_cbit(&m.zrow, CNT_LIMIT_ZROW)) {
-              std::memset(row, 0, cols);
-              continue;
-            }
-            for (size_t k = 0; k < cols; k++)
-              row[k] = int8_t(
-                  int(dec.decode_ctree(m.cint4.data(), 4, CNT_LIMIT_INT4)) - 7);
+      case ENC_INT4W: {
+        // one zero-row flag per row, then the values through the tree of the
+        // width context (T, N over the coded rows, cs[k] column sums of |q|,
+        // n coded rows so far); a zero row stays as calloc left it
+        int8_t* out = reinterpret_cast<int8_t*>(t.data);
+        uint64_t* cs = static_cast<uint64_t*>(std::calloc(cols, sizeof(uint64_t)));
+        uint64_t n = 0, T = 0, N = 0;
+        for (size_t r0 = 0; r0 < rows; r0++) {
+          int8_t* row = out + r0 * cols;
+          if (dec.decode_cbit(&m->zrow, CNT_LIMIT_ZROW)) continue;
+          uint64_t rs = 0;
+          for (size_t k = 0; k < cols; k++) {
+            uint64_t M = (T * 65536 + 64 * 190054) / (N + 64);
+            if (M < 1) M = 1;
+            uint64_t rr = (rs * 65536 + 64 * M) / (k + 64);
+            uint64_t cc = (cs[k] * 65536 + 64 * M) / (n + 64);
+            uint64_t b = (8 * rr * cc) / (M * 65536);
+            b = b < 8 ? 0 : (b > 8 + 23 ? 23 : b - 8);
+            int v = int(dec.decode_ctree(&m->cint4w[b * 16], 4, CNT_LIMIT_INT4W)) - 7;
+            row[k] = int8_t(v);
+            uint64_t a = uint64_t(v < 0 ? -v : v);
+            rs += a;
+            cs[k] += a;
+            T += a;
+            N++;
           }
-          break;
+          n++;
         }
-        if (v3) {
-          for (size_t k = 0; k < numel; k++)
-            out[k] = int8_t(
-                int(dec.decode_ctree(m.cint4.data(), 4, CNT_LIMIT_INT4)) - 7);
+        std::free(cs);
+        break;
+      }
+      case ENC_BF16C:
+      case ENC_F32HC: {
+        // bf16 values through a hi tree [0, 256) and lo trees [256 (1 + hi), ...);
+        // ENC_F32HC: the hi byte through counting trees per canonical name and
+        // column (index within the row, columns from 4 on share one tree), the
+        // lo byte through the shared trees f32hl
+        const bool f32 = encoding == ENC_F32HC;
+        uint16_t* s = m->f32hl;
+        CountNode* hc = nullptr;
+        if (f32) {
+          CountNode*& c = m->f32hc[ci];
+          if (!c) {
+            c = static_cast<CountNode*>(std::malloc(5 * 256 * sizeof(CountNode)));
+            FrischCN(c, 5 * 256);
+          }
+          hc = c;
         } else {
-          for (size_t k = 0; k < numel; k++)
-            out[k] = int8_t(int(dec.decode_tree(m.int4.data(), 4)) - 7);
+          uint16_t*& b = m->bf16c[ci];
+          if (!b) {
+            b = static_cast<uint16_t*>(std::malloc(257 * 256 * sizeof(uint16_t)));
+            Frisch16(b, 257 * 256);
+          }
+          s = b;
+        }
+        for (size_t k = 0, j = 0; k < numel; k++) {
+          uint32_t hi = hc ? dec.decode_ctree(hc + (j < 4 ? j : 4) * 256, 8, CNT_LIMIT_F32HC)
+                           : dec.decode_tree(s, 8);
+          if (++j == cols) j = 0;
+          uint32_t v = (hi << 8) | dec.decode_tree(&s[256 + hi * 256], 8);
+          if (f32)
+            reinterpret_cast<uint32_t*>(t.data)[k] = v << 16;
+          else
+            reinterpret_cast<uint16_t*>(t.data)[k] = uint16_t(v);
         }
         break;
       }
       case ENC_BF16: {
-        if (t.dtype != DT_BF16) die("%s: %s: ENC_BF16 on dtype %u", path,
-                                    name.c_str(), unsigned(t.dtype));
-        uint16_t* out = reinterpret_cast<uint16_t*>(t.data.data());
+        uint16_t* out = reinterpret_cast<uint16_t*>(t.data);
         for (size_t k = 0; k < numel; k++) {
-          uint32_t hi = dec.decode_tree(m.bf16_hi.data(), 8);
-          uint32_t lo = dec.decode_tree(&m.bf16_lo[hi * 256], 8);
+          uint32_t hi = dec.decode_tree(m->bf16_hi, 8);
+          uint32_t lo = dec.decode_tree(&m->bf16_lo[hi * 256], 8);
           out[k] = uint16_t((hi << 8) | lo);
         }
         break;
       }
       case ENC_PLANE4: {
-        if (dtype_size(t.dtype) != 4)
-          die("%s: %s: ENC_PLANE4 on dtype %u", path, name.c_str(),
-              unsigned(t.dtype));
         for (size_t k = 0; k < bytes; k++)
-          t.data[k] = uint8_t(
-              v4 && (k & 3) < 2
-                  ? dec.decode_ctree(&m.cplane[(k & 3) * 256], 8,
-                                     CNT_LIMIT_PLANE01)
-                  : dec.decode_tree(&m.plane[(k & 3) * 256], 8));
+          t.data[k] = uint8_t((k & 3) < 2
+                                  ? dec.decode_ctree(&m->cplane[(k & 3) * 256], 8, CNT_LIMIT_PLANE01)
+                                  : dec.decode_tree(&m->plane[(k & 3) * 256], 8));
         break;
       }
       case ENC_ROPE_SIN:
       case ENC_ROPE_COS: {
-        if (t.dtype != DT_F32 || ndim != 2)
-          die("%s: %s: bad rope tensor", path, name.c_str());
-        if (!wf.has("rope.inv_freq"))
-          die("%s: %s: rope.inv_freq not decoded yet", path, name.c_str());
-        const WTensor& inv = wf.get("rope.inv_freq");
-        if (inv.dtype != DT_F32 || inv.numel != t.shape[1])
-          die("%s: %s: rope.inv_freq mismatch", path, name.c_str());
-        const float* invf = inv.f32();
-        float* out = reinterpret_cast<float*>(t.data.data());
-        int cos_bias = encoding == ENC_ROPE_COS ? 1 : 0;
+        const float* invf = wf.T(TID("rope.inv_freq")).f32();
+        float* out = reinterpret_cast<float*>(t.data);
+        const int cos_bias = encoding == ENC_ROPE_COS ? 1 : 0;
         for (size_t pos = 0; pos < t.shape[0]; pos++)
           for (size_t col = 0; col < t.shape[1]; col++)
-            out[pos * t.shape[1] + col] =
-                sincosf_cuda(float(pos) * invf[col], cos_bias);
-        break;
-      }
-      case ENC_RAW: {
-        for (size_t k = 0; k < bytes; k++)
-          t.data[k] = uint8_t(dec.decode_tree(m.raw.data(), 8));
+            out[pos * t.shape[1] + col] = sincosf_cuda(float(pos) * invf[col], cos_bias);
         break;
       }
       default:
-        die("%s: %s: unknown encoding %u", path, name.c_str(),
-            unsigned(encoding));
+        __builtin_unreachable();   // the stamped container has no other encoding
     }
-
-    if (!wf.tensors.emplace(name, std::move(t)).second)
-      die("%s: duplicate tensor %s", path, name.c_str());
+    if (npkey) NpZiffern(t, npkey, x, nx);
   }
+  if (n_cn != size_t(kNamenN) || fnv != std::integral_constant<unsigned long long, namen::Fnv()>::value)
+    msg_stop(268);
+  for (size_t c = 0; c < 65536; c++) std::free(m->cname[c]);
+  for (int c = 0; c < kNamenN; c++) {
+    std::free(m->bf16c[c]);
+    std::free(m->f32hc[c]);
+  }
+  std::free(m);
+  std::free(bufB);
+  std::free(x);
   return wf;
 }
 
 }  // namespace
 
+WeightsFile::~WeightsFile() {
+  if (!t) return;
+  for (size_t i = 0; i < size_t(kNamenN) * (16 + 1); i++) std::free(t[i].data);
+  std::free(t);
+}
+
 WeightsFile WeightsFile::load_compressed(const char* path) {
   FILE* f = std::fopen(path, "rb");
-  if (!f) die("cannot open %s", path);
+  if (!f) msg_stop(206);
   std::fseek(f, 0, SEEK_END);
-  long size = std::ftell(f);
+  const size_t size = size_t(std::ftell(f));
   std::fseek(f, 0, SEEK_SET);
-  if (size < 12) die("%s: too small", path);
-  std::vector<uint8_t> buf(static_cast<size_t>(size));
-  if (std::fread(buf.data(), 1, buf.size(), f) != buf.size())
-    die("%s: short read", path);
+  uint8_t* buf = static_cast<uint8_t*>(std::malloc(size));
+  const size_t n = std::fread(buf, 1, size, f);
   std::fclose(f);
-
-  Reader r{buf.data(), buf.size(), path};
-  char magic[8];
-  r.read(magic, 8);
-  if (std::memcmp(magic, "FX2TFWC4", 8) == 0)
-    return load_v2(r, path, true, true);
-  if (std::memcmp(magic, "FX2TFWC3", 8) == 0)
-    return load_v2(r, path, true, false);
-  if (std::memcmp(magic, "FX2TFWC2", 8) == 0)
-    return load_v2(r, path, false, false);
-  if (std::memcmp(magic, "FX2TFWC1", 8) != 0) die("%s: bad magic", path);
-
-  uint32_t n_tensors = r.u32();
-  WeightsFile wf;
-  wf.tensors.reserve(n_tensors);
-  for (uint32_t i = 0; i < n_tensors; i++) {
-    uint32_t name_len = r.u32();
-    if (name_len > 4096) die("%s: absurd name length %u", path, name_len);
-    std::string name(name_len, '\0');
-    r.read(&name[0], name_len);
-
-    WTensor t;
-    t.dtype = r.u8();
-    dtype_size(t.dtype);  // validates the code
-    uint32_t ndim = r.u32();
-    if (ndim > 8) die("%s: %s: absurd ndim %u", path, name.c_str(), ndim);
-    t.shape.resize(ndim);
-    size_t numel = 1;
-    for (uint32_t d = 0; d < ndim; d++) {
-      t.shape[d] = r.u32();
-      numel *= t.shape[d];
-    }
-    t.numel = numel;
-    size_t bytes = numel * dtype_size(t.dtype);
-    t.data.resize(bytes);
-    if (t.dtype == DT_I8) {
-      uint32_t stream_len = r.u32();
-      r.need(stream_len);
-      decode_i8_uniform15(r.p, stream_len,
-                          reinterpret_cast<int8_t*>(t.data.data()), numel);
-      r.p += stream_len;
-      r.left -= stream_len;
-    } else {
-      r.read(t.data.data(), bytes);
-    }
-
-    if (!wf.tensors.emplace(name, std::move(t)).second)
-      die("%s: duplicate tensor %s", path, name.c_str());
-  }
-  if (r.left != 0)
-    die("%s: %zu trailing bytes after last tensor", path, r.left);
+  // The fingerprint of the container over the buffer the
+  // reader decodes (it was a second read of the file in the engine)
+  unsigned long long h = 14695981039346656037ULL;
+  for (size_t i = 0; i < n; i++) h = (h ^ buf[i]) * 1099511628211ULL;
+  if (h != 0xaec368ac6a568632ULL)
+    msg_stop(207)
+;
+  Reader r{buf + 8, n - 8, path};   // behind the magic (fixed by the fingerprint)
+  WeightsFile wf = LoadId(r, path);
+  std::free(buf);
   return wf;
 }
 

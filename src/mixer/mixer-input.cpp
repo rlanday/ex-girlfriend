@@ -1,3 +1,4 @@
+#include "../meld.h"
 #include "mixer-input.h"
 
 #include <cstdio>
@@ -6,8 +7,8 @@
 MixerInput::MixerInput(const Sigmoid& sigmoid, float eps) :
     inputs_(0.5, 1), sigmoid_(sigmoid) {
   if (eps != min_ || (1 - eps) != max_) {
-    fprintf(stderr, "build check: MixerInput eps=%a (1-eps=%a), compiled eps=%a (max=%a)\n",
-            (double)eps, (double)(1 - eps), (double)min_, (double)max_);
+    msg_note(3)
+;
     fflush(stderr);
     abort();
   }

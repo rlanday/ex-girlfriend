@@ -1,8 +1,10 @@
 #ifndef TIMESTAMP_ALGEBRA_H_
 #define TIMESTAMP_ALGEBRA_H_
+#include "meld.h"
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -106,14 +108,20 @@ struct Schaetzer {
     ema = (nsl == 0) ? r : (ema - Fdiv(ema, 8) + Fdiv(r, 8));
     ++nsl;
   }
-  long long Median() const {
-    hilf = fen;
-    std::sort(hilf.begin(), hilf.end());
-    return hilf[hilf.size() / 2];             // element n/2 of the sorted window (upper middle)
+  static int MedVergleich(const void* x, const void* y) {
+    const long long a = *(const long long*)x, b = *(const long long*)y;
+    return (a > b) - (a < b);
   }
+  long long Median() const {
+    long long hilf[kFenMax];
+    const size_t n = fen.size();
+    memcpy(hilf, fen.data(), n * sizeof(long long));
+    if (n) qsort(hilf, n, sizeof(long long), MedVergleich);
+    return hilf[n / 2];                       // element n/2 of the sorted window (upper middle)
+  }
+  static constexpr int kFenMax = 32 > 16 ? 32 : 16;
 
   std::vector<long long> fen;
-  mutable std::vector<long long> hilf;
   size_t pos = 0;
   unsigned long long nsl = 0;
   long long ema = 0, t_letzt = 0, t0 = 0, rev0 = 0, rev_letzt = 0;
@@ -121,7 +129,7 @@ struct Schaetzer {
 };
 
 static inline void RohFail(const char* what) {
-  fprintf(stderr, "timestamps: %s\n", what);
+  fprintf(stderr, "%s\n", what);
   fflush(stderr);
   exit(1);
 }
@@ -143,10 +151,10 @@ static inline long long TsRohZuSek(const char* p, int n) {
   if (i >= n) RohFail("raw timestamp without seconds field");
   long long sek = 0;
   for (; i < n; ++i) {
-    if (p[i] < '0' || p[i] > '9') RohFail("seconds field not numeric");
+    if (p[i] < '0' || p[i] > '9') __builtin_unreachable();
     sek = sek * 10 + (p[i] - '0');
   }
-  if (sek > 86399) RohFail("seconds field over 86399");
+  if (sek > 86399) __builtin_unreachable();
   return TsZuSek(yy, mt, sek);
 }
 
@@ -180,14 +188,14 @@ static inline int DezimalRoh(char* out, long long v) {
 static inline long long ZahlRoh(const char* p, int n) {
   long long v = 0; int i = 0, neg = 0;
   if (n > 0 && p[0] == '-') { neg = 1; i = 1; }
-  if (i >= n) RohFail("empty residual field");
+  if (i >= n) __builtin_unreachable();
   for (; i < n; ++i) {
-    if (p[i] < '0' || p[i] > '9') RohFail("residual not numeric");
+    if (p[i] < '0' || p[i] > '9') __builtin_unreachable();
     v = v * 10 + (p[i] - '0');
   }
   return neg ? -v : v;
 }
 
-}
+}  // namespace ts_algebra
 
 #endif

@@ -35,5 +35,5 @@ inline unsigned int Q8diff(float d) {
   return d < 0.0f ? 3u - m : 4u + m;
 }
 
-}
+}  // namespace dictreload
 #endif

@@ -4,7 +4,6 @@
 #include <vector>
 #include <valarray>
 #include "../ds/emhash_map.hpp"
-#include "../fast_math.h"
 #include "../simd_scan.h"
 #include "../mixer_lr.h"
 #include "../mixer_decay.h"
@@ -16,8 +15,8 @@
 #include "../mixer_chain.h"
 
 #include "../mixer_lr_restart.h"
-#include "../port_cfg.h"
 #include <memory>
+#include "../port_cfg.h"
 
 typedef float mixw_t;
 
@@ -34,8 +33,10 @@ struct ContextData {
   ContextData& operator=(ContextData&&) = default;
   //unsigned long long steps;
   arena_row_t weights, extra_weights;
-#if PORT_PRL
-  uint32_t n = 0;   // PRL: updates applied to this row (never reset)
+#if PORT_CMX_MEAS
+  // research CMX_ROWDECAY: the row's clock (birth step or update count) and the restart epoch it belongs to
+  unsigned long long cmx_n = 0;
+  uint32_t cmx_ep = 0;
 #endif
 
 };
@@ -64,11 +65,23 @@ class Mixer {
   void E2ESetErr(float e) { e2e_err_ = e; e2e_use_ = true; }
   void E2ESeedHead(unsigned int head, float val);
 
+  // the step counter, read for the decay staircase of the Bayes weight w of
+  // the final mixer (Predictor::EndLearn)
+  unsigned long long Steps() const { return steps_; }
   unsigned long long MetalrSteps() const { return steps_; }
   void MetalrSteps0() { steps_ = 0; }
+#if PORT_CMX_MEAS
+  // research CMX_MIXROW / CMX_MIXTEL (src/cmx_meas.h): re-key, telemetry
+  void CmxRekey();
+  bool CmxOnBase() const { return primed_data_ == &context_base_; }
+  size_t CmxRows() const { return context_map_.size(); }
+#endif
 
  private:
   ContextData* GetContextData();
+#if PORT_CMX_MEAS
+  ContextData* CmxNewRow();
+#endif
   float e2e_err_ = 0.0f;
   bool e2e_use_ = false;
   ContextData* primed_data_ = nullptr;
@@ -94,5 +107,7 @@ class Mixer {
 
 void MixBankMain(Mixer* m, unsigned int count, float* out);
 void PerceiveBank(Mixer* m, unsigned int count, int bit);
+
+void PerceiveBankX(Mixer* m, unsigned int count, int bit, const float* xt);
 
 #endif

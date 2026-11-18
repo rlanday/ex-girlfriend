@@ -4,7 +4,7 @@
 
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/attn.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // Optimized vanilla sliding-window attention (SPEC.md section 3.5) for the
 // 3 vanilla layers (3/7/11): W=1024, 3 heads x d_head 64, int8 q/k/v with
 // per-head static scales. Single-threaded; the score/exp scratch buffers are

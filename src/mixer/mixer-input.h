@@ -3,12 +3,13 @@
 
 #include "sigmoid.h"
 
-#include "../fast_math.h"
 #include "../simd_scan.h"
 #include "../logit_table.h"
 
 #include <valarray>
 #include <vector>
+
+// ---------------------------------------------------------------------------
 
 class MixerInput {
  public:
@@ -47,7 +48,7 @@ class MixerInput {
   //std::vector<float> extra_inputs_;
   std::valarray<float> extra_inputs_;
   const Sigmoid& sigmoid_;
-  static constexpr float min_ = (1.0e-4f);
+  static constexpr float min_ = (1.0e-6f);
   static constexpr float max_ = 1.0f - min_;
   static constexpr float stretched_min_ = (-0x1.86983p+3f);
   static constexpr float stretched_max_ = (0x1.868cfep+3f);

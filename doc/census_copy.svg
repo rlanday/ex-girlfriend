@@ -1,0 +1,871 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 970" width="960" height="970" role="img" aria-labelledby="t d">
+<title id="t">The transformer copies values from the census prompt</title>
+<desc id="d">Cost map of the transformer alone on census page 194,559 of the coder stream (Yardley, Pennsylvania). Top, the rows fed in front of the page and behind its title, the context row, the page rows and the block with the census values. Below, five excerpts of the page as coded bytes, each once with the prompt rows and once without them, every unit shaded by its cost in bits per byte; spans that also stand in the census prompt are underlined. At the bottom, the cost of the page and of 958 census pages whose stubs keep 3 or more phrases of the template, in both arms.</desc>
+<rect x="0.5" y="0.5" width="959" height="969" rx="6" fill="#fcfcfb" stroke="#d9d8d1"/>
+<text x="24" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" fill="#0b0b0b" font-weight="600">The transformer copies values from the census prompt</text>
+<text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#52514e">Census page 194,559 of the coder stream (Yardley, Pennsylvania). The transformer of this entry alone, once with its prompt rows and once without them.</text>
+<text x="24" y="84" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Prompt rows of the page (fed to the transformer, not coded)</text>
+<rect x="24" y="94" width="912" height="198" fill="#ffffff" stroke="#6f6e69" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="34" y="114" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">in front of the title: context row (kind of place, state) and page rows (page index, population and area, contributor, day)</text>
+<text x="34" y="130" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">#census population households borough Pennsylvania</text>
+<text x="34" y="146" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">194559</text>
+<text x="34" y="162" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2,498 2.6</text>
+<text x="34" y="178" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">(contributor)</text>
+<text x="34" y="194" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2006-02-14</text>
+<text x="34" y="210" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">behind the title: census values block (values of the record in sentences of the template wording)</text>
+<rect x="34" y="229" width="69" height="2.2" fill="#eda100"/>
+<rect x="130.6" y="229" width="48.3" height="2.2" fill="#eda100"/>
+<rect x="185.8" y="229" width="89.7" height="2.2" fill="#eda100"/>
+<rect x="310" y="229" width="124.2" height="2.2" fill="#eda100"/>
+<rect x="448" y="229" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="496.3" y="229" width="317.4" height="2.2" fill="#eda100"/>
+<text x="34" y="226" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="779.7" lengthAdjust="spacing">As of the 2000 census, the borough had a total population of 2,498, with 1,170 households, 649 families and 1,209</text>
+<rect x="34" y="245" width="186.3" height="2.2" fill="#eda100"/>
+<rect x="254.8" y="245" width="48.3" height="2.2" fill="#eda100"/>
+<rect x="385.9" y="245" width="41.4" height="2.2" fill="#eda100"/>
+<text x="34" y="242" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="786.6" lengthAdjust="spacing">housing units. The borough has a total area of 2.6 km&#178; (1.0 mi&#178;): 2.4 km&#178; (0.9 mi&#178;) of it is land and 0.3 km&#178; (0.1</text>
+<rect x="123.7" y="261" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="213.4" y="261" width="552" height="2.2" fill="#eda100"/>
+<text x="34" y="258" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="814.2" lengthAdjust="spacing">mi&#178;) of it is water, 9.90% water. The population density is 1,048.4/km&#178; (2,729.0/mi&#178;). Yardley is located at 40&#176;14'29&quot;</text>
+<rect x="337.6" y="277" width="476.1" height="2.2" fill="#eda100"/>
+<text x="34" y="274" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="814.2" lengthAdjust="spacing">North, 74&#176;50'11&quot; West (40.241508, -74.836325). The median income for a household is $58,221, for a family $70,938, and</text>
+<rect x="61.6" y="293" width="200.1" height="2.2" fill="#eda100"/>
+<text x="34" y="290" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="227.7" lengthAdjust="spacing">the per capita income is $32,802.</text>
+<text x="24" y="318" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Excerpts of the page in stream order, cost of each unit in bits per byte of the coder stream</text>
+<text x="24" y="344" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Title and first line of the page</text>
+<text x="124" y="381" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<rect x="132" y="369" width="48.3" height="17" fill="#1c5cab"/>
+<text x="132" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="48.3" lengthAdjust="spacingAndGlyphs">Yardley</text>
+<rect x="180.3" y="369" width="6.9" height="17" fill="#cde2fb"/>
+<text x="180.3" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">&#182;</text>
+<rect x="187.2" y="369" width="6.9" height="17" fill="#5598e7"/>
+<text x="187.2" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="194.1" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="201" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="207.9" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="214.8" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="221.7" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="228.6" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="235.5" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="249.3" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="256.2" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="263.1" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="270" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="318.3" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="325.2" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">located</text>
+<text x="373.5" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="380.4" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="394.2" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="401.1" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">[</text>
+<rect x="408" y="369" width="34.5" height="17" fill="#5598e7"/>
+<text x="408" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">Bucks</text>
+<text x="442.5" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="449.4" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">County</text>
+<text x="490.8" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="497.7" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="504.6" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="82.8" lengthAdjust="spacingAndGlyphs">Pennsylvania</text>
+<text x="587.4" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">]</text>
+<rect x="594.3" y="369" width="6.9" height="17" fill="#cde2fb"/>
+<text x="594.3" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="601.2" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="608.1" y="369" width="20.7" height="17" fill="#1c5cab"/>
+<text x="608.1" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="20.7" lengthAdjust="spacingAndGlyphs">but</text>
+<text x="628.8" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="635.7" y="369" width="20.7" height="17" fill="#1c5cab"/>
+<text x="635.7" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="656.4" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="663.3" y="369" width="41.4" height="17" fill="#1c5cab"/>
+<text x="663.3" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="41.4" lengthAdjust="spacingAndGlyphs">postal</text>
+<text x="704.7" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="711.6" y="369" width="48.3" height="17" fill="#5598e7"/>
+<text x="711.6" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">address</text>
+<text x="759.9" y="381.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="124" y="400" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<rect x="132" y="388" width="48.3" height="17" fill="#1c5cab"/>
+<text x="132" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="48.3" lengthAdjust="spacingAndGlyphs">Yardley</text>
+<rect x="180.3" y="388" width="6.9" height="17" fill="#1c5cab"/>
+<text x="180.3" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">&#182;</text>
+<rect x="187.2" y="388" width="6.9" height="17" fill="#1c5cab"/>
+<text x="187.2" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">'</text>
+<text x="194.1" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="201" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="207.9" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="214.8" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="221.7" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">'</text>
+<text x="228.6" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="235.5" y="388" width="13.8" height="17" fill="#9ec5f4"/>
+<text x="235.5" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="249.3" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="256.2" y="388" width="6.9" height="17" fill="#cde2fb"/>
+<text x="256.2" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="263.1" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="270" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="318.3" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="325.2" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">located</text>
+<text x="373.5" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="380.4" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="394.2" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="401.1" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">[</text>
+<rect x="408" y="388" width="34.5" height="17" fill="#1c5cab"/>
+<text x="408" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="34.5" lengthAdjust="spacingAndGlyphs">Bucks</text>
+<text x="442.5" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="449.4" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">County</text>
+<text x="490.8" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="497.7" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="504.6" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="82.8" lengthAdjust="spacingAndGlyphs">Pennsylvania</text>
+<rect x="587.4" y="388" width="6.9" height="17" fill="#cde2fb"/>
+<text x="587.4" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">]</text>
+<rect x="594.3" y="388" width="6.9" height="17" fill="#1c5cab"/>
+<text x="594.3" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">,</text>
+<text x="601.2" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="608.1" y="388" width="20.7" height="17" fill="#1c5cab"/>
+<text x="608.1" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="20.7" lengthAdjust="spacingAndGlyphs">but</text>
+<text x="628.8" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="635.7" y="388" width="20.7" height="17" fill="#1c5cab"/>
+<text x="635.7" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="656.4" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="663.3" y="388" width="41.4" height="17" fill="#1c5cab"/>
+<text x="663.3" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="41.4" lengthAdjust="spacingAndGlyphs">postal</text>
+<text x="704.7" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="711.6" y="388" width="48.3" height="17" fill="#5598e7"/>
+<text x="711.6" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">address</text>
+<text x="759.9" y="400.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="24" y="431" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Sentences in the template wording that stay in the stub, values not in the prompt</text>
+<text x="124" y="468" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<text x="132" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">In</text>
+<text x="145.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="152.7" y="456" width="20.7" height="17" fill="#cde2fb"/>
+<text x="152.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="173.4" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="180.3" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="228.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="235.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="256.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="263.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">population</text>
+<text x="332.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="339" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="352.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="359.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">spread</text>
+<text x="401.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="408" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">out</text>
+<text x="428.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="435.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">with</text>
+<text x="463.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="470.1" y="456" width="6.9" height="17" fill="#cde2fb"/>
+<text x="470.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="477" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="477" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="483.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="490.8" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="490.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="497.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="504.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="511.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">under</text>
+<text x="546" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="573.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">age</text>
+<text x="601.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="608.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="621.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="628.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="635.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="642.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="649.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="656.4" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="656.4" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<rect x="663.3" y="456" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="663.3" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="670.2" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="670.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="677.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="684" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="690.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">from</text>
+<text x="718.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="725.4" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="732.3" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="739.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="746.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">to</text>
+<text x="759.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="766.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="773.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="780.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="787.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="794.4" y="456" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="794.4" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<rect x="801.3" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="801.3" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<text x="808.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="815.1" y="456" width="6.9" height="17" fill="#5598e7"/>
+<text x="815.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<text x="822" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="828.9" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="835.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">from</text>
+<text x="863.4" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="870.3" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="877.2" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<text x="884.1" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="891" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">to</text>
+<text x="904.8" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="911.7" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="918.6" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="925.5" y="468.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="124" y="487" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<rect x="132" y="475" width="13.8" height="17" fill="#cde2fb"/>
+<text x="132" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">In</text>
+<text x="145.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="152.7" y="475" width="20.7" height="17" fill="#5598e7"/>
+<text x="152.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="173.4" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="180.3" y="475" width="48.3" height="17" fill="#cde2fb"/>
+<text x="180.3" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="228.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="235.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="256.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="263.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">population</text>
+<text x="332.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="339" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="352.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="359.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">spread</text>
+<text x="401.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="408" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">out</text>
+<text x="428.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="435.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">with</text>
+<text x="463.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="470.1" y="475" width="6.9" height="17" fill="#cde2fb"/>
+<text x="470.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="477" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="477" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="483.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="490.8" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="490.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="497.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="504.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="511.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">under</text>
+<text x="546" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="573.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">age</text>
+<text x="601.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="608.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="621.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="628.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="635.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="642.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="649.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="656.4" y="475" width="6.9" height="17" fill="#1c5cab"/>
+<text x="656.4" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">4</text>
+<rect x="663.3" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="663.3" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="670.2" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="670.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="677.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="684" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="690.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">from</text>
+<text x="718.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="725.4" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="732.3" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="739.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="746.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">to</text>
+<text x="759.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="766.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="773.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="780.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="787.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="794.4" y="475" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="794.4" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<rect x="801.3" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="801.3" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<text x="808.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="815.1" y="475" width="6.9" height="17" fill="#5598e7"/>
+<text x="815.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<text x="822" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">%</text>
+<text x="828.9" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="835.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="27.6" lengthAdjust="spacingAndGlyphs">from</text>
+<text x="863.4" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="870.3" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="877.2" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<text x="884.1" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="891" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">to</text>
+<text x="904.8" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="911.7" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="918.6" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="925.5" y="487.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="145.8" y="496" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="152.7" y="496" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="173.4" y="496" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="180.3" y="496" width="48.3" height="2.2" fill="#eda100"/>
+<rect x="228.6" y="496" width="6.9" height="2.2" fill="#eda100"/>
+<text x="24" y="518" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#52514e">Sentences in the template wording that stay in the stub, values in the prompt</text>
+<text x="124" y="555" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<rect x="132" y="543" width="20.7" height="17" fill="#cde2fb"/>
+<text x="132" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">The</text>
+<text x="152.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="159.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">median</text>
+<text x="201" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="207.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">income</text>
+<text x="249.3" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="256.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">for</text>
+<text x="276.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="283.8" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="290.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="297.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="62.1" lengthAdjust="spacingAndGlyphs">household</text>
+<text x="359.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="366.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="380.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="387.3" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="408" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="414.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="463.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="470.1" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="483.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="490.8" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">$</text>
+<rect x="497.7" y="543" width="6.9" height="17" fill="#5598e7"/>
+<text x="497.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<rect x="504.6" y="543" width="6.9" height="17" fill="#1c5cab"/>
+<text x="504.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">8</text>
+<text x="511.5" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="518.4" y="543" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="518.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="525.3" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="532.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="539.1" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="546" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">and</text>
+<text x="573.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="601.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="608.1" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">median</text>
+<text x="649.5" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="656.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">income</text>
+<text x="697.8" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="704.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">for</text>
+<text x="725.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="732.3" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="739.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="746.1" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">family</text>
+<text x="787.5" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="794.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="808.2" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="815.1" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">$</text>
+<rect x="822" y="543" width="6.9" height="17" fill="#1c5cab"/>
+<text x="822" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">7</text>
+<rect x="828.9" y="543" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="828.9" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="835.8" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="842.7" y="543" width="6.9" height="17" fill="#5598e7"/>
+<text x="842.7" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<rect x="849.6" y="543" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="849.6" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<rect x="856.5" y="543" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="856.5" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="863.4" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="870.3" y="555.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="124" y="574" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<text x="132" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">The</text>
+<text x="152.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="159.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">median</text>
+<text x="201" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="207.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">income</text>
+<text x="249.3" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="256.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">for</text>
+<text x="276.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="283.8" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="290.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="297.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="62.1" lengthAdjust="spacingAndGlyphs">household</text>
+<text x="359.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="366.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="380.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="387.3" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="408" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="414.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="463.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="470.1" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="483.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="490.8" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">$</text>
+<rect x="497.7" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="497.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">5</text>
+<rect x="504.6" y="562" width="6.9" height="17" fill="#1c5cab"/>
+<text x="504.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">8</text>
+<text x="511.5" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="518.4" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="518.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="525.3" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="525.3" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="532.2" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="532.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<rect x="539.1" y="562" width="6.9" height="17" fill="#cde2fb"/>
+<text x="539.1" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="546" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">and</text>
+<text x="573.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="601.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="608.1" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">median</text>
+<text x="649.5" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="656.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">income</text>
+<text x="697.8" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="704.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">for</text>
+<text x="725.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="732.3" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">a</text>
+<text x="739.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="746.1" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">family</text>
+<text x="787.5" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="794.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="808.2" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="815.1" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">$</text>
+<rect x="822" y="562" width="6.9" height="17" fill="#1c5cab"/>
+<text x="822" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">7</text>
+<rect x="828.9" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="828.9" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="835.8" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="842.7" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="842.7" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<rect x="849.6" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="849.6" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">3</text>
+<rect x="856.5" y="562" width="6.9" height="17" fill="#5598e7"/>
+<text x="856.5" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="863.4" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="870.3" y="574.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="132" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="152.7" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="159.6" y="583" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="201" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="207.9" y="583" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="249.3" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="256.2" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="276.9" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="283.8" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="290.7" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="297.6" y="583" width="62.1" height="2.2" fill="#eda100"/>
+<rect x="359.7" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="380.4" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="387.3" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="408" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="414.9" y="583" width="48.3" height="2.2" fill="#eda100"/>
+<rect x="463.2" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="470.1" y="583" width="13.8" height="2.2" fill="#eda100"/>
+<rect x="483.9" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="490.8" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="497.7" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="504.6" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="511.5" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="518.4" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="525.3" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="532.2" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="539.1" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="546" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="552.9" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="573.6" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="580.5" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="601.2" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="608.1" y="583" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="649.5" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="656.4" y="583" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="697.8" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="704.7" y="583" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="725.4" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="732.3" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="739.2" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="746.1" y="583" width="41.4" height="2.2" fill="#eda100"/>
+<rect x="787.5" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="808.2" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="815.1" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="822" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="828.9" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="835.8" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="842.7" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="849.6" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="856.5" y="583" width="6.9" height="2.2" fill="#eda100"/>
+<text x="124" y="624" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<rect x="132" y="612" width="13.8" height="17" fill="#1c5cab"/>
+<text x="132" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="13.8" lengthAdjust="spacingAndGlyphs">As</text>
+<text x="145.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="152.7" y="612" width="13.8" height="17" fill="#cde2fb"/>
+<text x="152.7" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="166.5" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="173.4" y="612" width="20.7" height="17" fill="#5598e7"/>
+<text x="173.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="194.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="201" y="612" width="41.4" height="17" fill="#5598e7"/>
+<text x="201" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">census</text>
+<rect x="242.4" y="612" width="6.9" height="17" fill="#1c5cab"/>
+<text x="242.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">{</text>
+<text x="249.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">G</text>
+<text x="256.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">R</text>
+<text x="263.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">|</text>
+<text x="270" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="276.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">}</text>
+<text x="283.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="290.7" y="612" width="13.8" height="17" fill="#cde2fb"/>
+<text x="290.7" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="304.5" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="311.4" y="612" width="6.9" height="17" fill="#cde2fb"/>
+<text x="311.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="318.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="325.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="332.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="339" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="345.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="352.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">there</text>
+<text x="387.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="394.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">are</text>
+<text x="414.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="421.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="428.7" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="435.6" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="442.5" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="449.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="456.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="463.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">people</text>
+<text x="504.6" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="511.5" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="518.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="525.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="532.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="539.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">7</text>
+<text x="546" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="552.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="559.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">households</text>
+<text x="628.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="635.7" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="642.6" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">and</text>
+<text x="663.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="670.2" y="612" width="6.9" height="17" fill="#5598e7"/>
+<text x="670.2" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">6</text>
+<rect x="677.1" y="612" width="6.9" height="17" fill="#5598e7"/>
+<text x="677.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<rect x="684" y="612" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="684" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="690.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="697.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="55.2" lengthAdjust="spacingAndGlyphs">families</text>
+<text x="753" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="759.9" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="55.2" lengthAdjust="spacingAndGlyphs">residing</text>
+<text x="815.1" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="822" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="835.8" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="842.7" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="863.4" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="870.3" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="918.6" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="925.5" y="624.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="124" y="643" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<rect x="132" y="631" width="13.8" height="17" fill="#1c5cab"/>
+<text x="132" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="13.8" lengthAdjust="spacingAndGlyphs">As</text>
+<text x="145.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="152.7" y="631" width="13.8" height="17" fill="#cde2fb"/>
+<text x="152.7" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="166.5" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="173.4" y="631" width="20.7" height="17" fill="#5598e7"/>
+<text x="173.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="194.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="201" y="631" width="41.4" height="17" fill="#1c5cab"/>
+<text x="201" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff" textLength="41.4" lengthAdjust="spacingAndGlyphs">census</text>
+<rect x="242.4" y="631" width="6.9" height="17" fill="#1c5cab"/>
+<text x="242.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">{</text>
+<text x="249.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">G</text>
+<text x="256.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">R</text>
+<text x="263.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">|</text>
+<text x="270" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="276.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">}</text>
+<text x="283.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="290.7" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">of</text>
+<text x="304.5" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="311.4" y="631" width="6.9" height="17" fill="#cde2fb"/>
+<text x="311.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="318.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="325.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="332.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="339" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="345.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="352.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">there</text>
+<text x="387.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="394.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">are</text>
+<text x="414.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="421.8" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="421.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="428.7" y="631" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="428.7" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="435.6" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="435.6" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<rect x="442.5" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="442.5" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<rect x="449.4" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="449.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<rect x="456.3" y="631" width="6.9" height="17" fill="#cde2fb"/>
+<text x="456.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="463.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="41.4" lengthAdjust="spacingAndGlyphs">people</text>
+<rect x="504.6" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="504.6" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="511.5" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="518.4" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="518.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="525.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="532.2" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="532.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<rect x="539.1" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="539.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">7</text>
+<rect x="546" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="546" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="552.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="559.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">households</text>
+<text x="628.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="635.7" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="642.6" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">and</text>
+<text x="663.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="670.2" y="631" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="670.2" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">6</text>
+<rect x="677.1" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="677.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<rect x="684" y="631" width="6.9" height="17" fill="#5598e7"/>
+<text x="684" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="690.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="697.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="55.2" lengthAdjust="spacingAndGlyphs">families</text>
+<text x="753" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="759.9" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="55.2" lengthAdjust="spacingAndGlyphs">residing</text>
+<text x="815.1" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="822" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">in</text>
+<text x="835.8" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="842.7" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">the</text>
+<text x="863.4" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="870.3" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">borough</text>
+<text x="918.6" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="925.5" y="631" width="6.9" height="17" fill="#cde2fb"/>
+<text x="925.5" y="643.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="132" y="652" width="13.8" height="2.2" fill="#eda100"/>
+<rect x="145.8" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="152.7" y="652" width="13.8" height="2.2" fill="#eda100"/>
+<rect x="166.5" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="173.4" y="652" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="194.1" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="414.9" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="421.8" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="428.7" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="435.6" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="442.5" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="449.4" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="456.3" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="511.5" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="518.4" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="525.3" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="532.2" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="539.1" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="546" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="552.9" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="559.8" y="652" width="69" height="2.2" fill="#eda100"/>
+<rect x="628.8" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="635.7" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="663.3" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="670.2" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="677.1" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="684" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="690.9" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="697.8" y="652" width="55.2" height="2.2" fill="#eda100"/>
+<rect x="753" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="835.8" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="842.7" y="652" width="20.7" height="2.2" fill="#eda100"/>
+<rect x="863.4" y="652" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="870.3" y="652" width="48.3" height="2.2" fill="#eda100"/>
+<text x="124" y="693" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<text x="132" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">The</text>
+<text x="152.7" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="159.6" y="681" width="6.9" height="17" fill="#cde2fb"/>
+<text x="159.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">[</text>
+<text x="166.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">population</text>
+<text x="235.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="242.4" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">density</text>
+<text x="290.7" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">]</text>
+<text x="297.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="304.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="318.3" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="325.2" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="332.1" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<text x="339" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="345.9" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="352.8" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="359.7" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="366.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="373.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">/</text>
+<text x="380.4" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">k</text>
+<text x="387.3" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">m</text>
+<text x="394.2" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">&#178;</text>
+<text x="401.1" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="408" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">(</text>
+<text x="414.9" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="421.8" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="428.7" y="681" width="6.9" height="17" fill="#cde2fb"/>
+<text x="428.7" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">7</text>
+<text x="435.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="442.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="449.4" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="456.3" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="463.2" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">/</text>
+<text x="470.1" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">m</text>
+<text x="477" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">i</text>
+<text x="483.9" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">&#178;</text>
+<text x="490.8" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">)</text>
+<text x="497.7" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="504.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="511.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">There</text>
+<text x="546" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">are</text>
+<text x="573.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="587.4" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="594.3" y="681" width="6.9" height="17" fill="#5598e7"/>
+<text x="594.3" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="601.2" y="681" width="6.9" height="17" fill="#5598e7"/>
+<text x="601.2" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<rect x="608.1" y="681" width="6.9" height="17" fill="#5598e7"/>
+<text x="608.1" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="615" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="621.9" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">housing</text>
+<text x="670.2" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="677.1" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">units</text>
+<text x="711.6" y="693.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="124" y="712" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<rect x="132" y="700" width="20.7" height="17" fill="#cde2fb"/>
+<text x="132" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">The</text>
+<text x="152.7" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="159.6" y="700" width="6.9" height="17" fill="#cde2fb"/>
+<text x="159.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">[</text>
+<rect x="166.5" y="700" width="69" height="17" fill="#cde2fb"/>
+<text x="166.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="69" lengthAdjust="spacingAndGlyphs">population</text>
+<text x="235.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="242.4" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">density</text>
+<text x="290.7" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">]</text>
+<text x="297.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="304.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="13.8" lengthAdjust="spacingAndGlyphs">is</text>
+<text x="318.3" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="325.2" y="700" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="325.2" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<rect x="332.1" y="700" width="6.9" height="17" fill="#9ec5f4"/>
+<text x="332.1" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="339" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="339" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<rect x="345.9" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="345.9" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<rect x="352.8" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="352.8" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">8</text>
+<text x="359.7" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="366.6" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="366.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">4</text>
+<text x="373.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">/</text>
+<text x="380.4" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">k</text>
+<text x="387.3" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">m</text>
+<rect x="394.2" y="700" width="6.9" height="17" fill="#cde2fb"/>
+<text x="394.2" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">&#178;</text>
+<text x="401.1" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="408" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">(</text>
+<text x="414.9" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<text x="421.8" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="428.7" y="700" width="6.9" height="17" fill="#1c5cab"/>
+<text x="428.7" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#ffffff">7</text>
+<rect x="435.6" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="435.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="442.5" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="442.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="449.4" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<rect x="456.3" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="456.3" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<text x="463.2" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">/</text>
+<text x="470.1" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">m</text>
+<text x="477" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">i</text>
+<text x="483.9" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">&#178;</text>
+<text x="490.8" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">)</text>
+<text x="497.7" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">.</text>
+<text x="504.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="511.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">There</text>
+<text x="546" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="552.9" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="20.7" lengthAdjust="spacingAndGlyphs">are</text>
+<text x="573.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="580.5" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">1</text>
+<text x="587.4" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">,</text>
+<rect x="594.3" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="594.3" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">2</text>
+<rect x="601.2" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="601.2" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">0</text>
+<rect x="608.1" y="700" width="6.9" height="17" fill="#5598e7"/>
+<text x="608.1" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b">9</text>
+<text x="615" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="621.9" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="48.3" lengthAdjust="spacingAndGlyphs">housing</text>
+<text x="670.2" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<text x="677.1" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b" textLength="34.5" lengthAdjust="spacingAndGlyphs">units</text>
+<text x="711.6" y="712.5" font-family="ui-monospace, Consolas, 'Liberation Mono', monospace" font-size="11.5" fill="#0b0b0b"> </text>
+<rect x="297.6" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="304.5" y="721" width="13.8" height="2.2" fill="#eda100"/>
+<rect x="318.3" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="325.2" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="332.1" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="339" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="345.9" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="352.8" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="359.7" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="366.6" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="373.5" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="380.4" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="387.3" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="394.2" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="401.1" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="408" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="414.9" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="421.8" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="428.7" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="435.6" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="442.5" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="449.4" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="456.3" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="463.2" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="470.1" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="477" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="483.9" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="490.8" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="497.7" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="504.6" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="573.6" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="580.5" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="587.4" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="594.3" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="601.2" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="608.1" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="615" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="621.9" y="721" width="48.3" height="2.2" fill="#eda100"/>
+<rect x="670.2" y="721" width="6.9" height="2.2" fill="#eda100"/>
+<rect x="677.1" y="721" width="34.5" height="2.2" fill="#eda100"/>
+<text x="24" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">bit per byte</text>
+<rect x="132" y="738" width="22" height="14" fill="#ffffff" stroke="#d9d8d1" stroke-width="1"/>
+<text x="160" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">below 0.25</text>
+<rect x="241" y="738" width="22" height="14" fill="#cde2fb"/>
+<text x="269" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">0.25 to 1</text>
+<rect x="343.7" y="738" width="22" height="14" fill="#9ec5f4"/>
+<text x="371.7" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">1 to 2</text>
+<rect x="427.5" y="738" width="22" height="14" fill="#5598e7"/>
+<text x="455.5" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">2 to 4</text>
+<rect x="511.3" y="738" width="22" height="14" fill="#1c5cab"/>
+<text x="539.3" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">4 and more</text>
+<rect x="626.3" y="746" width="22" height="2.2" fill="#eda100"/>
+<text x="654.3" y="749" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#52514e">also in the census prompt (6 characters or more)</text>
+<text x="24" y="783" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#0b0b0b" font-weight="600">Cost of the coded bytes, transformer alone</text>
+<text x="560" y="803" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">with prompt</text>
+<text x="660" y="803" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">without</text>
+<text x="760" y="803" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69" text-anchor="end">difference</text>
+<text x="24" y="823" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">this page, 1,599 bytes</text>
+<text x="560" y="823" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">163.5 B</text>
+<text x="660" y="823" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">193.0 B</text>
+<text x="760" y="823" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">&#8722;15.2 %</text>
+<text x="24" y="843" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">958 census pages whose stubs keep 3 or more phrases of the template, 3.02 MB</text>
+<text x="560" y="843" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">447.2 KB</text>
+<text x="660" y="843" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">472.5 KB</text>
+<text x="760" y="843" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">&#8722;5.3 %</text>
+<text x="24" y="863" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">  of these, digits that stand in the census prompt (6,012 bytes)</text>
+<text x="560" y="863" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">0.65 bit/B</text>
+<text x="660" y="863" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2.76 bit/B</text>
+<text x="760" y="863" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">&#8722;2.11 bit/B</text>
+<text x="24" y="883" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b">  of these, digits that stand in no prompt row (145,890 bytes)</text>
+<text x="560" y="883" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2.03 bit/B</text>
+<text x="660" y="883" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">2.12 bit/B</text>
+<text x="760" y="883" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">&#8722;0.08 bit/B</text>
+<text x="24" y="911" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">Without prompt: the same rows of the page without any fed row (the context row, the page rows, the census values block and</text>
+<text x="24" y="926" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">the link context). Both arms get the PPMd input and the match channel of the coder. A dictionary word is one to three bytes.</text>
+<text x="24" y="941" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11" fill="#6f6e69">&#182; marks a line feed and &#178; the three bytes of an escaped character.</text>
+</svg>

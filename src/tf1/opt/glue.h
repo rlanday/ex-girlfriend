@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/glue.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // glue.h - optimized "everything else" ops for the fx2 transformer:
 // fused rms-norm + activation quantization, residual/coefficient passes,
 // embedding + prior input path, and the softcap+softmax head.
@@ -26,6 +26,7 @@
 #include <cstdint>
 
 #include "sparse_acts.h"
+#include "../tf1_config.h"
 
 namespace fx2 {
 namespace opt {
@@ -115,6 +116,9 @@ void rope_apply_192(float* h192, const float* sin32, const float* cos32);
 // difference, <= ~1 ulp on den). Measured 1480 cycles/call (naive: ~14.6K);
 // max |delta(-log p[target])| vs double reference: 2.3e-6 nats.
 void head_softcap_softmax(float* l, float* probs);
+
+void head_plm_softcap_softmax(float* l, const float* prior, float hdot,
+                              float* probs);
 // f16 emit of the 205 probabilities (vcvtps2ph round-nearest-even)
 void probs_to_f16(const float* probs, uint16_t* out);
 // e2e-test helper, matches test_e2e's sanity loss term

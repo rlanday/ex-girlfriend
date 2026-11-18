@@ -15,7 +15,7 @@ static const unsigned long long DYN_HALTE =
     (0) ? (0) : (8ULL << 20);
 // Room that must stay free on top of a grown pool: it absorbs what the rest of
 // the process adds between two polls, so a growth is not undone by the next
-// poll.  A constant, not a switch.
+// poll.
 static const unsigned long long DYN_RESERVE_MIB = 32ULL;
 // The jury clamp is max(ru_maxrss, process-tree sum) <= 10 GiB.
 static const unsigned long long DYN_KLEMME_KIB =
@@ -91,6 +91,12 @@ struct Vorrat {
   unsigned char* schmutz;          // dirty byte per frame
   unsigned long long verdraengt;   // evictions of occupied frames
   unsigned long long gespart;      // write-backs skipped (frame clean)
+  // Hole map: one bit per heap page, set once the page has been written to the
+  // working file.  A page without it is a hole and is paged in as zeros
+  // without a pread.  Cleared with the file at a PPMd restart.
+  unsigned char* dat;
+  unsigned long long loecher;      // page-ins served from the hole map
+  unsigned long long dyn_vorab_kib;   // raum(): resident soon, counted as foreign by the poll
 };
 
 static const unsigned int LEER = 0xFFFFFFFFu;
@@ -107,6 +113,9 @@ void freigeben(void);
 // Called ONCE PER MODEL BYTE: one decrement and one compare.  Against 1.714
 // translations per model byte that is not measurable.
 void dyn_tick(void);
+// Shrinks the pool so that `bytes` about to become resident in one go fit
+// under the clamp; 1 = the caller may touch them now (ppmd_page.cpp).
+int raum(unsigned long long bytes);
 // Called from InitSubAllocator with the byte offset of UnitsStart: places the
 // upper band.  Called between two model bytes (ppmd_PrepareByte) when a front
 // comes near the boundary: write back, switch to direct mapping for good.
@@ -172,5 +181,5 @@ static inline unsigned char* xl_w(unsigned char* a, unsigned long long len) {
   return xl_t<1,0,1>(a, len);
 }
 
-}
+} // namespace ppmd_page
 #endif

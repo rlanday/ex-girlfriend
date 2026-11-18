@@ -50,10 +50,10 @@ static inline unsigned FindChk8(const U8 *c, const U8 ch) {
 template <const int SLOTS, const int TAGBITS>
 union EKA {
     struct {
-        U16 last;
+        U16 last;              // 0..1     four protected indices
         U8  chk[SLOTS];        // 2..
-        U8  bh[SLOTS][7];      //          bit histories, 7 B per slot as before
-        U16 tag3[3];           //          3 bit je Slot, 5 Slots je U16
+        U8  bh[SLOTS][7];      //          bit histories, 7 B per slot
+        U16 tag3[3];           //          3 bits per slot, 5 slots per U16
     };
     U8 pad[128];
     enum { A = SLOTS };
@@ -263,7 +263,7 @@ union EKM {
     U8 pad[128];
     static_assert(3 * N + 4 * QB <= 8 * AUXB, "EKM: header does not fit");
     static_assert(N <= 31, "EKM: too many slots");
-    typedef unsigned __int128 W; enum { WB = AUXB < 16 ? AUXB : 16 };   // head bits <= 113; form 15 has AUXB 24 > sizeof(W)
+    typedef unsigned __int128 W; enum { WB = AUXB < 16 ? AUXB : 16 };   // head bits <= 113; at most 16 bytes go through W
     inline W ld() const { W v = 0; memcpy(&v, aux, WB); return v; }
     inline void st(W v) { memcpy(aux, &v, WB); }
     inline unsigned bits(int off, int n) const { return (unsigned)(ld() >> off) & ((1u << n) - 1u); }
@@ -493,6 +493,6 @@ union EKMC6 {
     }
 };
 
-}
+}  // namespace cm_compact
 
 #endif

@@ -24,13 +24,21 @@
     Visit <http://www.gnu.org/copyleft/gpl.html>.
 */
 
+#include "../meld.h"
 
 #include "fxcmv1.h"
+#include "../port_cfg.h"
+#if PORT_CMX_MEAS
+#include "../cmx_meas.h"   // research CMX_FX_DECCODE / CMX_FX_VERB / CMX_FX_APM_OFF (release defaults)
+#include <x86intrin.h>     // __rdtsc for CMX_FX_TICKS
+#define CMX_FX_DECCODE_T (cmx_meas::g_fx_deccode)
+#define CMX_FX_VERB_T (cmx_meas::g_fx_verb)
+#define CMX_FX_APM_A (14ULL*256*1024 + cmx_meas::g_fx_apm_off)
+#define CMX_FX_APM_B (28ULL*512*1024 + cmx_meas::g_fx_apm_off)
+#endif
 #include "../attributes.h"
 #include "../page_contexts.h"
 #include "../page_registry.h"
-#include "../port_cfg.h"
-#include "../fast_math.h"
 #include "../word_recency.h"
 #include "../sentence_intersect.h"
 #include "../build_guards.h"
@@ -66,7 +74,6 @@
 // AVX2
 #include <immintrin.h>
 #include "../simd_scan.h"
-#include "../lstm_fx_link.h"
 #include "../match_extra.h"
 typedef unsigned char U8;
 typedef unsigned short U16;
@@ -76,7 +83,7 @@ typedef __m128i XMM;
 typedef __m256i YMM;
 extern const U8 wrt_2b[256];
 extern const U8 wrt_3b[256];
-extern int lstmpr, lstmex;
+extern int lstmpr;
 
 namespace dictreload {
 extern int ord_x, ord_w;
@@ -138,7 +145,7 @@ typedef unsigned long long int U64;
 typedef __m128i XMM;
 typedef __m256i YMM;
 
-const int num_models = 557 + 0;
+const int num_models = 531 + 0;
 
 static_assert(((((num_models) + 15) & -16) & 15) == 0 || !1,
     "the rounded-up mxA2 row width is not a multiple of 16"
@@ -146,7 +153,6 @@ static_assert(((((num_models) + 15) & -16) & 15) == 0 || !1,
 static_assert((((num_models) + 15) & -16) <= num_models + 64,
     "the reserve behind model_predictions1 does not cover the "
     "rounded-up row width.");
-std::valarray<float> model_predictions(0.5f, num_models);
 short *model_predictions1 = nullptr, *model_predictions1_ptr = nullptr;
 alignas(64) unsigned char model_prediction_present[num_models] = {};
 unsigned int prediction_index = 0;
@@ -179,19 +185,22 @@ bool s45_first = true;
 
 #define VERSION 26
 
+__attribute__((noinline)) static void* alloc_kern(size_t n, size_t sz) {
+  void* p = calloc(n, sz);
+  if (!p) exit(1);
+  PAGE_REGISTRY_ADD(p, n * sz);
+  return p;
+}
+
 // Array
-template <class T> void alloc(T*&ptr, int c) {
-  ptr=(T*)calloc(c, sizeof(T));
-  if (!ptr) exit(1);
-  PAGE_REGISTRY_ADD(ptr, (size_t)c * sizeof(T));
+template <class T> inline void alloc(T*&ptr, int c) {
+  ptr=(T*)alloc_kern((size_t)c, sizeof(T));
 }
 
 // for aligned data
-template <class T> void alloc1(T*&data, int c,T*&ptr,const int align=16) {
+template <class T> inline void alloc1(T*&data, int c,T*&ptr,const int align=16) {
   const size_t extra=(align+sizeof(T)-1)/sizeof(T);
-  ptr=(T*)calloc((size_t)c+extra, sizeof(T));
-  if (!ptr) exit(1);
-  PAGE_REGISTRY_ADD(ptr, ((size_t)c + extra) * sizeof(T));
+  ptr=(T*)alloc_kern((size_t)c+extra, sizeof(T));
   data=(T*)(((uintptr_t)ptr+(align-1)) & ~(uintptr_t)(align-1));
 }
 
@@ -257,8 +266,9 @@ inline short stretch(int p) {
 }
 
 template <const int S=256>
+#define BL_NULLINIT(...)
 struct alignas(64) Inputs {
-    short n[S] = {};
+    short n[S] BL_NULLINIT({});
     int ncount;     // mixer input count
      void add(int p){
         assert(p>-2048 && p<2048);// fixme, when enabled compression is different
@@ -298,7 +308,60 @@ struct BlockData {
     }
 };
 
-BlockData<560 + 0 + 0> x; //maintains current global data block
+BlockData<544 + 0 + 0> x; //maintains current global data block
+#if PORT_CMX_MEAS
+// ---- research CMX_CM_TICKS=2 / CMX_VALTEL (src/cmx_meas.h, CM census phase 2a; Claude Opus 5.5, 2026-11-08) --------
+// A site is one mix() call or mixer stage of fxcm.  FxBeg() / FxEnd(id) around it give its cycles (CMX_CM_TICKS=2)
+// and its input layout: [prediction lo, hi) = layer-0 index - 1 of the inputs it adds, [mxInputs1 lo, hi) = the slots
+// of fxcm's own mixers (both empty for a site without inputs).  Observers only.
+#define CMX_FX_SITES(X) X(parse) X(sets) X(dsmset) X(maps1) X(maps2) X(scmA_0) X(scmA_1) X(scmA_2) X(match) \
+  X(cmC2_0) X(cmC2_1) X(cmC2_2) X(cmC2_3) X(cmC2_4) X(cmC2_5) X(cmC2_6) X(cmC2_7) X(cmC2_8) X(cmC2_9) X(cmC2_10) \
+  X(cmC2_11) X(cmC2_12) X(cmC2_13) X(cmC2_14) X(cmC2_15) X(cmC2_16) X(cmC2_17) X(cmC2_18) X(cmC2_19) X(cmC2_20) \
+  X(cmC4_0) X(cmC4_1) X(cmC4_2) X(cmC4_3) X(cmC4_4) X(cmC4_6) X(cmC4_7) X(cmC4_8) \
+  X(cmC_0) X(cmC_2) X(cmC_3) X(cmC_4) X(cmC_5) X(cmCR_0) X(cmCR_1) X(cmCR_2) \
+  X(cmcr_0) X(cmcr_1) X(cmcr_2) X(cmcr_3) X(cmcr_4) X(cmcr_5) X(cmcr_6) X(cmcr_7) X(cmcr_8) \
+  X(cmcr2_0) X(cmcr2_1) X(cmcr2_2) X(cmcr2_3) X(cmNum) X(cmLink) X(cmNumDate) X(smNum) X(rcmA) \
+  X(dcsm) X(dcsm0) X(dcsm1) X(dcsm2) X(dcsmN) X(mxA) X(mxA1) X(apm) X(mxA2) X(pf25) X(upd_mxA) X(upd_mxA1) X(upd_mxA2)
+enum FxSite : int {
+#define CMX_FX_ENUM(n) FX_##n,
+  CMX_FX_SITES(CMX_FX_ENUM)
+#undef CMX_FX_ENUM
+  FX_N
+};
+static_assert((int)FX_N <= cmx_meas::kFxN, "fxcm sites");
+static const char* const kFxSiteName[FX_N] = {
+#define CMX_FX_STR(n) #n,
+  CMX_FX_SITES(CMX_FX_STR)
+#undef CMX_FX_STR
+};
+static unsigned fx_lo = 0, fx_lo1 = 0;
+static unsigned long long fx_t = 0;
+static inline void FxBeg() {
+  if (__builtin_expect(cmx_meas::g_fxrec, 0)) {
+    fx_lo = prediction_index;
+    fx_lo1 = (unsigned)x.mxInputs1.ncount;
+    fx_t = cmx_meas::g_cm_ticks >= 2 ? __rdtsc() : 0ull;
+  }
+}
+static __attribute__((noinline)) void FxEndSlow(int id) {
+  if (fx_t) {
+    cmx_meas::g_fxk[cmx_meas::g_region][id] += __rdtsc() - fx_t;
+    ++cmx_meas::g_fxkn[cmx_meas::g_region][id];
+  }
+  unsigned* const l = cmx_meas::g_fxlay[id];
+  l[0] = fx_lo;
+  l[1] = prediction_index;
+  l[2] = fx_lo1;
+  l[3] = (unsigned)x.mxInputs1.ncount;
+  if (!cmx_meas::g_fxname[id]) cmx_meas::g_fxname[id] = kFxSiteName[id];
+}
+static inline void FxEnd(int id) {
+  if (__builtin_expect(cmx_meas::g_fxrec, 0)) FxEndSlow(id);
+}
+#define FXM(id, stmt) FxBeg(); stmt; FxEnd(id)
+#else
+#define FXM(id, stmt) stmt
+#endif
 
 // ilog(x) = round(log2(x) * 16), 0 <= x < 256
 U8 ilog[256];
@@ -335,6 +398,7 @@ int num_states(int x, int y) {
 void discount(int& x) {
   int y=0;
   if (x>2){
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
     for (int i=1;i<mdc;i++) y+=x>=i;
     x=y;
   }
@@ -448,9 +512,9 @@ int wfgets(char *str, int count, FILE  *fp) {
 char *s;
 
 #include "../word_label.h"
-static_assert(54857 >= 54857,
-    "must cover every rank the dictionary can assign; "
-    "raise the vocabulary limit of the word label model or shrink the dictionary");
+static_assert(word_label::kVMax >= 54857,
+    "the word label model must have a row for every rank the dictionary can "
+    "assign; raise its vocabulary limit or shrink the dictionary");
 
 static_assert(54857 <=
     (0 ? (80 + 3840 + 40960 + 20480 + 122880)
@@ -468,43 +532,22 @@ int dict1size=80;
 int dict2size=32;
 int dict12size=dict1size*dict2size;
 int sizeDict,sizeDict2;
-// decoded codewords for wordmodel
-U32 cwTEXT;           // text
-U32 cwNOWIKI;         // nowiki
-U32 cwMATH;           // math
-U32 cwPRE;            // pre
-U32 cwPAGE;           // page image category user wikipedia
-U32 cwIMAGE;
-U32 cwCATEGORY;
-U32 cwUSER;
-U32 cwWIKIPEDIA;
-//
-U32 cwTABLE;
-U32 cwTD;
-//
-U32 cwSEE;
-U32 cwALSO;
-//
-U32 cwEXTERNAL;
-U32 cwLINKS;
-//
-U32 cwREFERENCES;     // References
-U32 cwBIBLIOGRAPHY;   // Bibliography
-
-U32 cwIS;
-U32 cwWITH;
-U32 cwTHE;
-U32 cwON,cwIN;
-U32 cwWWW,cwHTTP;
-U32 cwISBN;
+// decoded codewords for the word model: the line of each word in the
+// dictionary, 0 = not found (index by CW_*, names in kCwName)
+enum { CW_NOWIKI, CW_MATH, CW_PRE, CW_PAGE, CW_IMAGE, CW_CATEGORY, CW_USER, CW_WIKIPEDIA, CW_EXTERNAL, CW_LINKS, CW_SEE, CW_ALSO, CW_REFERENCES, CW_BIBLIOGRAPHY, CW_ISBN,
+       CW_N };
+U32 cwDict[CW_N];
+static const char kCwName[] =
+    "nowiki\0math\0pre\0page\0image\0category\0user\0wikipedia\0external\0links\0see\0also\0references\0bibliography\0isbn"
+    ;
 
  void loaddict(FILE  *file){
     int line_count=0,len=0;
     s=(char *)malloc(8192*8);
     while ((len=wfgets(s, 8192*8, file)) )  {
         if (line_count >= (int)(sizeof(dictW) / sizeof(dictW[0]))) {
-            fprintf(stderr, "Dictionary too large: %d entries (max %zu)\n",
-                line_count + 1, sizeof(dictW) / sizeof(dictW[0]));
+            msg_note(6)
+;
             exit(1);
         }
         dictW[line_count]=(char *)malloc((size_t)len + 1);
@@ -512,42 +555,16 @@ U32 cwISBN;
         memcpy(dictW[line_count],  s, (size_t)len + 1);
         dictWLen[line_count]=U8(len-1);
         //printf("%d,%s\n",len,dictW[line_count]);
-        if (cwTEXT==0 && strcmp(dictW[line_count], "text")==0) cwTEXT=line_count;
-        else if (cwNOWIKI==0 && strcmp(dictW[line_count], "nowiki")==0) cwNOWIKI=line_count;
-        else if (cwMATH==0 && strcmp(dictW[line_count], "math")==0) cwMATH=line_count;
-        else if (cwPRE==0 && strcmp(dictW[line_count], "pre")==0) cwPRE=line_count;
-        else if (cwPAGE==0 && strcmp(dictW[line_count], "page")==0) cwPAGE=line_count;
-        else if (cwIMAGE==0 && strcmp(dictW[line_count], "image")==0) cwIMAGE=line_count;
-        else if (cwCATEGORY==0 && strcmp(dictW[line_count], "category")==0) cwCATEGORY=line_count;
-        else if (cwUSER==0 && strcmp(dictW[line_count], "user")==0) cwUSER=line_count;
-        else if (cwWIKIPEDIA==0 && strcmp(dictW[line_count], "wikipedia")==0) cwWIKIPEDIA=line_count;
-        else if (cwTABLE==0 && strcmp(dictW[line_count], "table")==0) cwTABLE=line_count;
-        else if (cwTD==0 && strcmp(dictW[line_count], "td")==0) cwTD=line_count;
-
-        else if (cwEXTERNAL==0 && strcmp(dictW[line_count], "external")==0) cwEXTERNAL=line_count;
-        else if (cwLINKS==0 && strcmp(dictW[line_count], "links")==0) cwLINKS=line_count;
-        else if (cwSEE==0 && strcmp(dictW[line_count], "see")==0) cwSEE=line_count;
-        else if (cwALSO==0 && strcmp(dictW[line_count], "also")==0) cwALSO=line_count;
-        else if (cwREFERENCES==0 && strcmp(dictW[line_count], "references")==0) cwREFERENCES=line_count;
-        else if (cwBIBLIOGRAPHY==0 && strcmp(dictW[line_count], "bibliography")==0) cwBIBLIOGRAPHY=line_count;
-
-        else if (cwIS==0 && strcmp(dictW[line_count], "is")==0) cwIS=line_count;
-        else if (cwWITH==0 && strcmp(dictW[line_count], "with")==0) cwWITH=line_count;
-        else if (cwTHE==0 && strcmp(dictW[line_count], "the")==0) cwTHE=line_count;
-
-        else if (cwON==0 && strcmp(dictW[line_count], "on")==0) cwON=line_count;
-        else if (cwIN==0 && strcmp(dictW[line_count], "in")==0) cwIN=line_count;
-
-        else if (cwWWW==0 && strcmp(dictW[line_count], "www")==0) cwWWW=line_count;
-        else if (cwHTTP==0 && strcmp(dictW[line_count], "http")==0) cwHTTP=line_count;
-
-        else if (cwISBN==0 && strcmp(dictW[line_count], "isbn")==0) cwISBN=line_count;
+        // the first line of each word (names distinct: one match at most)
+        const char* q = kCwName;
+#pragma clang loop unroll(disable)
+        for (int k = 0; k < CW_N; ++k, q += strlen(q) + 1)
+            if (cwDict[k] == 0 && strcmp(dictW[line_count], q) == 0) { cwDict[k] = line_count; break; }
 
         line_count++;
     }
     free(s);
     printf("dictionary: Loaded %d words\n",line_count);   // package form: labelled
-    //printf("Loaded %d %d %d %d %d %d %d %d %d, %d %d %d, %d %d,  %d %d, %d\n", cwTEXT,cwNOWIKI,cwMATH,cwPRE,cwPAGE,cwIMAGE,cwCATEGORY,cwUSER,cwWIKIPEDIA ,cwIS,cwWITH,cwTHE,cwON,cwIN,cwWWW ,cwHTTP,cwISBN);
     sizeDict=line_count;
 }
 
@@ -670,7 +687,7 @@ struct Mixer1 {
     short *tx;  // N inputs from add()
     short *wx ; // N*M weights
     short *ptr;
-    unsigned char *rdy = nullptr;
+    unsigned char *rdy BL_NULLINIT(nullptr);
     inline void rdyrow(int c) {
         if (__builtin_expect(!rdy[c], 0)) {
             short* w = &wx[(size_t)c*N];
@@ -792,6 +809,11 @@ for (int i=0; i<n; ++i) {
 
     // Adjust weights to minimize coding cost of last prediction
     inline void update(int y) {
+#if PORT_CMX_MEAS
+        if (__builtin_expect(cmx_meas::g_fx_ka != 1000, 0))   // research CMX_FX_KA: err x kA / 1000, exactly
+          err=(int)(((long long)((y<<12)-pr)*uperr*cmx_meas::g_fx_ka)/4000);
+        else
+#endif
         err=((y<<12)-pr)*uperr/4;
         if (err>32767)
         err=32767;
@@ -951,6 +973,7 @@ struct RunContextMap {
         n=(m/B-1);
         for (int r=0;r<B;r++) tmp[r]=0;
         cp=&t[0]+1;
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
         for (int r=0;r<256;r++) {
             int c=ilog[r]*8;
             if ((r&1)==0) c=c*rcm_ml/4;
@@ -1271,7 +1294,7 @@ inline int stretch_k075(int p12) {
     if (di < -2047) di = -2047;
     return di;
 }
-}
+}  // namespace cm_state_tables
 
 namespace sharedstate {
 
@@ -1286,7 +1309,7 @@ inline int nn_pre(const U8 *nn, const int state) {
 const int kMax = 64;                 // register slots per table kind
 
 struct Reg {
-    int n = 0;
+    int n BL_NULLINIT(0);
     const U8 *nn[kMax];
     int a[kMax], b[kMax];
     short *tab[kMax];
@@ -1354,7 +1377,7 @@ inline const short* GetSt32(const U8 *nn, int cms3, int cms4) {
     return t;
 }
 
-}
+}  // namespace sharedstate
 
 // Adaptation rate R (log2) of ContextMap3's ts[256] state->probability decoder.
 // ts[] is a fixed-rate EMA without a count: ts += (y<<(32-R)) - (ts>>R).  Its
@@ -1391,6 +1414,19 @@ struct ContextMap3 {
                             : 2 + 16) };
     CMBK *ptr,*t;  // Double sized BH
     U32 tmask;
+#if PORT_CMX_MEAS
+    // research CMX_FX_LAZY: the generation of each bucket's last zeroing (nullptr = eager memset as released)
+    U32* lz_tag = nullptr;
+    U32 lz_gen = 0;
+    inline U32 lz(U32 k) {
+      if (__builtin_expect(lz_tag != nullptr, 0) && lz_tag[k] != lz_gen) {
+        memset((void*)&t[k], 0, sizeof(CMBK));
+        lz_tag[k] = lz_gen;
+        ++cmx_meas::g_fx_lazy_zero;
+      }
+      return k;
+    }
+#endif
     int skip2;
     int skip3;
     U16 cxtMask;
@@ -1439,11 +1475,7 @@ struct ContextMap3 {
     void __attribute__ ((noinline)) Init(U32 m1, int c1, int s2, int s3,const U8 *nn1,int cs4,int k, const int u,short *st
     ) {
         C=min(c1, MAXCXT);
-#if PORT_BIGTAB_CM3
-        int m=m1*4;   // W3: every ContextMap3 table x2 (neif m1*2)
-#else
         int m=m1*2;
-#endif
         tmask=((m>>7)-1);
         cn=result=0;
         cxtMask=InitialContextMask(C);
@@ -1478,6 +1510,14 @@ struct ContextMap3 {
         st32 = sharedstate::GetSt32(nn, cms3, cms4);
     }
     void reset() {
+#if PORT_CMX_MEAS
+        if (cmx_meas::g_fx_lazy) {   // research CMX_FX_LAZY: new generation, bucket 0 now (the pointers below use it)
+          if (!lz_tag) lz_tag = (U32*)calloc((size_t)tmask + 1, sizeof(U32));
+          ++lz_gen;
+          memset((void*)&t[0], 0, sizeof(CMBK));
+          lz_tag[0] = lz_gen;
+        } else
+#endif
         memset((void*)t, 0, (tmask+1)*sizeof(CMBK));
         for (int i=0; i<C; ++i) {
             cp0[i]=cp[i]=&t[0].bh[0][0];
@@ -1566,19 +1606,35 @@ struct ContextMap3 {
                     const U32 chksum = cm_compact::chk_hash(cxt[i],i);
 #define CHECKSUM_OF(c0v) chksum
                     if ( x.bpos){
+#if PORT_CMX_MEAS
+                        if ( x.bpos==2 ||  x.bpos==5) cp0[i]=cp[i]=t[lz((cxt[i]+x.c0)&tmask)].template get<1>(chksum,kep);
+#else
                         if ( x.bpos==2 ||  x.bpos==5) cp0[i]=cp[i]=t[(cxt[i]+x.c0)&tmask].template get<1>(chksum,kep);
+#endif
                         else cp[i]=cp0[i]+x.cmBitState;
                     } else {// default
+#if PORT_CMX_MEAS
+                        cp0[i]=cp[i]=t[lz((cxt[i]+x.c0)&tmask)].template get<0>(chksum,kep);   // bit-0 slot
+#else
                         cp0[i]=cp[i]=t[(cxt[i]+x.c0)&tmask].template get<0>(chksum,kep);   // bit-0 slot
+#endif
                         // Update pending bit histories for bits 2-7
                         if (cp0[i][3]==2) {
 
                             const int c=cp0[i][4]+256;
+#if PORT_CMX_MEAS
+                            U8 *p=t[lz((cxt[i]+(c>>6))&tmask)].template get<1>(chksum,kep);
+#else
                             U8 *p=t[(cxt[i]+(c>>6))&tmask].template get<1>(chksum,kep);
+#endif
                             p[0]=1+((c>>5)&1);
                             p[1+((c>>5)&1)]=1+((c>>4)&1);
                             p[3+((c>>4)&3)]=1+((c>>3)&1);
+#if PORT_CMX_MEAS
+                            p=t[lz((cxt[i]+(c>>3))&tmask)].template get<1>(chksum,kep);
+#else
                             p=t[(cxt[i]+(c>>3))&tmask].template get<1>(chksum,kep);
+#endif
                             p[0]=1+((c>>2)&1);
                             p[1+((c>>2)&1)]=1+((c>>1)&1);
                             p[3+((c>>1)&3)]=1+(c&1);
@@ -1632,6 +1688,19 @@ struct ContextMap4 {
     enum { CMBK4_SL = 3, CMBK4_HDR = (0 >= 3 ? 8 : 7) };
     CMBK4 *ptr,*t;  // Half sized BH
     U32 tmask;
+#if PORT_CMX_MEAS
+    // research CMX_FX_LAZY (see ContextMap3)
+    U32* lz_tag = nullptr;
+    U32 lz_gen = 0;
+    inline U32 lz(U32 k) {
+      if (__builtin_expect(lz_tag != nullptr, 0) && lz_tag[k] != lz_gen) {
+        memset((void*)&t[k], 0, sizeof(CMBK4));
+        lz_tag[k] = lz_gen;
+        ++cmx_meas::g_fx_lazy_zero;
+      }
+      return k;
+    }
+#endif
     int skip2;
     U16 cxtMask;
 
@@ -1673,6 +1742,14 @@ struct ContextMap4 {
         st32 = sharedstate::GetSt32(nn, cms3, cms4);
     }
     void reset() {
+#if PORT_CMX_MEAS
+        if (cmx_meas::g_fx_lazy) {   // research CMX_FX_LAZY
+          if (!lz_tag) lz_tag = (U32*)calloc((size_t)tmask + 1, sizeof(U32));
+          ++lz_gen;
+          memset((void*)&t[0], 0, sizeof(CMBK4));
+          lz_tag[0] = lz_gen;
+        } else
+#endif
         memset((void*)t, 0, (tmask+1)*sizeof(CMBK4));
         for (int i=0; i<C; ++i) {
             cp0[i]=cp[i]=&t[0].bh[0][0];
@@ -1744,19 +1821,35 @@ struct ContextMap4 {
                 } else {
                     const U16 chksum=(cxt[i]>>16)^i;
                     if ( x.bpos){
+#if PORT_CMX_MEAS
+                        if ( x.bpos==2 ||  x.bpos==5)cp0[i]=cp[i]=t[lz((cxt[i]+x.c0)&tmask)].get(chksum,kep);
+#else
                         if ( x.bpos==2 ||  x.bpos==5)cp0[i]=cp[i]=t[(cxt[i]+x.c0)&tmask].get(chksum,kep);
+#endif
                         else cp[i]=cp0[i]+x.cmBitState;
                     } else {// default
+#if PORT_CMX_MEAS
+                        cp0[i]=cp[i]=t[lz((cxt[i]+x.c0)&tmask)].get(chksum,kep);
+#else
                         cp0[i]=cp[i]=t[(cxt[i]+x.c0)&tmask].get(chksum,kep);
+#endif
                         // Update pending bit histories for bits 2-7
                         if (cp0[i][3]==2) {
 
                             const int c=cp0[i][4]+256;
+#if PORT_CMX_MEAS
+                            U8 *p=t[lz((cxt[i]+(c>>6))&tmask)].get(chksum,kep);
+#else
                             U8 *p=t[(cxt[i]+(c>>6))&tmask].get(chksum,kep);
+#endif
                             p[0]=1+((c>>5)&1);
                             p[1+((c>>5)&1)]=1+((c>>4)&1);
                             p[3+((c>>4)&3)]=1+((c>>3)&1);
+#if PORT_CMX_MEAS
+                            p=t[lz((cxt[i]+(c>>3))&tmask)].get(chksum,kep);
+#else
                             p=t[(cxt[i]+(c>>3))&tmask].get(chksum,kep);
+#endif
                             p[0]=1+((c>>2)&1);
                             p[1+((c>>2)&1)]=1+((c>>1)&1);
                             p[3+((c>>1)&3)]=1+(c&1);
@@ -1813,8 +1906,15 @@ struct  APM {
     int p(int pr=2048, int cxt=0, int rate=8, int y=0) {
         pr=stretch(pr);
         int g=(y<<16)+(y<<rate)-y*2;
+#if PORT_CMX_MEAS
+        if (__builtin_expect(!cmx_meas::g_fxls_pend, 1)) {   // research CMX_FXLS: no step for a gate bit
         t[index]   += SarPow2(g-t[index], rate);
         t[index+1] += SarPow2(g-t[index+1], rate);
+        }
+#else
+        t[index]   += SarPow2(g-t[index], rate);
+        t[index+1] += SarPow2(g-t[index+1], rate);
+#endif
         const int w=pr&127;  // interpolation weight (33 points)
         index=((pr+2048)>>7)+(cxt&mask)*33;
         return clp1((t[index]*(128-w)+t[index+1]*w) >> 11);
@@ -1837,8 +1937,8 @@ struct StationaryMap {
     int Context, Mask, Stride, bCount, bTotal, B, N;
     U32 *cp;
     int Multiplier;
-    unsigned char *rdy = nullptr;
-    U32 ival = 0;
+    unsigned char *rdy BL_NULLINIT(nullptr);
+    U32 ival BL_NULLINIT(0);
     inline void rdyrow(U32 r) {
         if (__builtin_expect(!rdy[r], 0)) {
             U32* d = &Data[(size_t)r*Stride];
@@ -1981,7 +2081,7 @@ template <typename T = int,const int S=256 >
 struct vec {
     T cxt[S];
     static constexpr int capacity=S;
-    int size=0;
+    int size BL_NULLINIT(0);
 };
 
 template <typename T = int,const int S>
@@ -2289,8 +2389,8 @@ struct WordsContext {
     U32 codesum;
     int ref;
     bool paragraph;
-    int maxc=0;
-    int worInPar=0,worInLink=0;
+    int maxc BL_NULLINIT(0);
+    int worInPar BL_NULLINIT(0),worInLink BL_NULLINIT(0);
     void Init() {
         vec_new(&sbytes);
         vec_new(&type);
@@ -2547,9 +2647,6 @@ public:
   U8 Letters[MAX_WORD_SIZE];
   U8 Start, End,fEnd;
   U32 Hash, Type, Suffix, Preffix, NextW;
-  Word(): Start(0), End(0), Hash(0), Type(0), Suffix(0), Preffix(0), NextW(0) {
-    memset(&Letters[0], 0, sizeof(U8)*MAX_WORD_SIZE);
-  }
   bool operator==(const char *s) const{
     size_t len=strlen(s);
     return ((size_t)(End-Start+(Letters[Start]!=0))==len && memcmp(&Letters[Start], s, len)==0);
@@ -2589,13 +2686,13 @@ public:
     }
     return false;
   }
-  bool MatchesAny(const char* a[], const int count) {
+  template <class E> bool MatchesAny(const E* a, const int count) {
     int i=0;
     size_t len = (size_t)Length();
     for (; i<count && (len!=strlen(a[i]) || memcmp(&Letters[Start], a[i], len)!=0); i++);
     return i<count;
   }
-  bool MatchesAnyP(const char* a[], const int count) {
+  template <class E> bool MatchesAnyP(const E* a, const int count) {
     int i=0;
     NextW=0xff;
     size_t len = (size_t)Length();
@@ -2662,7 +2759,7 @@ enum EngWordTypeFlagsSuffix {
 
 // pronouns/determiner
 // https://en.wikipedia.org/wiki/English_pronouns
-const char *Pronouns[14][5]={
+const char Pronouns[14][5][11]={
 {" "/*i*/,  "me",  "myself",     "mine",   "my"},
 {"we",      "us",  "ourselves",  "ours",   "our"},
 {"you",     "you", "yourself",   "yours",  "your"},
@@ -2688,34 +2785,34 @@ const char LiEndings[NUM_LI_ENDINGS]={'c','d','e','g','h','k','m','n','r','t'};
 #define NUM_NON_SHORT_CONSONANTS 3
 const char NonShortConsonants[NUM_NON_SHORT_CONSONANTS]={'w','x','Y'};
 #define NUM_VERB 23
-const char *VerbWords1[NUM_VERB]={"has","had","have","was","were","may","might","must","shall","should","can","could","will","would","is","am","are","be","being","been","do","does","did"};
+const char VerbWords1[NUM_VERB][7]={"has","had","have","was","were","may","might","must","shall","should","can","could","will","would","is","am","are","be","being","been","do","does","did"};
 #define NUM_NUM 21
-const char *Numbers[NUM_NUM]={"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety","hundred","thousand","million"};
+const char Numbers[NUM_NUM][9]={"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety","hundred","thousand","million"};
 #define  NUM_CONJ_WORDS  25
-const char *ConjWords[NUM_CONJ_WORDS]={"for","and","nor","but","or","yet","so","than","as","that","if","when","because","while",
+const char ConjWords[NUM_CONJ_WORDS][9]={"for","and","nor","but","or","yet","so","than","as","that","if","when","because","while",
 "where","after","though","whether","before","although","like","once","unless","now","except"};
 #define  NUM_APO_WORDS  30  //Adposition
-const char *ApoWords[NUM_APO_WORDS]={"in","during","at","on","since","until","above", "across", "against", "along", "among", "around",
+const char ApoWords[NUM_APO_WORDS][8]={"in","during","at","on","since","until","above", "across", "against", "along", "among", "around",
    "behind", "below", "beneath", "beside", "between", "by", "down", "from",  "into", "near", "of", "off", "to", "toward", "under", "upon", "with", "within"};
 #define  NUM_PREP_WORDS 5 //preposition
 const char *PrepWords[NUM_PREP_WORDS]={"as","by","de","in","on"};
 #define  NUM_CAVER_WORDS 2 //Conjunctive Adverb
-const char *ConAdVerPrepWords[NUM_CAVER_WORDS]={"also","thus"};
+const char ConAdVerPrepWords[NUM_CAVER_WORDS][5]={"also","thus"};
 #define  NUM_VERB_WORDS 12
 const char *VerbWords[NUM_VERB_WORDS]={"be","do","an","could","may","must","need","ought","shall","should","will","would"};
 #define  NUM_MALE_WORDS  9
-const char *MaleWords[NUM_MALE_WORDS]={"he","him","his","himself","man","men","boy","husband","actor"};
+const char MaleWords[NUM_MALE_WORDS][8]={"he","him","his","himself","man","men","boy","husband","actor"};
 #define  NUM_FEMALE_WORDS  8
-const char *FemaleWords[NUM_FEMALE_WORDS]={"she","her","herself","woman","women","girl","wife","actress"};
+const char FemaleWords[NUM_FEMALE_WORDS][8]={"she","her","herself","woman","women","girl","wife","actress"};
 #define  NUM_ARTICLE_WORDS  3
-const char *ArticleWords[NUM_ARTICLE_WORDS]={"a","an","the"};
+const char ArticleWords[NUM_ARTICLE_WORDS][4]={"a","an","the"};
 #define NUM_SUFFIXES_STEP0 3
-const char *SuffixesStep0[NUM_SUFFIXES_STEP0]={"'s'","'s","'"};
+const char SuffixesStep0[NUM_SUFFIXES_STEP0][4]={"'s'","'s","'"};
 #define NUM_SUFFIXES_STEP1b 6
-const char *SuffixesStep1b[NUM_SUFFIXES_STEP1b]={"eedly","eed","ed","edly","ing","ingly"};
+const char SuffixesStep1b[NUM_SUFFIXES_STEP1b][6]={"eedly","eed","ed","edly","ing","ingly"};
 const U32 TypesStep1b[NUM_SUFFIXES_STEP1b]={AdverbOfManner,0,PastTense,AdverbOfManner|PastTense,PresentParticiple,AdverbOfManner|PresentParticiple};
 #define NUM_SUFFIXES_STEP2 22
-const char *(SuffixesStep2[NUM_SUFFIXES_STEP2])[2]={
+const char SuffixesStep2[NUM_SUFFIXES_STEP2][2][8]={
   {"ization", "ize"},
   {"ational", "ate"},
   {"ousness", "ous"},
@@ -2790,7 +2887,7 @@ const U32 TypesStep2Suffix[NUM_SUFFIXES_STEP2]={
   0,
 };
 #define NUM_SUFFIXES_STEP3 8
-const char *(SuffixesStep3[NUM_SUFFIXES_STEP3])[2]={
+const char SuffixesStep3[NUM_SUFFIXES_STEP3][2][8]={
   {"ational", "ate"},
   {"tional", "tion"},
   {"alize", "al"},
@@ -2823,7 +2920,7 @@ SuffixAL,
 SuffixNESS
 };
 #define NUM_SUFFIXES_STEP4 20
-const char *SuffixesStep4[NUM_SUFFIXES_STEP4]={"al","ance","ence","er","ic","able","ible","ant","ement","ment","ent","ou","ism","ate","iti","ous","ive","ize","sion","tion"};
+const char SuffixesStep4[NUM_SUFFIXES_STEP4][6]={"al","ance","ence","er","ic","able","ible","ant","ement","ment","ent","ou","ism","ate","iti","ous","ive","ize","sion","tion"};
 const U32 TypesStep4[NUM_SUFFIXES_STEP4]={
   Suffix|Adjective,
   Suffix,
@@ -2870,9 +2967,9 @@ const U32 TypesStep4Suffix[NUM_SUFFIXES_STEP4]={
   SuffixION
 };
 #define NUM_EXCEPTION_REGION1 3
-const char *ExceptionsRegion1[NUM_EXCEPTION_REGION1]={"gener","arsen","commun"};
+const char ExceptionsRegion1[NUM_EXCEPTION_REGION1][7]={"gener","arsen","commun"};
 #define NUM_EXCEPTIONS1 19
-const char *(Exceptions1[NUM_EXCEPTIONS1])[2]={
+const char Exceptions1[NUM_EXCEPTIONS1][2][7]={
   {"skis", "ski"},
   {"skies", "sky"},
   {"dying", "die"},
@@ -2914,7 +3011,7 @@ Noun,
 Noun|Plural,
 Noun};
 #define NUM_EXCEPTIONS2 8
-const char *Exceptions2[NUM_EXCEPTIONS2]={"inning","outing","canning","herring","earring","proceed","exceed","succeed"};
+const char Exceptions2[NUM_EXCEPTIONS2][8]={"inning","outing","canning","herring","earring","proceed","exceed","succeed"};
 const U32 TypesExceptions2[NUM_EXCEPTIONS2]={Noun,Noun,Noun,Noun,Noun,Verb,Verb,Verb};
 
 inline bool CharInArray(const char c, const char a[], const int len) {
@@ -2925,6 +3022,13 @@ inline bool CharInArray(const char c, const char a[], const int len) {
   return i<len;
 }
 
+// The stemmer runs once per word and is integer
+// code only, so it is compiled for size (the result cannot change).  Stem is
+// kept a call of its own, so the per-character path of setbufstem keeps its
+// code; before, the whole stemmer was inlined there (11 KB).
+#if defined(__clang__)
+#pragma clang attribute push (__attribute__((minsize)), apply_to = function)
+#endif
 class EnglishStemmer {
 private:
   inline bool IsVowel(const char c) {
@@ -3406,7 +3510,7 @@ private:
     return false;
   }
 public:
-  bool Stem(Word *W){
+  __attribute__((noinline)) bool Stem(Word *W){
     /*if ((*W).Length()<2){
       Hash(W);
       return false;
@@ -3464,7 +3568,11 @@ public:
         res = true, (*W).Type|=Adposition;
       else if (W->MatchesAny(ConAdVerPrepWords, NUM_CAVER_WORDS))
         res = true, (*W).Type|=ConjunctiveAdverb;
+#if PORT_CMX_MEAS
+      else if ((x.blpos<CMX_FX_VERB_T) && W->MatchesAny(VerbWords1, NUM_VERB)) //77,06% disable
+#else
       else if ((x.blpos<451531986) && W->MatchesAny(VerbWords1, NUM_VERB)) //77,06% disable
+#endif
         res = true, (*W).Type|=Verb;
       else if (W->MatchesAny(Numbers, NUM_NUM))
         res = true, (*W).Type|=Number;
@@ -3481,300 +3589,11 @@ public:
     return res;
   }
 };
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 
-// ===== XML model ======
-
-#define CacheSize (1<<5)
-struct XMLAttribute {
-    U32 Name, Value, Length;
-};
-
-struct XMLContent {
-    U32 Data, Length, Type;
-};
-
-struct XMLTag {
-    U32 Name, Length;
-    int Level;
-    bool EndTag, Empty;
-    XMLContent Content;
-    struct XMLAttributes {
-        XMLAttribute Items[4];
-        U32 Index;
-    } Attributes;
-};
-
-struct XMLTagCache {
-    XMLTag Tags[CacheSize];
-    U32 Index;
-};
-
-enum ContentFlags {
-    xText        = 0x001,
-    xNumber      = 0x002,
-    xDate        = 0x004,
-    xTime        = 0x008,
-    xURL         = 0x010,
-    xLink        = 0x020,
-    xCoordinates = 0x040,
-    xTemperature = 0x080,
-    xISBN        = 0x100
-};
-
-enum XMLState {
-    xNone               = 0,
-    xReadTagName        = 1,
-    xReadTag            = 2,
-    xReadAttributeName  = 3,
-    xReadAttributeValue = 4,
-    xReadContent        = 5,
-    xReadCDATA          = 6,
-    xReadComment        = 7
-};
-
-#define DetectContent() { \
-  if ((x.c4&0xF0F0F0F0)==0x30303030){ \
-    int i = 0, j = 0; \
-    while ((i<4) && ( (j=(x.c4>>(8*i))&0xFF)>=0x30 && j<=0x39 )) \
-      i++; \
-\
-    if (i==4 && ( ((ord&0xFDF0F0FD)==0x2D30302D && buf(9)>=0x30 && buf(9)<=0x39) || ((ord&0xF0FDF0FD)==0x302D302D) )) \
-      (*Content).Type |= xDate; \
-  } \
-  else if (((ord&0xF0F0FDF0)==0x30302D30 || (ord&0xF0F0F0FD)==0x3030302D) && buf(9)>=0x30 && buf(9)<=0x39){ \
-    int i = 2, j = 0; \
-    while ((i<4) && ( (j=(ord>>(8*i))&0xFF)>=0x30 && j<=0x39 )) \
-      i++; \
-\
-    if (i==4 && (x.c4&0xF0FDF0F0)==0x302D3030) \
-      (*Content).Type |= xDate; \
-  } \
-\
-  if ((x.c4&0xF0FFF0F0)==(0x30003030+COLON*256*256) && buf(5)>=0x30 && buf(5)<=0x39 && ((buf(6)<0x30 || buf(6)>0x39) || ((ord&0xF0F0FF00)==(0x30300000+COLON*256) && (buf(9)<0x30 || buf(9)>0x39)))) \
-    (*Content).Type |= xTime; \
-\
-  if ((*Content).Length>=8 && (ord&0x80808080)==0 && (x.c4&0x80808080)==0) \
-    (*Content).Type |= xText; \
-\
-  if ((ord&0xF0F0FF)==0x3030C2 && (x.c4&0xFFF0F0FF)==0xB0303027){ \
-    int i = 2; \
-    while ((i<7) && buf(i)>=0x30 && buf(i)<=0x39) \
-      i+=(i&1)*2+1; \
-\
-    if (i==10) \
-      (*Content).Type |= xCoordinates; \
-  } \
-\
-  if ((x.c4&0xFFFFFA)==0xC2B042 && B!=0x47 && (((x.c4>>24)>=0x30 && (x.c4>>24)<=0x39) || ((x.c4>>24)==0x20 && (buf(5)>=0x30 && buf(5)<=0x39)))) \
-    (*Content).Type |= xTemperature; \
-\
-  if (B>=0x30 && B<=0x39) \
-    (*Content).Type |= xNumber; \
-\
-  if (lastCW==cwISBN && buf(4)==UPPER) \
-    (*Content).Type |= xISBN; \
-}
-U32 xlU1=0,xlU2=0,xlU3=0,xlU4=0;
-bool nearTag=false;
-struct XMLModel1 {
-    XMLTagCache Cache;
-    XMLState State, pState;
-    U32 ord, WhiteSpaceRun, pWSRun, IndentTab, IndentStep, LineEnding,lastState;
-    U32 StateBH[8];
-
-    void Init() {
-        ord=0;
-        Reset();
-    }
-    void Reset() {
-        State=xNone, pState=xNone,
-        WhiteSpaceRun=0, pWSRun=0, IndentTab=0, IndentStep=2, LineEnding=2,lastState=0;
-        memset(&Cache, 0, sizeof(XMLTagCache));
-        memset(&StateBH, 0, sizeof(StateBH));
-    }
-    int p() {
-        xlU4=0;
-        if (x.bpos==0) {
-            U8 B=(U8)x.c4;
-            XMLTag *pTag=&Cache.Tags[ (Cache.Index-1)&(CacheSize-1) ], *Tag = &Cache.Tags[ Cache.Index&(CacheSize-1)];
-            XMLAttribute *Attribute=&((*Tag).Attributes.Items[ (*Tag).Attributes.Index&3]);
-            XMLContent *Content=&(*Tag).Content;
-            pState=State;
-            ord=(ord<<8)|buf(5);
-            if ((B==0x09 || B==0x20) && (B==(U8)(x.c4>>8) || !WhiteSpaceRun)) {
-                WhiteSpaceRun++;
-                IndentTab = (B==0x09);
-            }
-            else{
-                if ((State==xNone || (State==xReadContent && (*Content).Length<=LineEnding+WhiteSpaceRun)) && WhiteSpaceRun>1+IndentTab && WhiteSpaceRun!=pWSRun) {
-                    IndentStep=abs((int)(WhiteSpaceRun-pWSRun));
-                    pWSRun=WhiteSpaceRun;
-                }
-                WhiteSpaceRun=0;
-            }
-            if (B==0x0A)
-            LineEnding=1+((U8)(x.c4>>8)==0x0D);
-            if(State!=xNone) lastState=x.blpos;
-            switch (State) {
-            case xNone: {
-                    if (B==LESSTHAN){
-                        State=xReadTagName;
-                        memset(Tag, 0, sizeof(XMLTag));
-                        (*Tag).Level=((*pTag).EndTag || (*pTag).Empty)?(*pTag).Level:(*pTag).Level+1;
-                    }
-                    if ((*Tag).Level>1)
-                    DetectContent();
-
-                    xlU4=(hash(pState, State, ((*pTag).Level+1)*IndentStep - WhiteSpaceRun));
-                    break;
-                }
-            case xReadTagName: {
-                    if ((*Tag).Length>0 && (B==0x09 || B==0x0A || B==0x0D || B==0x20))
-                    State = xReadTag;
-                    else if ((B>127) || (B==COLON || B==FIRSTUPPER || B==UPPER || B==0x5F|| (B>='a' && B<='z')) || ((*Tag).Length>0 && (B==0x2D || B==0x2E || (B>='0' && B<='9')))) {
-                        (*Tag).Length++;
-                        (*Tag).Name=(*Tag).Name * 263 * 32 + (B&0xDF);
-                    }
-                    else if (B == GREATERTHAN) {
-                        if ((*Tag).EndTag){
-                            State=xNone;
-                            Cache.Index++;
-                        }
-                        else
-                        State = xReadContent;
-                    }
-                    else if (B!=0x21 && B!=0x2D && B!=0x2F && B!=0x5B) {
-                        State=xNone;
-                        Cache.Index++;
-                    }
-                    else if ((*Tag).Length==0) {
-                        if (B==0x2F) {
-                            (*Tag).EndTag=true;
-                            (*Tag).Level=max(0,(*Tag).Level-1);
-                        }
-                        else if (x.c4==(LESSTHAN*256*256*256+0x212D2D)) { //LESSTHAN
-                            State=xReadComment;
-                            (*Tag).Level=max(0,(*Tag).Level-1);
-                        }
-                    }
-
-                    if ((*Tag).Length==1 && (x.c4&0xFFFF00)==(LESSTHAN*256*256+0x2100)) {//LESSTHAN
-                        memset(Tag, 0, sizeof(XMLTag));
-                        State=xNone;
-                    }
-                    int i=1;
-                    do {
-                        pTag=&Cache.Tags[ (Cache.Index-i)&(CacheSize-1) ];
-                        i+=1+((*pTag).EndTag && Cache.Tags[ (Cache.Index-i-1)&(CacheSize-1) ].Name==(*pTag).Name);
-                    } while ( i<CacheSize && ((*pTag).EndTag || (*pTag).Empty) );
-
-                    xlU4=(hash(pState*8+State, hash((*Tag).Name, (*Tag).Level),hash((*pTag).Name, (*pTag).Level!=(*Tag).Level) ) );
-                    break;
-                }
-            case xReadTag: {
-                    if (B==0x2F)
-                    (*Tag).Empty=true;
-                    else if (B==GREATERTHAN){
-                        if ((*Tag).Empty){
-                            State=xNone;
-                            Cache.Index++;
-                        }
-                        else
-                        State=xReadContent;
-                    }
-                    else if (B!=0x09 && B!=0x0A && B!=0x0D && B!=0x20) {
-                        State = xReadAttributeName;
-                        (*Attribute).Name=B;
-                    }
-                    xlU4=(hash(pState, State, hash((*Tag).Name, B, (*Tag).Attributes.Index)));
-                    break;
-                }
-            case xReadAttributeName: {
-                    if ((x.c4&0xFFF0)==(EQUALS*256+SPACE) && (B==0x22 || B==0x27)) {
-                        State=xReadAttributeValue;
-                        if ((ord&0xDFDF)==0x4852 && (x.c4&0xDFDF0000)==0x45460000)
-                        (*Content).Type|=xLink;
-                    }
-                    else if (B!=0x22 && B!=0x27 && B!=EQUALS)
-                    (*Attribute).Name=(*Attribute).Name*263*32+(B&0xDF);
-
-                    xlU4=(hash(pState*8+State, (*Attribute).Name, hash((*Tag).Attributes.Index, (*Tag).Name, (*Content).Type )));
-                    break;
-                }
-            case xReadAttributeValue: {
-                    if (B==0x22 || B==0x27) {
-                        (*Tag).Attributes.Index++;
-                        State=xReadTag;
-                    }
-                    else{
-                        (*Attribute).Value=(*Attribute).Value*263*32+B;
-                        (*Attribute).Length++;
-                        if (lastCW==cwHTTP && ((x.c4>>8)==(COLON*256*256+0x2F2F) )) // HTTP :// s://
-                        (*Content).Type|=xURL;
-                    }
-                    xlU4=(hash(pState, State, hash((*Attribute).Name, (*Content).Type )));
-                    break;
-                }
-            case xReadCDATA:
-            case xReadContent: {
-                    if (B==LESSTHAN) {
-                        State=xReadTagName;
-                        Cache.Index++;
-                        memset(&Cache.Tags[ Cache.Index&(CacheSize-1) ], 0, sizeof(XMLTag));
-                        Cache.Tags[Cache.Index&(CacheSize-1) ].Level=(*Tag).Level+1;
-                    }
-                    else{
-                        (*Content).Length++;
-                        (*Content).Data=(*Content).Data*997*16+B;
-
-                        DetectContent();
-                    }
-                    xlU4=(hash(pState, State,hash( (*Tag).Name, x.c4&0xC0FF )));
-                    break;
-                }
-            case xReadComment: {
-                    if ((x.c4&0xFFFFFF)==(0x2D2D00+GREATERTHAN)) { // -->
-                        State=xNone;
-                        Cache.Index++;
-                    }
-                    xlU4=(hash(pState, State));
-                    break;
-                }
-            }
-            StateBH[pState]=(StateBH[pState]<<8)|B;
-            pTag=&Cache.Tags[ (Cache.Index-1)&(CacheSize-1) ];
-            nearTag=false;
-            xlU1=hash(State, (*Tag).Level, hash(pState*2+(*Tag).EndTag, (*Tag).Name));
-            xlU2=hash((*pTag).Name, State*2+(*pTag).EndTag,hash( (*pTag).Content.Type, (*Tag).Content.Type));
-            xlU3=hash(State*2+(*Tag).EndTag, (*Tag).Name,hash( (*Tag).Content.Type, x.c4&0xE0FF));
-        }
-        U8 s = ((StateBH[State]>>(28-x.bpos))&0x08) |
-        ((StateBH[State]>>(21-x.bpos))&0x04) |
-        ((StateBH[State]>>(14-x.bpos))&0x02) |
-        ((StateBH[State]>>( 7-x.bpos))&0x01) |
-        ((x.bpos)<<4);
-        return (s<<3)|State;
-    }
-};
-// Precalculated state to prediction for STA7
-static const short pre1[256]={
-    0,  -89,   88, -125,    0,    0,  124, -148,  -36,  -36,   35,   35,  147, -165,  -59,  -59,
-    0,    0,   58,   58,  164, -178,  -76,  -76,  -23,  -23,   22,   22,   75,   75,  177, -189,
-  -89,  -40,    0,   39,   88,  188, -198, -100,  -53,  -17,   16,   53,   99,  197, -207, -109,
-  -64,  -30,    0,   30,   64,  109,  205, -214, -118,  -74,  -41,  -14,   13,   41,   73,  117,
-  213, -220, -125,  -82,  -51,  -25,   24,   50,   81,  124,  219, -226, -131,  -89,  -59,  -34,
-   33,   58,   88,  131,  225, -232, -137,  -96,  -66,  -42,   41,   66,   95,  136,  231, -237,
- -143, -102,  -73,  -50,   49,   72,  101,  142,  236, -241, -148, -107,  -79,  -56,   55,   78,
-  106,  147,  240, -246, -152, -112,  -84,  -62,   61,   83,  111,  152,  244, -250, -157, -117,
-  -89,  -67,   67,   88,  116,  156,  249, -253, -161, -121,  -94,  -72,   72,   93,  120,  160,
-  252, -257, -165, -125,  -98,  -77,   76,   97,  124,  164,  255, -261, -168, -129, -102,  -81,
-   80,  101,  128,  167,  259, -264, -172, -132, -106,  -85,   85,  105,  131,  171,  262, -267,
- -175, -136, -109,  -89,   88,  109,  135,  174,  265, -270, -178, -139, -113,  -93,   92,  112,
-  138,  177,  268, -273, -181, -142, -116,  -96,   95,  115,  141,  180,  271, -275, -184, -145,
- -119,  -99,   99,  118,  144,  183,  273, -278, -186, -148, -122, -102,  102,  121,  147,  185,
-  276, -280, -189, -151, -105,  105,  150,  188,  278, -283, -191, -153,  152,  190,  281, -194,
- -156,  155,  193, -196, -158,  157,  195, -160,  159, -163,  162, -165,  164, -167,  166, -169,
-};
+static short pre1[256];
 
 struct DirectStateMap {
     StateMap *sm;
@@ -3965,15 +3784,12 @@ int pr; // Our most important variable - final prediction
 StateMap1 smA[3 + 0];
 SmallStationaryContextMap scmA[3];
 
-Mixer1 mxA[18];
+Mixer1 mxA[17];
 Mixer1 mxA1[6];
 
 Mixer1 mxA2[4];
-// Predictors are:
-// medium state memory, per context max 7 uniqe contexts state sets
-// for average sized contexts
+
 ContextMap3 cmC[6];
-ContextMap3 cmC44;
 ContextMap3 cmcr[1+8];
 ContextMap3 cmcr2[4];
 // small state memory, per context max 3 uniqe contexts state sets
@@ -4034,8 +3850,6 @@ SentenceContext sencxtCL; // wikilinks
 WordsContext *simiwor;
 BracketContext<U16> htcxt;
 
-XMLModel1 xml;
-
 //int mxskip=0,mxskiptotal=0;
 
 Mix mmmO[4];
@@ -4045,7 +3859,11 @@ Mix mmmO[4];
     pr=2048;
 
     // Match
+#if PORT_CMX_MEAS
+    smA[0].Init(cmx_meas::g_match_age == 1 ? (1<<10) : (1<<9),1023);   // research CMX_MATCH_AGE=1: + the far bit
+#else
     smA[0].Init((1<<9),1023);
+#endif
     smA[1].Init((1<<19),1023);
     smA[2].Init((1<<16),1023);
 
@@ -4055,28 +3873,14 @@ Mix mmmO[4];
     scmA[1].Init(9);
     scmA[2].Init(8);
 
-#if PORT_RESTORE_MAPS16
-    maps1.Init(16,8);   // W2: 16 context bits (neif 15)
-    maps2.Init(16,8);
-#else
     maps1.Init(16 - (1),8);
     maps2.Init(16 - (1),8);
-#endif
     const int dccount=6;
-#if PORT_BIGTAB_DSM
-    // W3: every direct state map +1 bit (neif 28/29/24/27/26).
-    dcsm.Init(29,dccount-1, &STA7[0][0] );
-    dcsm0.Init(30,dccount, &STA7[0][0] );
-    dcsm1.Init(25,2, &STA7[0][0] );
-    dcsm2.Init(28,3, &STA7[0][0] );
-    dcsmN.Init(27,3, &STA7[0][0] );
-#else
     dcsm.Init(28,dccount-1, &STA7[0][0] );
     dcsm0.Init(29,dccount, &STA7[0][0] );
     dcsm1.Init(24,2, &STA7[0][0] );
     dcsm2.Init(27,3, &STA7[0][0] );
     dcsmN.Init(26,3, &STA7[0][0] );
-#endif
 
     // Mixers      size,  shift, err, errmul
     mxA[0].Init((0x8000),  75,  8, 14);
@@ -4095,8 +3899,7 @@ Mix mmmO[4];
     mxA[13].Init((32*256),   6,  1,  4);
     mxA[14].Init((32*256),  55,  1, 24);
     mxA[15].Init((16*256),  55,  1, 24);
-    mxA[16].Init((1024),   6,  1,  4);
-    mxA[17].Init((2048),   6,  1,  4);
+    mxA[16].Init((2048),   6,  1,  4);
 
     mxA1[0].Init(8*7*4,   6,  0,  4);
     mxA1[1].Init(    1,   6,  0,  4);
@@ -4119,12 +3922,12 @@ Mix mmmO[4];
 
     rcmA[0].Init(1*4096*4096,6);
 
-    x.mxInputs1.ncount=560 + 0 + 0;
+    x.mxInputs1.ncount=544 + 0 + 0;
     x.mxInputs2.ncount=32;
     x.mxInputs4.ncount=16;
 
     // Provide inputs array info to mixers
-    for (int i=0;i<18;i++)
+    for (int i=0;i<17;i++)
         mxA[i].setTxWx(x.mxInputs1.ncount,&x.mxInputs1.n[0]);
     // Final mixer
 
@@ -4151,7 +3954,6 @@ Mix mmmO[4];
     cmC4[4].Init((32*4096), 6, c_s[12],c_s3[12],&STA7[0][0],c_s4[12],0x00,1);
 
     cmC[0].Init((2* 16*4096), 7, c_s[13],c_s3[13],&STA2[0][0],c_s4[13],0x00,1,&st2_p1[0]);
-    cmC44.Init(64*4096, 4, c_s[13],c_s3[13],&STA2[0][0],c_s4[13],0xf0,1,&st2_p1[0]);
 
     cmcr[0].Init((1*4096*4096), 2, c_s[13],c_s3[13],&STA2[0][0],c_s4[13],0xf0,1,&st2_p1[0]);
     for (int i=0;i<8;i++)
@@ -4165,7 +3967,6 @@ Mix mmmO[4];
     smNumB.Init(1<<18,1023);
     smNumC.Init(1<<11,1023);
 
-    cmC[1].Init(16*4096, 3, c_s[14],c_s3[14],&STA5[0][0],c_s4[14],0xf0,0,&st2_p0[0]);
     cmC[2].Init((4*4096), 2, c_s[15],c_s3[15],&STA2[0][0],c_s4[15],0xf0,0,&st2_p0[0]);
 
     cmC4[3].Init((256*4096), 2, c_s[16],c_s3[16],&STA1[0][0],c_s4[16],0x00,0);
@@ -4216,7 +4017,6 @@ Mix mmmO[4];
     htcxt.Init(&html[0],2,false,0xfff);
     simiwor=sencxt.SimilarSentence(&worcxt,0);
     cWord=&StemWords[0], pWord=&StemWords[3];
-    xml.Init();
 }
 
 void PredictorFree() {
@@ -4232,13 +4032,12 @@ void PredictorFree() {
     dcsm1.Free();
     dcsm2.Free();
     dcsmN.Free();
-    for (int i=0;i<18;i++) mxA[i].Free();
+    for (int i=0;i<17;i++) mxA[i].Free();
     for (int i=0;i<6;i++) mxA1[i].Free();
     for (int i=0;i<4;i++) mxA2[i].Free();
     for (int i=0;i<6;i++) cmC[i].Free();
     cmNum.Free();
     cmLink.Free();
-    cmC44.Free();
     for (int i=0;i<9;i++) cmcr[i].Free();
     for (int i=0;i<4;i++) cmcr2[i].Free();
     cmNumDate.Free();
@@ -4521,6 +4320,17 @@ int MatchModel2mix() {
   const U32 length = matchCandidates[bestCandidateIdx].length;
   const U8 expectedByte = matchCandidates[bestCandidateIdx].expectedByte;
   const bool isInDeltaMode = matchCandidates[bestCandidateIdx].delta;
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_md_arm, 0) && x.bpos == 0) {   // research CMX_MATCHDUMP: the byte's first bit
+    cmx_meas::MatchRec& r = cmx_meas::g_mdrec;
+    if (length != 0) {
+      r.flags |= 2u;
+      r.fx_sym = expectedByte;   // the raw byte; Predictor::Predict maps it to the token index
+      r.fx_len = (uint8_t)(length < 255 ? length : 255);
+    }
+    if (isInDeltaMode) r.flags |= 8u;
+  }
+#endif
   const int expectedBit = length != 0 ? (expectedByte >> (7 - x.bpos)) & 1 : 0;
 
   U32 denselength = 0; // 0..27
@@ -4530,12 +4340,23 @@ int MatchModel2mix() {
     } else {
       denselength = 12 + ((length ) >> 2); // 16..27
     }
+#if PORT_CMX_MEAS
+    if (__builtin_expect(cmx_meas::g_match_age != 0, 0)) {   // research CMX_MATCH_AGE
+      const U32 far = (U32)(pos - (matchCandidates[bestCandidateIdx].index & 0xffffffu)) > 2048u ? 1u : 0u;
+      if (cmx_meas::g_match_age == 1) denselength |= far << 5;
+      cmx_meas::g_mtc_far = far;
+      dictreload::mtc_len = length;
+    }
+#endif
     ctx[0] = (denselength << 4) | (expectedBit << 3) | x.bpos; // 1..28*2*8
     ctx[1] = ((expectedByte << 11) | (x.bpos << 8) | c1) ;//+ 1;
     const int sign = 2 * expectedBit - 1;
     x.mxInputs1.add(sign * int(length << 5));
   } else { // no match at all or delta mode
     x.mxInputs1.add(0);
+#if PORT_CMX_MEAS
+    if (__builtin_expect(cmx_meas::g_match_age != 0, 0)) { cmx_meas::g_mtc_far = 0; dictreload::mtc_len = 0; }
+#endif
   }
 
   if( isInDeltaMode ) { // delta mode: helps predicting the remaining bits of a character when a mismatch occurs
@@ -4669,6 +4490,8 @@ int __attribute__ ((noinline)) getWT3(U32 t) {
 
 // Set decoded char to buffer and update stemmer string
 void setbuf(char c){
+    invariants::umr.Text((unsigned char)c);   // Conversion trigger (decoded text)
+    invariants::cvz.Text((unsigned char)c);
     cwbuf[cwpos&CBMASK]=c;
     cwpos++;
     setbufstem(c);
@@ -4980,7 +4803,11 @@ GLUE_ATTR void parseByte() {
                 // Codeword ended so decode it and put to the decoded text buffer
                 procWord();
                 // Set mixer(8) to last decoded dictionary index (befere main text ends)
+#if PORT_CMX_MEAS
+                if (x.blpos<CMX_FX_DECCODE_T)  deccode=lastCW; // for processed enwik9
+#else
                 if (x.blpos<448131719)  deccode=lastCW; // for processed enwik9
+#endif
                 assert(deccode>=0 && deccode<0x20000);
             }
             // Set char to decoded text buffer
@@ -4999,7 +4826,11 @@ GLUE_ATTR void parseByte() {
                 // Decode codeword if any and put to the decoded text buffer
                 procWord();
                 // Set mixer(8) to last decoded dictionary index (befere main text ends)
+#if PORT_CMX_MEAS
+                if (x.blpos<CMX_FX_DECCODE_T) deccode=lastCW; // for processed enwik9
+#else
                 if (x.blpos<448131719) deccode=lastCW; // for processed enwik9
+#endif
                 assert(deccode>=0 && deccode<0x20000);
             } else {
                 // Set mixer(8) to non-codeword flag (bit 16) and last 8 bit2words
@@ -5105,23 +4936,22 @@ GLUE_ATTR void parseByte() {
                 stream3bMask=stream2bMask=stream3bRMask1=0;
             }
 
-            if (buffer1(8)==charSwap(LESSTHAN) && isNowiki==false && cwSTR==cwNOWIKI) isNowiki=true;
-            else if ((buffer1(9)=='/') && (c1==GREATERTHAN ) && isNowiki==true && cwSTR==cwNOWIKI) isNowiki=isPre=false,cwSTR=0x10000;
+            if (buffer1(8)==charSwap(LESSTHAN) && isNowiki==false && cwSTR==cwDict[CW_NOWIKI]) isNowiki=true;
+            else if ((buffer1(9)=='/') && (c1==GREATERTHAN ) && isNowiki==true && cwSTR==cwDict[CW_NOWIKI]) isNowiki=isPre=false,cwSTR=0x10000;
 
             U8 pChar=(worcxt.sBytes()>>8)&0xff;
-            if (isMath && ( (c1==SPACE && colcxt.lastfc()!=COLON)|| c1==',') && c2==GREATERTHAN && cwSTR==cwMATH) isMath=false,cwSTR=0x10000;
+            if (isMath && ( (c1==SPACE && colcxt.lastfc()!=COLON)|| c1==',') && c2==GREATERTHAN && cwSTR==cwDict[CW_MATH]) isMath=false,cwSTR=0x10000;
             if (isMath && c1=='/' && c2==LESSTHAN && c3==GREATERTHAN && buffer1(4)=='h')isMath=false,cwSTR=0x10000;
 
-            if (isNowiki==false && buffer1(6)==charSwap(LESSTHAN) && buffer1(5)=='m'&& isMath==false && c1!='.'&& buffer1(7)!='&'  && buffer1(8)!='&' && cwSTR==cwMATH) isMath=true;
-            else if ((buffer1(6)=='/') && (c1==GREATERTHAN ||c1=='&') && isMath==true && cwSTR==cwMATH) isMath=false,cwSTR=0x10000;
+            if (isNowiki==false && buffer1(6)==charSwap(LESSTHAN) && buffer1(5)=='m'&& isMath==false && c1!='.'&& buffer1(7)!='&'  && buffer1(8)!='&' && cwSTR==cwDict[CW_MATH]) isMath=true;
+            else if ((buffer1(6)=='/') && (c1==GREATERTHAN ||c1=='&') && isMath==true && cwSTR==cwDict[CW_MATH]) isMath=false,cwSTR=0x10000;
 
             pChar=(worcxt.sBytes()>>8)&0xff;
-            if ((buffer1(5)==charSwap(LESSTHAN)) && (c1==GREATERTHAN) && (buffer1(4)=='p') && isPre==false && cwSTR==cwPRE) isPre=true,cwSTR=0x10000;
-            else if ((buffer1(5)=='/') && (c1==GREATERTHAN) &&(buffer1(4)=='p') && cwSTR==cwPRE) isPre=false,cwSTR=0x10000;
+            if ((buffer1(5)==charSwap(LESSTHAN)) && (c1==GREATERTHAN) && (buffer1(4)=='p') && isPre==false && cwSTR==cwDict[CW_PRE]) isPre=true,cwSTR=0x10000;
+            else if ((buffer1(5)=='/') && (c1==GREATERTHAN) &&(buffer1(4)=='p') && cwSTR==cwDict[CW_PRE]) isPre=false,cwSTR=0x10000;
             // wikipedia article ended with page tag. Do reset on some contexts.
-            if ((buffer1(6)=='/') && (c1==GREATERTHAN) &&(buffer1(5)=='p') && cwSTR==cwPAGE) {
+            if ((buffer1(6)=='/') && (c1==GREATERTHAN) &&(buffer1(5)=='p') && cwSTR==cwDict[CW_PAGE]) {
                 if (pagectx::link) pagectx::link->NewArticle();
-                invariants::isbn.Reset();
                 isPre=isMath=isNowiki=false,colcxt.nlChar=LF;
                 colcxt.resetCells();
                 fccxt.Reset();
@@ -5140,6 +4970,9 @@ GLUE_ATTR void parseByte() {
                 lastPTOP=lastPTOP*2;
                 if (pageParag<2 && pageSent<5) lastPTOP++;
 
+#if PORT_CMX_MEAS
+                const unsigned long long cmx_t0 = cmx_meas::g_fx_ticks ? __rdtsc() : 0ull;   // research CMX_FX_TICKS
+#endif
                 cmC4[1].reset();
                 cmC4[2].reset();
 
@@ -5148,10 +4981,13 @@ GLUE_ATTR void parseByte() {
                 cmC4[8].reset();
                 cmC4[6].reset();
                 cmC[0].reset();
-                if ((lastPTOP&63)==63) {
-                    cmC[1].reset();
-                    lastPTOP++;
-                }
+#if PORT_CMX_MEAS
+                if (cmx_meas::g_fx_ticks) { cmx_meas::g_fx_reset_cyc += __rdtsc() - cmx_t0; ++cmx_meas::g_fx_resets; }
+#endif
+                // the reset() of the removed map cmC[1] is gone;
+                // lastPTOP++ is a SIDE EFFECT of this line that other contexts
+                // read (it is doubled and incremented a few lines above).
+                if ((lastPTOP&63)==63) lastPTOP++;
                 pageParag=pageSent=0;
             }
 
@@ -5359,14 +5195,14 @@ GLUE_ATTR void parseByte() {
         if (c1==COLON && (words&2)==2) cwCOLON=cwSTR;// copy word
         if ((c1==SPACE &&fccxt.cxt==COLON && colcxt.lastfc()!=COLON && colcxt.nlChar!=WIKITABLE) ) {
             // Remove if word before colon was not:
-            if (cwCOLON!=cwIMAGE) {
+            if (cwCOLON!=cwDict[CW_IMAGE]) {
                 while (fccxt.cxt==COLON) fccxt.Update(LF);
             }
         }
 
         // wiki links with [catecory:...] or [wikipedia:...], remove word and reset first char colon context
-        if (c1==COLON &&(cwCOLON==cwCATEGORY ||cwCOLON==cwUSER ||cwCOLON==cwWIKIPEDIA)) {
-            if (cwCOLON==cwCATEGORY) {
+        if (c1==COLON &&(cwCOLON==cwDict[CW_CATEGORY] ||cwCOLON==cwDict[CW_USER] ||cwCOLON==cwDict[CW_WIKIPEDIA])) {
+            if (cwCOLON==cwDict[CW_CATEGORY]) {
                 PState=PCategory,isCategory=true;
             }
             PStateH=hash(PStateH,PState,0);
@@ -5503,21 +5339,21 @@ GLUE_ATTR void parseByte() {
 
         if (skipSeeExternal==false && colcxt.lastfc()==EQUALS) {
             if (worcxt.wordcount==2 && c1==EQUALS) {
-                if (worcxt.Code(2)==cwEXTERNAL && worcxt.Code(1)==cwLINKS) {
+                if (worcxt.Code(2)==cwDict[CW_EXTERNAL] && worcxt.Code(1)==cwDict[CW_LINKS]) {
                     skipSeeExternal=true;
-                } else if (worcxt.Code(2)==cwSEE && worcxt.Code(1)==cwALSO) {
+                } else if (worcxt.Code(2)==cwDict[CW_SEE] && worcxt.Code(1)==cwDict[CW_ALSO]) {
                     skipSeeExternal=true;
                 }
             } else if (worcxt.wordcount==1 && c1==EQUALS) {
-                if (worcxt.Code(1)==cwREFERENCES) {
+                if (worcxt.Code(1)==cwDict[CW_REFERENCES]) {
                     skipSeeExternal=true;
-                }else if (worcxt.Code(1)==cwBIBLIOGRAPHY) {
+                }else if (worcxt.Code(1)==cwDict[CW_BIBLIOGRAPHY]) {
                     skipSeeExternal=true;
                 }
             }
         }
         if (isCategory==false && colcxt.lastfc()==SQUAREOPEN) {
-            if (lastCW==cwCATEGORY && c1==COLON){
+            if (lastCW==cwDict[CW_CATEGORY] && c1==COLON){
                 isCategory=true;
             }
         }
@@ -5535,10 +5371,6 @@ GLUE_ATTR void parseByte() {
             }
         }
         num_update();
-        {
-            if (cwISBN && lastCW==cwISBN) invariants::isbn.Arm();
-            else invariants::isbn.Byte((unsigned char)c1);
-        }
         invariants::tail = skipSeeExternal ? 1 : 0;
 }
 
@@ -5550,7 +5382,6 @@ static inline unsigned int apm_extra() {
     return v;
 }
 
-int tagS=0;
 int mp0=0,mp1=0,mp2=0,mp3=0;
 U8 mstate=0;
 
@@ -5560,7 +5391,10 @@ GLUE_ATTR int modelPrediction() {
     const int bpos=x.bpos;
     const U32 c4=x.c4;
     const int c0=x.c0;
-    if (bpos==0) parseByte();
+    FXM(FX_parse, if (bpos==0) parseByte());
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     if (bpos==0) {
         const int is_utf8_ctx = (utf8left>0) || (c1==ESCAPE && c2!=ESCAPE) ||
                            (c1>127 && c2==ESCAPE);
@@ -5800,17 +5634,7 @@ GLUE_ATTR int modelPrediction() {
                 cmC[0].set( word0+wrt_2b[bufr(colcxt.abovecellpos)] );
             }
         }
-        // xml
-        if (nearTag==true) {
-            cmC44.set(xlU1);// ?
-            cmC44.set(xlU2);
-            cmC44.set(xlU3);
-            cmC44.set(xlU4);
-        } else {
-            SETS4(cmC44);
-        }
-
-        SETS3(cmC[1]);
+        // Indirect byte with sentence word(1) and current byte
         if (isMath) cmC[0].sets();
         else cmC[0].set((indirectByte& 0xff00)+257 * worcxt.Word(1)*53+(c1 ));// brcxt less?
 
@@ -5861,7 +5685,7 @@ GLUE_ATTR int modelPrediction() {
         else cmC2[11].set(((indirectByte& 0xffff)>>8) + ((64 * stream2bR) & 0x3ffff00)+(U32(brcxt.cxt)<< 25)); // end good
         // Byte from prvious word(0), pos if in range(255), indirect byte
 
-        if ((fccxt.cxt==FIRSTUPPER && brcxt.cxt==SQUAREOPEN) || brcxt.cxt==LESSTHAN/* ||  (tagS&7)!=xReadContent*/) {
+        if ((fccxt.cxt==FIRSTUPPER && brcxt.cxt==SQUAREOPEN) || brcxt.cxt==LESSTHAN) {
             cmC2[11].sets();
         } else {
             cmC2[11].set((indirectWord0Pos )| ((indirectByte& 0xff00)<<16));// good 2,7k
@@ -6037,11 +5861,17 @@ GLUE_ATTR int modelPrediction() {
         maps1.set((word0*191));
         maps2.set(deccode>>2);
     }
+#if PORT_CMX_MEAS
+    FxEnd(FX_sets);
+#endif
 
     const int c0b=c0<<(8-bpos);
     // Indices computed once and handed to set().  Value-identical,
     // because no input (word0/word00/h/x.c0/worcxt*/fccxt/indirectBrByte/
     // cxtind3) is written by set().
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     const U32 dsmidx[19] = {
         (word0*191)*256+x.c0,
         (word0*191+worcxt.Word(1))*256+x.c0,
@@ -6070,70 +5900,83 @@ GLUE_ATTR int modelPrediction() {
     dcsm0.set(dsmidx[10],x.y); dcsm0.set(dsmidx[11],x.y); dcsm0.set(dsmidx[12],x.y);
     dcsm0.set(dsmidx[13],x.y); dcsm0.set(dsmidx[14],x.y); dcsm0.set(dsmidx[15],x.y);
     dcsmN.set(dsmidx[16],x.y); dcsmN.set(dsmidx[17],x.y); dcsmN.set(dsmidx[18],x.y);
-    invariants::g_isbn_rule = (int)invariants::RuleBit(x.c0, x.bpos);
+#if PORT_CMX_MEAS
+    FxEnd(FX_dsmset);
+#endif
+    invariants::g_isbn_rule = (int)invariants::RuleBit2(x.c0, x.bpos);
 
-    maps1.mix();
-    maps2.mix();
-    scmA[0].mix(sscmrate);
-    scmA[1].mix(sscmrate);
-    scmA[2].mix(sscmrate);
+    FXM(FX_maps1, maps1.mix());
+    FXM(FX_maps2, maps2.mix());
+    FXM(FX_scmA_0, scmA[0].mix(sscmrate));
+    FXM(FX_scmA_1, scmA[1].mix(sscmrate));
+    FXM(FX_scmA_2, scmA[2].mix(sscmrate));
 
-    isMatch=MatchModel2mix();
+    FXM(FX_match, isMatch=MatchModel2mix());
 
     // Order X
     ordX=0;
     if (cmC2[0].cxtMask) ordX=2;
-    ordX=ordX+cmC2[0].mix();
+    FXM(FX_cmC2_0, ordX=ordX+cmC2[0].mix());
     if (ordX==3) ordX=2; // low max 2
-    ordX=ordX+cmC2[1].mix();
-    ordX=ordX+cmC2[2].mix();
-    ordX=ordX+cmC2[3].mix();
-    ordW=cmC2[4].mix();
-    ordW=ordW+cmC2[5].mix();
+    FXM(FX_cmC2_1, ordX=ordX+cmC2[1].mix());
+    FXM(FX_cmC2_2, ordX=ordX+cmC2[2].mix());
+    FXM(FX_cmC2_3, ordX=ordX+cmC2[3].mix());
+    FXM(FX_cmC2_4, ordW=cmC2[4].mix());
+    FXM(FX_cmC2_5, ordW=ordW+cmC2[5].mix());
     if (ordW>3) ordW=3;
-    cmC2[6].mix();
-    cmC2[7].mix();
-    cmC2[8].mix();
-    cmC4[0].mix();
-    cmC4[1].mix();
-    cmC4[2].mix();
-    cmC4[4].mix();
-    int ordP=cmC[0].mix();
-    cmC[1].mix();
-    cmC[2].mix();
-    cmC4[3].mix();
-    cmC2[9].mix();
-    cmC2[10].mix();
-    cmC2[11].mix();
-    cmC2[12].mix();
-    cmC44.mix();
+    FXM(FX_cmC2_6, cmC2[6].mix());
+    FXM(FX_cmC2_7, cmC2[7].mix());
+    FXM(FX_cmC2_8, cmC2[8].mix());
+    FXM(FX_cmC4_0, cmC4[0].mix());
+    FXM(FX_cmC4_1, cmC4[1].mix());
+    FXM(FX_cmC4_2, cmC4[2].mix());
+    FXM(FX_cmC4_4, cmC4[4].mix());
+    FXM(FX_cmC_0, int ordP=cmC[0].mix());
+    FXM(FX_cmC_2, cmC[2].mix());
+    FXM(FX_cmC4_3, cmC4[3].mix());
+    FXM(FX_cmC2_9, cmC2[9].mix());
+    FXM(FX_cmC2_10, cmC2[10].mix());
+    FXM(FX_cmC2_11, cmC2[11].mix());
+    FXM(FX_cmC2_12, cmC2[12].mix());
 
     // Order Word
-    ordW=ordW+cmC2[13].mix();
-    cmC[3].mix();
-    ordW=ordW+cmC2[14].mix();
+    FXM(FX_cmC2_13, ordW=ordW+cmC2[13].mix());
+    FXM(FX_cmC_3, cmC[3].mix());
+    FXM(FX_cmC2_14, ordW=ordW+cmC2[14].mix());
 
-    cmC2[15].mix();
-    cmC[4].mix();
-    cmC[5].mix();
-    cmC2[16].mix();
-    cmC2[17].mix();
-    cmC2[19].mix();
-    cmC4[6].mix();
-    cmC4[7].mix();
-    cmC4[8].mix();
-    cmC2[18].mix();
-    cmC2[20].mix();
-    cmCR[0].mix();
-    cmCR[1].mix();
-    cmCR[2].mix();
+    FXM(FX_cmC2_15, cmC2[15].mix());
+    FXM(FX_cmC_4, cmC[4].mix());
+    FXM(FX_cmC_5, cmC[5].mix());
+    FXM(FX_cmC2_16, cmC2[16].mix());
+    FXM(FX_cmC2_17, cmC2[17].mix());
+    FXM(FX_cmC2_19, cmC2[19].mix());
+    FXM(FX_cmC4_6, cmC4[6].mix());
+    FXM(FX_cmC4_7, cmC4[7].mix());
+    FXM(FX_cmC4_8, cmC4[8].mix());
+    FXM(FX_cmC2_18, cmC2[18].mix());
+    FXM(FX_cmC2_20, cmC2[20].mix());
+    FXM(FX_cmCR_0, cmCR[0].mix());
+    FXM(FX_cmCR_1, cmCR[1].mix());
+    FXM(FX_cmCR_2, cmCR[2].mix());
+#if PORT_CMX_MEAS
+    for (int i=0;i<9;i++) {
+        FXM((int)FX_cmcr_0 + i, cmcr[i].mix());
+    }
+    for (int i=0;i<4;i++) {
+        FXM((int)FX_cmcr2_0 + i, cmcr2[i].mix());
+    }
+#else
     for (int i=0;i<9;i++)
         cmcr[i].mix();
     for (int i=0;i<4;i++)
         cmcr2[i].mix();
-    cmNum.mix();
-    cmLink.mix();
-    cmNumDate.mix();
+#endif
+    FXM(FX_cmNum, cmNum.mix());
+    FXM(FX_cmLink, cmLink.mix());
+    FXM(FX_cmNumDate, cmNumDate.mix());
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     if (num_expk) {
         smNumB.set((((num_expk-1)*256 + (num_exp&255))<<8) | x.c0);
         const int p1=smNumB.pr;
@@ -6146,13 +5989,16 @@ GLUE_ATTR int modelPrediction() {
         x.mxInputs1.add(stretch(p1)>>2);
         x.mxInputs1.add((p1-2048)>>3);
     } else { x.mxInputs1.add(0); x.mxInputs1.add(0); }
+#if PORT_CMX_MEAS
+    FxEnd(FX_smNum);
+#endif
 
-    rcmA[0].mix();
-    dcsm.mix();
-    dcsm0.mix();
-    dcsm1.mix();
-    dcsm2.mix();
-    dcsmN.mix();
+    FXM(FX_rcmA, rcmA[0].mix());
+    FXM(FX_dcsm, dcsm.mix());
+    FXM(FX_dcsm0, dcsm0.mix());
+    FXM(FX_dcsm1, dcsm1.mix());
+    FXM(FX_dcsm2, dcsm2.mix());
+    FXM(FX_dcsmN, dcsmN.mix());
 
     mstate=STA2[mstate][x.y];
     // Mixers
@@ -6165,7 +6011,7 @@ GLUE_ATTR int modelPrediction() {
 
     mxA1[5].cxt=(int)(wordrec::rec_bucket & 7u);
 
-    mxA[17].cxt=PState*16+(stream2b&15);
+    mxA[16].cxt=PState*16+(stream2b&15);
     // mixer 0
     // at bpos=0   context is last 2 bit2word and 1 bit3word
     // at bpos=1-3 context is last 2 bit2word and first char/bracket index (max 7)
@@ -6284,11 +6130,13 @@ GLUE_ATTR int modelPrediction() {
     mxA[13].cxt=(stream3bR&511);
     mxA[14].cxt=(BrFcIdx*8+FcIdx)*8+wrt_3b[c0b&255];
     mxA[15].cxt=(numbers|words)*16+(stream2bR&15);
-    mxA[16].cxt=tagS&1023;
 
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     x.mxInputs1.add_internal(stretch((lstmpr)));
 
-    for (int i=0;i<18;i++) mxA[i].pf();
+    for (int i=0;i<17;i++) mxA[i].pf();
     for (int i=0;i<5;i++)  mxA1[i].pf();
     x.mxInputs2.add(mxA[0].p1());
     x.mxInputs2.add(mxA[1].p1());
@@ -6306,19 +6154,35 @@ GLUE_ATTR int modelPrediction() {
     x.mxInputs2.add(mxA[13].p1());
     x.mxInputs2.add(mxA[14].p1());
     x.mxInputs2.add(mxA[15].p1());
-    if (nearTag==true) x.mxInputs2.add(mxA[16].p1()); else  x.mxInputs2.add(0);
     x.mxInputs2.add_internal(stretch((lstmpr))/2);
-    x.mxInputs4.add(mxA[17].p1());
+    x.mxInputs4.add(mxA[16].p1());
+#if PORT_CMX_MEAS
+    FxEnd(FX_mxA);
+    FxBeg();
+#endif
     //l2
     x.mxInputs4.add(mxA1[0].p1());
     x.mxInputs4.add(mxA1[1].p1());
     x.mxInputs4.add(mxA1[2].p1());
     x.mxInputs4.add(mxA1[3].p1());
     x.mxInputs4.add(mxA1[4].p1());
+#if PORT_CMX_MEAS
+    const int cmx_r = mxA1[5].p();
+    FxEnd(FX_mxA1);
+    return cmx_r;
+#else
     return (mxA1[5].p());
+#endif
 }
 
 int rate=6;
+#if PORT_CMX_MEAS
+// research CMX_CM_TICKS=2: the mxA steps of this bit and those with an error outside the elim band
+static __attribute__((noinline)) void FxTrnCount() {
+  const int r = cmx_meas::g_region;
+  for (int i=0;i<17;i++) { ++cmx_meas::g_fx_trn[r][0]; if (mxA[i].err) ++cmx_meas::g_fx_trn[r][1]; }
+}
+#endif
 GLUE_ATTR void update() {
     x.c0+=x.c0+x.y;
 
@@ -6329,35 +6193,66 @@ GLUE_ATTR void update() {
         // When last byte was predicted good/below error treshold then set new limits to mixer update
         // larger value means less updates and better speed.
         if ((fails&255)==0) {
-            for (int i=0;i<18;i++) mxA[i].elim=max(1024,
+            for (int i=0;i<17;i++) mxA[i].elim=max(1024,
                 mxA[i].elim+1);
         }else{
-            for (int i=0;i<18;i++) mxA[i].elim=max(0,min(16,mxA[i].elim-1));
+            for (int i=0;i<17;i++) mxA[i].elim=max(0,min(16,mxA[i].elim-1));
         }
+#if PORT_CMX_MEAS
+        sscmrate=(x.blpos>CMX_FX_APM_A);
+        // APM update rate based on input file position
+        rate=6 + (x.blpos>CMX_FX_APM_A) + (x.blpos>CMX_FX_APM_B);
+#else
         sscmrate=(x.blpos>14*256*1024);
         // APM update rate based on input file position
         rate=6 + (x.blpos>14*256*1024) + (x.blpos>28*512*1024);
+#endif
     }
 
     x.bpos=(x.bpos+1)&7;
     x.bposshift=7-x.bpos;
     x.c0shift_bpos=(x.c0<<1)^(256>>(x.bposshift));
     x.cmBitState=getStateByteLocation(x.bpos,x.c0);
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     if (x.bpos==2 || x.bpos==5) {
         for (int i=0;i<6;i++) cmC[i].pf25();
-        cmC44.pf25();
         for (int i=0;i<1+8;i++) cmcr[i].pf25();
         for (int i=0;i<4;i++) cmcr2[i].pf25();
         for (int i=0;i<21;i++) cmC2[i].pf25();
         for (int i=0;i<9;i++) cmC4[i].pf25();
         for (int i=0;i<9;i++) cmCR[i].pf25();
     }
+#if PORT_CMX_MEAS
+    FxEnd(FX_pf25);
+#endif
     if (s45_have_pred) {
+#if PORT_CMX_MEAS
+    // research CMX_FXLS (cmx_meas.h): a gate bit takes no mixer step here and no APM / mmmO step in the next
+    // predict_half (g_fxls_pend); with the knob unset g_fxls_off stays false
+    const bool cmx_ls = cmx_meas::g_fxls_off;
+    cmx_meas::g_fxls_pend = cmx_ls;
+    if (__builtin_expect(cmx_meas::g_fxls != 0, 0)) ++cmx_meas::g_fxls_n[cmx_meas::g_region][cmx_ls ? 1 : 0];
+    if (!cmx_ls) {
+    FxBeg();
     for (int i=0;i<16;i++)    mxA[i].update(x.y);
-    if (nearTag) mxA[16].update(x.y);
-        mxA[17].update(x.y);
+        mxA[16].update(x.y);
+    FxEnd(FX_upd_mxA);
+    if (__builtin_expect(cmx_meas::g_cm_ticks >= 2, 0)) FxTrnCount();
+    FxBeg();
+    for (int i=0;i<6;i++) mxA1[i].update(x.y);
+    FxEnd(FX_upd_mxA1);
+    FxBeg();
+    for (int i=0;i<4;i++) mxA2[i].update(x.y);
+    FxEnd(FX_upd_mxA2);
+    }
+#else
+    for (int i=0;i<16;i++)    mxA[i].update(x.y);
+        mxA[16].update(x.y);
     for (int i=0;i<6;i++) mxA1[i].update(x.y);
     for (int i=0;i<4;i++) mxA2[i].update(x.y);
+#endif
     if (x.blpos > 0)
     {
     if ((int)x.mxInputs1.ncount > build_guards::g_max_mx1) build_guards::g_max_mx1 = x.mxInputs1.ncount;
@@ -6388,6 +6283,9 @@ GLUE_ATTR void update() {
 
 GLUE_ATTR void predict_half() {
     pr=modelPrediction();
+#if PORT_CMX_MEAS
+    FxBeg();
+#endif
     AddPrediction(stretch(pr));
 
     int pt, pu=(apmA0.p(pr, x.c0 + (int)(apm_extra() << 8), 3,x.y)+7*pr+4)>>3, pv, pz=failcount+1;
@@ -6415,6 +6313,10 @@ GLUE_ATTR void predict_half() {
     if (fails&255) pr=(pt*6+pu  +pv*11+pz*14 +31)>>5;
     else           pr=(pt*4+pu*7+pv*12+pz*9 +31)>>5;
     AddPrediction(stretch(pr));
+#if PORT_CMX_MEAS
+    FxEnd(FX_apm);
+    FxBeg();
+#endif
     //l 4
     mxA2[0].cxt=c1;
     mxA2[1].cxt=c2;
@@ -6428,12 +6330,28 @@ GLUE_ATTR void predict_half() {
 
     pu=stretch(pr);
 
+#if PORT_CMX_MEAS
+    // research CMX_FXLS: the mmmO steps of a gate bit are skipped (the APMs above skipped theirs, APM::p)
+    const bool cmx_ls = cmx_meas::g_fxls_pend;
+    if (!cmx_ls) mmmO[0].update(x.y);
+    pu=clp(mmmO[0].pp(0,mp0,mstate));//clp this
+    if (!cmx_ls) mmmO[1].update(x.y);
+    pu=clp(mmmO[1].pp(pu,mp1,mstate));
+    if (!cmx_ls) mmmO[2].update(x.y);
+    pu=clp(mmmO[2].pp(pu,mp2,mstate));
+    if (!cmx_ls) mmmO[3].update(x.y);
+    pu=clp(mmmO[3].pp(pu,mp3,mstate));
+#else
     mmmO[0].update(x.y),  pu=clp(mmmO[0].pp(0,mp0,mstate));//clp this
     mmmO[1].update(x.y),  pu=clp(mmmO[1].pp(pu,mp1,mstate));
     mmmO[2].update(x.y),  pu=clp(mmmO[2].pp(pu,mp2,mstate));
     mmmO[3].update(x.y),  pu=clp(mmmO[3].pp(pu,mp3,mstate));
+#endif
 
     pr=(squash(clp(pu))+pr*3)>>2;
+#if PORT_CMX_MEAS
+    FxEnd(FX_mxA2);
+#endif
     s45_have_pred = true;
 }
 
@@ -6443,9 +6361,11 @@ GLUE_ATTR void predict_half() {
         dt[i]=4096/(o),o++;
     dt[1023]=1;
 
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
     for (int i=0; i<=4095; i++)
         strt[i]=stretchc(i);
 
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
     for (int i=-2047; i<=2047; i++)
         sqt[i+2047]=squashc(i),
         squashed_probability[i+2047]=sqt[i+2047] * conversion_factor;
@@ -6454,9 +6374,11 @@ GLUE_ATTR void predict_half() {
     InitIlog();
     x.Init();
 
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
     for (int i=0;i<4096;i++)
         st2_p1[i]=clp(sc(13*(i - 2048)));
 
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
     for (int rc=0; rc<256; rc++) {
         int c=ilog[rc];
         c=c<<(2+(~rc&1));
@@ -6478,6 +6400,8 @@ GLUE_ATTR void predict_half() {
     statetable.Init(33, 31, 31, 24, 20, 4, 33,&STA5[0][0]);
     statetable.Init(28, 29, 30, 30, 23, 3, 22,&STA6[0][0]);
     statetable.Init(28, 29, 33, 23, 23, 6, 14,&STA7[0][0]);
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)
+    for (int i=0; i<256; i++) pre1[i]=stretch(sharedstate::nn_pre(&STA7[0][0], i))>>2;
 
     alloc1(model_predictions1,num_models+64,model_predictions1_ptr,64);
     static_assert(((num_models + 15) & -16) <= num_models + 64,
@@ -6485,6 +6409,9 @@ GLUE_ATTR void predict_half() {
         "the 16-wide block loop (roundup16(num_models) > num_models+64).");
     build_guards::PredTailGuard(model_predictions1, num_models, 64);
     dosym();
+    invariants::isbn2.SetCodeword(cwDict[CW_ISBN]);   // Code word of "isbn"
+    invariants::umr.Reset();
+    invariants::cvz.Reset();
     PredictorInit();
 }
 
@@ -6515,11 +6442,10 @@ inline void Predictor::predict_half() {
     // second call would be a double free.  The call comes exactly once,
     // behind the last decoded byte -- this guard pins that down instead of
     // relying on it.
-    static bool schon = false;
-    if (schon) return;
-    schon = true;
+    static bool seen_list = false;
+    if (seen_list) return;
+    seen_list = true;
     for (int i=0;i<6;i++)  cmC[i].Free();
-    cmC44.Free();
     for (int i=0;i<1+8;i++) cmcr[i].Free();
     for (int i=0;i<4;i++)  cmcr2[i].Free();
     for (int i=0;i<9;i++)  cmC4[i].Free();
@@ -6539,10 +6465,21 @@ inline void Predictor::predict_half() {
     for (int i=0;i<3+0;i++) smA[i].Free();
     for (int i=0;i<3;i++) scmA[i].Free();
     for (int i=0;i<4;i++)  mmmO[i].Free();
-    for (int i=0;i<18;i++) mxA[i].Free();
+    for (int i=0;i<17;i++) mxA[i].Free();
     for (int i=0;i<6;i++)  mxA1[i].Free();
     for (int i=0;i<4;i++)  mxA2[i].Free();
     rcmA[0].Free();
+}
+
+ int DictNachladen() {
+    dosym();
+    invariants::isbn2.SetCodeword(cwDict[CW_ISBN]);   // the ISBN state is part of every build
+    return isDictLoaded ? sizeDict : 0;
+}
+
+ void DictVorab() {
+    for (int c=0; c<256; c++) codeword2sym[c] = c < 128 ? 0 : c - 128;
+    isDictLoaded=true;
 }
 
 }
@@ -6557,10 +6494,6 @@ FXCM::FXCM() {
 
  void FXCM::FreeRest() {
     predictor_->FreeRest();
-}
-
-const std::valarray<float>& FXCM::Predict() const{
-    return fxcmv1::model_predictions;
 }
 
 const short* FXCM::RawPredictions() const {
@@ -6598,3 +6531,24 @@ void FXCM::PredictHalf() {
     if (fxcmv1::s45_first) { fxcmv1::s45_first = false; return; }
     predictor_->predict_half();   // includes ResetPredictions()
 }
+#if PORT_CMX_MEAS
+// research CMX_VALTEL (Predictor::CmxValTel): the outputs of mxA[0..16] of this bit (as p1 returned them: mxInputs2,
+// mxInputs4[0]) and, to first order, without the mxInputs1 slots [lo[k], hi[k]): the zeroed slots' share of each dot
+// product (the row of this bit, t * w >> 8, scaled by shift1 >> 11 as in p1), clipped as p1 clips.  Read-only.
+void FXCM::CmxValFx(const unsigned* lo, const unsigned* hi, int n, short* oldraw, short* newraw) const {
+  using namespace fxcmv1;
+  for (int i = 0; i < 17; ++i) {
+    const Mixer1& m = mxA[i];
+    const short* const w = &m.wx[(size_t)m.cxt * (size_t)m.N];
+    long long sp = 0;
+    for (int k = 0; k < n; ++k)
+      for (unsigned j = lo[k]; j < hi[k] && j < (unsigned)m.N; ++j) sp += (long long)m.tx[j] * (long long)w[j];
+    const int old = i < 16 ? x.mxInputs2.n[i] : x.mxInputs4.n[0];
+    long long v = (long long)old - (((sp >> 8) * (long long)m.shift1) >> 11);
+    if (v < -2047) v = -2047;
+    if (v > 2047) v = 2047;
+    oldraw[i] = (short)old;
+    newraw[i] = (short)v;
+  }
+}
+#endif

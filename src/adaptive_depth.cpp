@@ -5,7 +5,6 @@
 #include <immintrin.h>
 
 #include "isa_floor.h"
-#include "fast_math.h"
 
 namespace adaptive_depth {
 
@@ -69,8 +68,8 @@ float Gate(State& s) {
 //
 // Every one of those is an IEEE-754 basic operation on single precision and is
 // element independent, so eight lanes at a time give bit for bit the same
-// numbers as the scalar loop.  The remainder (n is 33 today, so exactly one
-// element) runs scalar in the SAME order, with vsqrtss instead of the call.
+// numbers as the scalar loop.  The remainder (the last n mod 8 elements)
+// runs scalar in the SAME order, with vsqrtss instead of the call.
 // Nothing is read or written beyond s.n, so the padding of the arrays plays no
 // part at all.
 void TrainStep(State& s, int bit) {
@@ -105,5 +104,5 @@ void TrainStep(State& s, int bit) {
   }
 }
 
-}
+}  // namespace adaptive_depth
 

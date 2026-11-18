@@ -19,7 +19,9 @@ truncated to the expected size.
 
 Restartable.  After every block (read_off, write_off, block index) is written
 to <journal> and fsync is called.  If the run stops, the same call continues
-there; without the journal an interrupted run would destroy the table.
+there; without the journal an interrupted run would destroy the table.  A
+restart re-reads the block it stopped in, so the rows written for a block
+must end in front of that block; this is checked before every write.
 `TRIM_ROWS` (rows per block) exists only for the restart test.
 """
 import os, sys, numpy as np
@@ -68,6 +70,16 @@ try:
         buf = np.frombuffer(rein, dtype=np.uint8).reshape(b - a, BREITE)
         raus = buf[keep[a:b]]
         if len(raus):
+            # a restart re-reads this block from read_off (the journal still
+            # names it until the block is written): the rows written now must
+            # end in front of it, else the restart would read rows it wrote
+            # itself.  It holds when at least a block's worth of rows was
+            # removed in front (the metadata block is millions of rows).
+            if write_off + len(raus) * BREITE > read_off:
+                sys.exit(f"ERROR: block {blk} would overwrite rows a restart re-reads "
+                         f"(write {write_off:,} + {len(raus) * BREITE:,} > read {read_off:,}); "
+                         f"nothing written in this block: the mask removes too few rows in front "
+                         f"of the kept ones for a restartable trim in place")
             os.lseek(f, write_off, os.SEEK_SET)
             g = raus.tobytes()
             geschrieben = 0

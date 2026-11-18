@@ -7,6 +7,7 @@
 #include "preprocessor.h"
 #include "dictionary.h"
 #include "../vocab_frozen.h"
+#include "../isbn_check.h"
 
 namespace preprocessor {
 
@@ -104,8 +105,7 @@ int decode_default(FILE* in) {
   return getc(in);
 }
 
-void encode_text(FILE* in, FILE* out, int len, std::string temp_path,
-    FILE* dictionary) {
+void encode_text(FILE* in, FILE* out, int len, FILE* dictionary) {
   if (dictionary == NULL) {
     putc(vocab_frozen::kWrtOff, out);
     for (int i = 0; i < len; ++i) {
@@ -113,8 +113,8 @@ void encode_text(FILE* in, FILE* out, int len, std::string temp_path,
     }
     return;
   }
-  std::string path = temp_path + "2";
-  FILE* temp_output = fopen(path.c_str(), "wb+");
+  // the WRT form goes to an anonymous temporary file first
+  FILE* temp_output = tmpfile();
   if (!temp_output) abort();
   int orig_pos = ftell(in);
 
@@ -130,7 +130,7 @@ void encode_text(FILE* in, FILE* out, int len, std::string temp_path,
     }
   } else {
     putc(vocab_frozen::kWrtOn, out);
-    rewind(temp_output);
+    fseek(temp_output, 0, SEEK_SET);
     for (int i = 0; i < size; ++i) {
       int c = getc(temp_output);
       if (c>='{' && c<127) c+='P'-'{';
@@ -142,7 +142,6 @@ void encode_text(FILE* in, FILE* out, int len, std::string temp_path,
   }
 
   fclose(temp_output);
-  remove(path.c_str());
 }
 
 Dictionary* dict = NULL;
@@ -163,8 +162,9 @@ int decode_text(FILE* in) {
   return dict->Decode(in);
 }
 
-void EncodeSegment(FILE* in, FILE* out, int n, const std::string& temp_path,
-    FILE* dictionary, std::vector<double>* block_stats) {
+// block_stats[0]: bytes of text, [1]: other bytes
+void EncodeSegment(FILE* in, FILE* out, int n, FILE* dictionary,
+    double* block_stats) {
   Filetype type=DEFAULT;
   long begin=ftell(in);
 
@@ -175,9 +175,9 @@ void EncodeSegment(FILE* in, FILE* out, int n, const std::string& temp_path,
     long end=ftell(in);
     int len=int(end-begin);
     switch (type) {
-      case TEXT: (*block_stats)[0] += len; break;
+      case TEXT: block_stats[0] += len; break;
       case DEFAULT:
-      default: (*block_stats)[1] += len; break;
+      default: block_stats[1] += len; break;
     }
     remainder-=len;
     type=nextType;
@@ -187,11 +187,9 @@ void EncodeSegment(FILE* in, FILE* out, int n, const std::string& temp_path,
   type = DEFAULT;
   begin = start;
 
-  if ((*block_stats)[0] / n > 0.95) {
-    (*block_stats)[0] = n;
-    for (unsigned int i = 1; i < block_stats->size(); ++i) (*block_stats)[i] = 0;
+  if (block_stats[0] / n > 0.95) {
     vocab_frozen::PutHeader(out, TEXT, (unsigned int)n);
-    encode_text(in, out, n, temp_path, dictionary);
+    encode_text(in, out, n, dictionary);
     return;
   }
 
@@ -216,15 +214,12 @@ void EncodeSegment(FILE* in, FILE* out, int n, const std::string& temp_path,
 
 const unsigned long long kMaxSegment = 0x80000000 - 1;
 
-void Encode(FILE* in, FILE* out, unsigned long long n, const std::string&
-    temp_path, FILE* dictionary) {
-
-  unsigned long long size = n;
+void Encode(FILE* in, FILE* out, unsigned long long n, FILE* dictionary) {
   while(n > 0) {
     int segment = n;
     if (n > kMaxSegment) segment = kMaxSegment;
-    std::vector<double> segment_stats(2);
-    EncodeSegment(in, out, segment, temp_path, dictionary, &segment_stats);
+    double segment_stats[2] = {0, 0};
+    EncodeSegment(in, out, segment, dictionary, segment_stats);
     n -= segment;
   }
 }
@@ -266,7 +261,7 @@ void Decode(FILE* in, FILE* out, FILE* dictionary) {
       if (dict != NULL) delete dict;
       return;
     }
-    putc(result, out);
+    isbn_check::after_at.Put(result, out);
   }
 }
 

@@ -127,10 +127,10 @@ bool SizeTFromU64(uint64_t value, size_t* out) {
 bool ReadFile(const char* path, ByteBuf* data) {
   FILE* f = fopen(path, "rb");
   if (!f) return false;
-  if (fseeko(f, 0, SEEK_END) != 0) { fclose(f); return false; }
-  const off_t size = ftello(f);
+  if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return false; }
+  const long size = ftell(f);
   if (size < 0) { fclose(f); return false; }
-  rewind(f);
+  fseek(f, 0, SEEK_SET);
   BufReserve(data, (size_t)size);
   data->n = (size_t)size;
   size_t got = 0;

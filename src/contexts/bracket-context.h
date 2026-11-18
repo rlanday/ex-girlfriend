@@ -8,12 +8,13 @@
 
 class BracketContext : public Context {
  public:
-  static constexpr int kKind = Context::kBracketContext;
-  int Kind() const override { return kKind; }
+  // Keeps its vtable: its object layout is part of the profiled hot path
+  // (Update); the other contexts have none.
+  virtual ~BracketContext() {}
   BracketContext(const unsigned int& bit_context, int distance_limit,
       int stack_limit);
   void Update();
-  bool IsEqual(Context* c) const;
+  bool IsEqual(const BracketContext* p) const;
 
  private:
   const unsigned int& byte_;

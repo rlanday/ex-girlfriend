@@ -5,13 +5,11 @@
 
 class CombinedContext : public Context {
  public:
-  static constexpr int kKind = Context::kCombinedContext;
-  int Kind() const override { return kKind; }
   CombinedContext(const unsigned long long& context1, const unsigned long long&
       context2, unsigned long long context1_size, unsigned long long
       context2_size);
   void Update();
-  bool IsEqual(Context* c) const;
+  bool IsEqual(const CombinedContext* p) const;
 
  private:
   const unsigned long long& context1_;

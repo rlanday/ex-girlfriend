@@ -1,6 +1,7 @@
 
 #ifndef PAGE_FORM_H_
 #define PAGE_FORM_H_
+#include "../meld.h"
 
 #include "../author_block.h"
 #include "../redirect_table.h"
@@ -8,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "page_stream.h"   // page_find
 
 // Page form: the encoder turns each XML page into title line, body, "minor"
 // as a word, edit comment on the last line and one separator; the decoder
@@ -22,7 +24,7 @@ static long long g1_seiten = 0, g1_self = 0, g1_leerkom = 0, g1_nlkom = 0;
 static long long g1_rc_enc[7] = {0}, g1_rc_dec[7] = {0};
 static long long g1_rc_dseiten = 0;
 
-static void g1_oom(void) { fprintf(stderr, "page form: out of memory\n"); exit(1); }
+static void g1_oom(void) { msg_stop(121); exit(1); }
 
 static void g1_reserve(char **b, size_t *c, size_t need) {
   if (need <= *c) return;
@@ -39,18 +41,9 @@ static void g1_add(const char *t) {
   g1_pb[g1_pn] = 0;
 }
 
-// Substring search without memmem (a GNU extension), so the build does not
-// depend on _GNU_SOURCE.  The buffer is one page, the patterns are short.
-static long g1_find(const char *hay, size_t n, size_t from,
-                    const char *pat, size_t pl) {
-  if (pl == 0 || from >= n || pl > n - from) return -1;
-  const char c0 = pat[0];
-  for (size_t i = from; i + pl <= n; ++i) {
-    if (hay[i] != c0) continue;
-    if (memcmp(hay + i, pat, pl) == 0) return (long)i;
-  }
-  return -1;
-}
+// Substring search: the page search of the census and comment transforms
+// (page_stream.h); every pattern here is non-empty.
+#define g1_find(hay, n, from, pat, pl)   page_find((hay), (long)(n), (long)(from), (pat), (long)(pl))
 
 static long g1_rfind_str(const char *hay, size_t n, const char *pat, size_t pl) {
   if (pl == 0 || n < pl) return -1;
@@ -72,14 +65,14 @@ static void g1_page_out(FILE *out) {
   static const char kPageHead[] = "  <page>\n    <title>";
   const size_t kPageHeadLen = sizeof(kPageHead) - 1;
   if (n < kPageHeadLen || memcmp(b, kPageHead, kPageHeadLen) != 0) {
-    fprintf(stderr, "page form: page %lld does not start with `  <page>` + title\n",
-            g1_seiten);
+    __builtin_unreachable()
+;
     exit(1);
   }
   const long t0 = 9;                       // behind `  <page>\n`
   const long tv = g1_find(b, n, (size_t)t0 + 11, "</title>\n", 9);
   if (tv < 0) {
-    fprintf(stderr, "page form: no title end at page %lld\n", g1_seiten);
+    __builtin_unreachable();
     exit(1);
   }
   const char *titel = b + t0 + 11;
@@ -91,7 +84,7 @@ static void g1_page_out(FILE *out) {
   const long ts = g1_find(b, n, head, "      <text xml:space=\"preserve\">", strlen("      <text xml:space=\"preserve\">"));
   if (ts < 0) {
     if (g1_find(b, n, head, "      <text xml:space=\"preserve\" />\n", strlen("      <text xml:space=\"preserve\" />\n")) < 0) {
-      fprintf(stderr, "page form: page %lld has no text element\n", g1_seiten);
+      __builtin_unreachable();
       exit(1);
     }
     ++g1_self;
@@ -99,12 +92,12 @@ static void g1_page_out(FILE *out) {
     const size_t bs = (size_t)ts + strlen("      <text xml:space=\"preserve\">");
     const long te = g1_find(b, n, bs, "</text>\n", 8);
     if (te < 0) {
-      fprintf(stderr, "page form: page %lld without </text>\n", g1_seiten);
+      __builtin_unreachable();
       exit(1);
     }
     body = b + bs; bodyl = (size_t)te - bs;
     if (bodyl == 0) {
-      fprintf(stderr, "page form: empty <text ...></text> at page %lld\n", g1_seiten);
+      __builtin_unreachable();
       exit(1);
     }
   }
@@ -117,7 +110,7 @@ static void g1_page_out(FILE *out) {
   if (c0 >= 0) {
     c1 = g1_find(b, n, (size_t)c0 + 15, "</comment>\n", 11);
     if (c1 < 0) {
-      fprintf(stderr, "page form: page %lld without </comment>\n", g1_seiten);
+      __builtin_unreachable();
       exit(1);
     }
     kom = b + c0 + 15; koml = (size_t)c1 - c0 - 15;
@@ -128,7 +121,7 @@ static void g1_page_out(FILE *out) {
 
   const long rv = g1_rfind_str(b, n, "    </revision>\n", 16);
   if (rv < 0 || n < 10) {
-    fprintf(stderr, "page form: page %lld without </revision>\n", g1_seiten);
+    __builtin_unreachable();
     exit(1);
   }
   const char *mark = b + rv + 16;
@@ -156,7 +149,7 @@ static void g1_page_out(FILE *out) {
       for (size_t i = 0; i < koml; ++i) {
         if (kom[i] == '\n') { g1_ob[o++] = 0x02; g1_ob[o++] = 0x02; nl = 1; }
         else if ((unsigned char)kom[i] == 0x02) {
-          fprintf(stderr, "page form: 0x02 in the comment at page %lld\n", g1_seiten);
+          __builtin_unreachable();
           exit(1);
         }
         else                  g1_ob[o++] = kom[i];
@@ -169,15 +162,15 @@ static void g1_page_out(FILE *out) {
   if (minor) g1_puts(&o, "minor");
   g1_puts(&o, "  </page>\n");
   if (o > 10 && g1_find(g1_ob, o - 10, 0, "  </page>\n", 10) >= 0) {
-    fprintf(stderr, "page form: anchor inside page %lld\n", g1_seiten);
+    __builtin_unreachable();
     exit(1);
   }
   {
     const unsigned char m = (unsigned char)3;
     for (size_t z = 0; z < o; ) {
       if ((unsigned char)g1_ob[z] == m && !(kom && z == komzeile)) {
-        fprintf(stderr, "page form: marker byte 0x%02x outside the comment line (offset %zu), page %lld\n",
-                (unsigned)m, z, g1_seiten);
+        __builtin_unreachable()
+;
         exit(1);
       }
       const char *nl = (const char*)memchr(g1_ob + z, '\n', o - z);
@@ -186,7 +179,7 @@ static void g1_page_out(FILE *out) {
     }
   }
   if (kom && koml == 0 && markl == 0) {
-    fprintf(stderr, "page form: empty comment without index line at page %lld\n", g1_seiten);
+    __builtin_unreachable();
     exit(1);
   }
   blockwrite(out, (U8*)g1_ob, (U64)o);
@@ -205,7 +198,7 @@ static long g1_rfind(const char *b, size_t n, char c) {
 static void g1_expand(void) {
   const char *b = g1_db;
   if (g1_dn < 10 || memcmp(b + g1_dn - 10, "  </page>\n", 10) != 0) {
-    fprintf(stderr, "page form: page without anchor\n"); exit(1);
+    __builtin_unreachable(); exit(1);
   }
   size_t e = g1_dn - 10;
   const char *titel = 0, *body = 0, *kom = 0, *flag = 0, *mark = 0;
@@ -214,13 +207,13 @@ static void g1_expand(void) {
   {
     long nl = -1;
     for (size_t i = 0; i < e; ++i) if (b[i] == '\n') { nl = (long)i; break; }
-    if (nl < 0) { fprintf(stderr, "page form: page without title line\n"); exit(1); }
+    if (nl < 0) { __builtin_unreachable(); exit(1); }
     titel = b; titell = (size_t)nl;
     const char *rest = b + nl + 1;
     size_t restl = e - (size_t)nl - 1;
 
     long l = g1_rfind(rest, restl, '\n');
-    if (l < 0) { fprintf(stderr, "page form: page without flag line\n"); exit(1); }
+    if (l < 0) { __builtin_unreachable(); exit(1); }
     flag = rest + l + 1; flagl = restl - (size_t)l - 1;
     restl = (size_t)l;
 
@@ -231,12 +224,12 @@ static void g1_expand(void) {
       restl = (size_t)l;
     }
     l = g1_rfind(rest, restl, '\n');
-    if (l < 0) { fprintf(stderr, "page form: page without comment line\n"); exit(1); }
+    if (l < 0) { __builtin_unreachable(); exit(1); }
     body = rest; bodyl = (size_t)l;
     kom = rest + l + 1; koml = restl - (size_t)l - 1;
     if (koml) {
       if ((unsigned char)kom[0] != (unsigned char)3) {
-        fprintf(stderr, "page form: comment line without marker byte 0x%02x\n", (unsigned)(unsigned char)3);
+        __builtin_unreachable();
         exit(1);
       }
       ++kom; --koml;

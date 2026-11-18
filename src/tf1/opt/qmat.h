@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/qmat.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // qmat.h - quantized-matmul weight-arena format + descriptors (AVX2 / Zen 2).
 //
 // This file DEFINES the weight storage format the optimized kernels consume.
@@ -101,15 +101,17 @@ constexpr int qmat_round_up(int x, int m) { return (x + m - 1) / m * m; }
 constexpr int qmat_group_rows(int d_in) { return d_in <= 256 ? 8 : 4; }
 
 // ---------------- dense row-major descriptor ----------------
+// No member initialisers (see arena_build.h); qdense_build
+// sets every field.
 struct QDense {
-  const uint8_t* arena = nullptr;  // 64B-aligned group-block stream
-  int d_out = 0, d_in = 0;
-  int stride = 0;       // round_up(d_in, 32)
-  int nchunk = 0;       // stride / 32
-  int group_rows = 0;   // 8 or 4
-  int ngroups = 0;      // rows_padded / group_rows
-  int rows_padded = 0;  // round_up(d_out, group_rows)
-  size_t bytes = 0;     // total stream bytes (multiple of the group size)
+  const uint8_t* arena;  // 64B-aligned group-block stream
+  int d_out, d_in;
+  int stride;       // round_up(d_in, 32)
+  int nchunk;       // stride / 32
+  int group_rows;   // 8 or 4
+  int ngroups;      // rows_padded / group_rows
+  int rows_padded;  // round_up(d_out, group_rows)
+  size_t bytes;     // total stream bytes (multiple of the group size)
 };
 
 // arena size in bytes (excluding QMAT_TAIL_SLACK)
@@ -148,11 +150,12 @@ QSparse qsparse_build(int8_t* dst_cols, float* dst_fold, const int8_t* qw,
 // correction 7 * sum(processed act values) once in the int32 epilogue:
 // results are bit-identical to the int8 column kernels. The one-sided s16
 // bound (2*14*127 = 3556 per pair) means it widens every 9 pairs.
+// No member initialisers; qsparse4_build sets every field.
 struct QSparse4 {
-  const uint8_t* cols = nullptr;  // 64B-aligned, d_in * 128 bytes
-  const float* fold = nullptr;    // 64B-aligned fp32[192]
-  int d_in = 0;
-  int d_out = 0;  // always 192
+  const uint8_t* cols;  // 64B-aligned, d_in * 128 bytes
+  const float* fold;    // 64B-aligned fp32[192]
+  int d_in;
+  int d_out;  // always 192
 };
 
 size_t qsparse4_bytes(int d_in);  // = d_in * 128
@@ -182,6 +185,16 @@ QPacked qpacked_build(uint8_t* dst, const int8_t* qw, const float* fold,
 // worst case; with a row-major dense arena also resident one could switch to
 // qgemv_add at ~0.65 instead (7.0 vs ~8.5 Kcyc at density 1), at +1.7 MB L3.
 constexpr float QMAT_SPARSE_DENSITY_THRESHOLD = 0.95f;
+
+// Positions of the set bits of an 8-bit mask; unset slots hold 0 (an in-range
+// row index), so the 16 B slack writes of the index lists stay harmless.  One
+// table for the dense and the sparse kernels, built once at start-up
+// (qmat_dense.cpp).
+struct BitPosLut {
+  alignas(64) uint8_t t[256][8];
+  BitPosLut();
+};
+extern const BitPosLut g_bitpos;
 
 }  // namespace opt
 }  // namespace fx2

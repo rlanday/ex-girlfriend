@@ -55,10 +55,7 @@ static_assert(
 /// std::length_error or calls report_fatal_error.
 [[noreturn]] static void report_size_overflow(size_t MinSize, size_t MaxSize);
 static void report_size_overflow(size_t MinSize, size_t MaxSize) {
-  std::string Reason = "SmallVector unable to grow. Requested capacity (" +
-      std::to_string(MinSize) +
-      ") is larger than maximum value for size type (" +
-      std::to_string(MaxSize) + ")";
+  (void)MinSize; (void)MaxSize;
   // abort();
 //  std::length_error(Reason);
   abort();
@@ -68,9 +65,7 @@ static void report_size_overflow(size_t MinSize, size_t MaxSize) {
 /// std::length_error or calls report_fatal_error.
 [[noreturn]] static void report_at_maximum_capacity(size_t MaxSize);
 static void report_at_maximum_capacity(size_t MaxSize) {
-  std::string Reason =
-      "SmallVector capacity unable to grow. Already at maximum size " +
-      std::to_string(MaxSize);
+  (void)MaxSize;
   // abort();
 //  std::length_error(Reason);
   abort();

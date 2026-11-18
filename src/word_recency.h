@@ -47,6 +47,6 @@ inline unsigned int ApmExtra() {
   return rec_bucket & 7u;
 }
 
-}
+}  // namespace wordrec
 
 #endif

@@ -24,8 +24,10 @@
 // instead of moving and destroying them, which is valid for the element types
 // of this program (none points into itself); emplace_back() grows first and
 // then constructs in place instead of calling growAndEmplaceBack() (no call
-// site passes an argument that points into the same vector); #line markers
-// keep the line numbers of the original file.
+// site passes an argument that points into the same vector); emplace_back()
+// is out of line and stops the program (trap) when the inline capacity is
+// used up instead of growing (every vector of this program is sized for its
+// largest line); #line markers keep the line numbers of the original file.
 
 #pragma once
 
@@ -1006,8 +1008,8 @@ class SmallVectorImpl : public SmallVectorTemplateBase<T> {
   }
 
   template <typename... ArgTypes>
-  reference emplace_back(ArgTypes&&... Args) {
-    if ((this->size() >= this->capacity())) this->grow();
+  __attribute__((noinline)) reference emplace_back(ArgTypes&&... Args) {
+    if ((this->size() >= this->capacity())) __builtin_trap();
 #line 1012
 
     ::new ((void*)this->end()) T(std::forward<ArgTypes>(Args)...);

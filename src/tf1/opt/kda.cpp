@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/kda.cpp.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // Fused KDA per-token per-layer step (see kda.h for the contract).
 //
 // Sweep structure ("1.5-pass", default):
@@ -47,8 +47,11 @@ inline uint64_t rdt() {
   return (static_cast<uint64_t>(hi) << 32) | lo;
 }
 
-KdaSweep g_sweep = KdaSweep::ONEFIVE;
-int g_pf_mode = 5;  // see kda.h; 5 = scheduled front-end prefetch (default)
+// Fixed choices (kda.h): the ONEFIVE sweep (bit-identical to the naive
+// arithmetic) and the scheduled front-end prefetch (5, measured fastest).
+// As constants they fold the dispatch below to one sweep variant.
+constexpr KdaSweep g_sweep = KdaSweep::ONEFIVE;
+constexpr int g_pf_mode = 5;
 
 // prefetch cursor helper: NPF lines per call, clamped to [begin, end).
 // t1 = use _MM_HINT_T1 (keeps the 48 KB state batch out of the 32 KB L1
@@ -260,16 +263,12 @@ void sweep_head_t(float* S, const float* decay, const float* kn,
 
 }  // namespace
 
-void kda_set_sweep(KdaSweep v) { g_sweep = v; }
-KdaSweep kda_get_sweep() { return g_sweep; }
-void kda_set_pf_mode(int m) { g_pf_mode = m; }
-int kda_get_pf_mode() { return g_pf_mode; }
-
 void kda_layer_reset(KdaState& st) { std::memset(&st, 0, sizeof(st)); }
 
 void kda_sweep_head(float* S, const float* decay, const float* kn,
                     const float* v, float beta, const float* qs, float* o,
-                    const float* pf_next, KdaSweep variant) {
+                    const float* pf_next) {
+  const KdaSweep variant = g_sweep;
   const float* pfp = pf_next ? pf_next : S;
   switch (g_pf_mode) {
     case 1: sweep_head_t<1, 0>(S, decay, kn, v, beta, qs, o, pfp, variant); break;
@@ -284,6 +283,8 @@ void kda_layer_step(const KdaWeights& w, KdaState& st, const float* q_in,
                     const float* k_in, const float* v_in, const float* g_raw,
                     const float* og, const float* beta_raw, float* out,
                     KdaDebug* dbg, KdaProfile* prof) {
+  dbg = nullptr;
+  prof = nullptr;
   alignas(64) float cq[192], ck[192], cv[192];
   alignas(64) float decay[192], kn192[192], qs192[192], o192[192];
   alignas(64) float zb[576], eb[576];  // staging buffers (z / exp results)
@@ -425,7 +426,7 @@ void kda_layer_step(const KdaWeights& w, KdaState& st, const float* q_in,
   for (int h = 0; h < 3; h++) {
     const float* pfn = st.S[h < 2 ? h + 1 : h];  // self-prefetch for the last
     kda_sweep_head(st.S[h], decay + 64 * h, kn192 + 64 * h, cv + 64 * h,
-                   beta[h], qs192 + 64 * h, o192 + 64 * h, pfn, g_sweep);
+                   beta[h], qs192 + 64 * h, o192 + 64 * h, pfn);
   }
 
   uint64_t t3 = prof ? rdt() : 0;

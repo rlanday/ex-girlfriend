@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/qmat_sparse.cpp.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 #include "qmat_sparse.h"
 
 #include <immintrin.h>
@@ -19,18 +19,7 @@ constexpr int FLUSH_PAIRS = 18;  // 18 * 2*127*7 = 32004 < 32767 (exact bound)
 #endif
 constexpr int PF_PAIRS_AHEAD = QMAT_PF_PAIRS_AHEAD;
 
-struct IdxLut8 {
-  alignas(64) uint8_t t[256][8];
-  IdxLut8() {
-    for (int m = 0; m < 256; m++) {
-      int k = 0;
-      for (int b = 0; b < 8; b++)
-        if (m & (1 << b)) t[m][k++] = static_cast<uint8_t>(b);
-      for (; k < 8; k++) t[m][k] = 0;
-    }
-  }
-};
-const IdxLut8 g_lut;
+// the bit position table g_bitpos (qmat.h) is built in qmat_dense.cpp
 
 // widen the 12 s16 accumulators into acc[192] (natural row order) and clear.
 // a[4b+0] = rows 64b+{0..7 | 16..23}, a[4b+1] = 64b+{8..15 | 24..31},
@@ -503,7 +492,7 @@ int qsparse_make_idx(const uint8_t* q8, int n, uint16_t* idx) {
     for (int k = 0; k < 4; k++) {
       const uint32_t m8 = (m >> (8 * k)) & 0xFF;
       __m128i lut = _mm_loadl_epi64(
-          reinterpret_cast<const __m128i*>(g_lut.t[m8]));
+          reinterpret_cast<const __m128i*>(g_bitpos.t[m8]));
       __m128i i16 = _mm_add_epi16(
           _mm_cvtepu8_epi16(lut),
           _mm_set1_epi16(static_cast<short>(32 * b + 8 * k)));

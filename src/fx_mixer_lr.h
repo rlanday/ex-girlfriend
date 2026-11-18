@@ -7,10 +7,14 @@
 
 namespace fx_mixer_lr {
 
+// Build-time guards.  The braces make a float->int narrowing a hard error, so
+// a fractional learning-rate value stops the build instead of becoming a
+// silent 0 (which would stop the learning of the fxcm mixers).  Same
+// reasoning as mixer_decay.h.
 constexpr int kA{1000};
 static_assert(kA > 0 && kA <= 8000,
               "the factor is per mille (1..8000), e.g. 850 = x0.85");
 
-}
+}  // namespace fx_mixer_lr
 
 #endif

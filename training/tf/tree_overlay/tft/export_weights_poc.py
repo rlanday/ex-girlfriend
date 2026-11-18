@@ -434,14 +434,28 @@ def _p11_arme() -> list:
         import json as _j
         with open(os.path.join(dumpdir, "dump-meta.json"), encoding="utf-8") as f:
             return list(_j.load(f).get("arme", []))
+    # Without the package the list would come from the environment.  That
+    # list never carries the sentinel arms (the text form has no number
+    # sentinels) and lacks the arms of the text form, so the coder of the end
+    # line refuses such a container: the export stops here.  Export with
+    # PK_DUMP_DIR set to the package; PK_EXPORT_OHNE_PAKET=1 (export without
+    # the package) forces the list from the environment, for a container
+    # nobody will code with.
+    import sys as _s
+    if os.environ.get("PK_EXPORT_OHNE_PAKET", "0") == "0":
+        raise SystemExit("export: PK_DUMP_DIR is not set; the arm list of the container must come "
+                         "from dump-meta.json of the package (PK_DUMP_DIR=<package>), or force an "
+                         "export the coder of the end line refuses with PK_EXPORT_OHNE_PAKET=1")
+    print("export: PK_DUMP_DIR not set, PK_EXPORT_OHNE_PAKET=1: the arm list of the container comes "
+          "from the environment and lacks the text-form arms; the coder of the end line will "
+          "refuse it", file=_s.stderr)
     an = lambda n, d="1": os.environ.get(n, d) != "0"
     arme = []
     for name, var, d in (("paket", "PK_PAKET", "1"), ("match", "PK_MATCH", "1"),
                          ("z3", "PK_Z3", "1"), ("num", "PK_NUM", "0"),
                          ("z1t", "PK_Z1T", "1"), ("syn", "PK_SYN", "1"),
                          ("alias", "PK_ALIAS", "0"), ("a2", "PK_A2", "1"),
-                         ("a2n", "PK_A2N", "1"), ("sent", "PK_SENT", "1"),
-                         ("sent_feed", "PK_SENT_FEED", "1"),
+                         ("a2n", "PK_A2N", "1"),
                          ("titelmask", "PK_TITLEMASK", "1"),
                          ("x0row", "PK_LAST_X0ROW", "0")):
         if an(var, d):

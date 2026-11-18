@@ -6,12 +6,10 @@
 
 class ContextHash : public Context {
  public:
-  static constexpr int kKind = Context::kContextHash;
-  int Kind() const override { return kKind; }
   ContextHash(const unsigned int& bit_context, unsigned int order,
       unsigned int hash_size);
   void Update();
-  bool IsEqual(Context* c) const;
+  bool IsEqual(const ContextHash* p) const;
 
  private:
   const unsigned int& byte_;

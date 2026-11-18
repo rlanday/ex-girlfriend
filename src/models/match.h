@@ -4,6 +4,7 @@
 #include "model.h"
 #include "../fast_div.h"
 #include "../transformer.h"
+#include "../port_cfg.h"
 
 #include <vector>
 #include <array>
@@ -19,8 +20,9 @@ class Match : public Model {
   void ByteUpdate();
   unsigned char MatchByte() const { return cur_byte_; }
   unsigned char MatchLength() const { return match_length_; }
-  unsigned int MatchLenSlot()  const { return match_length_; }
-  unsigned int MatchByteSlot() const { return cur_byte_; }
+#if PORT_CMX_MEAS
+  float MatchConf() const { return predictions_[match_length_]; }   // research CMX_MATCHDUMP (observer)
+#endif
 
  private:
   const std::vector<unsigned char>& history_;

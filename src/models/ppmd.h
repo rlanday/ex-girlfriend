@@ -19,13 +19,20 @@ class PPMD : public ByteModel {
   std::valarray<float>& Predict();
   void Perceive(int bit);
   void ByteUpdate();
+  void Waermen();
  private:
   const unsigned int& byte_;
   std::unique_ptr<ppmd_Model> ppmd_model_;
-  std::valarray<int> byte_map_;
   std::array<unsigned int, 256> tree_zero_;
   std::array<unsigned int, 256> tree_total_;
-  std::vector<unsigned char> disabled_bytes_;
+  // the byte values outside the vocabulary, ascending; a fixed array instead
+  // of a vector (no heap block, no destructor), iterated like one
+  struct Bytes {
+    unsigned char b[256];
+    unsigned int n = 0;
+    const unsigned char* begin() const { return b; }
+    const unsigned char* end() const { return b + n; }
+  } disabled_bytes_;
   unsigned int tree_context_ = 1;
   bool vocab_full_ = false;
 };

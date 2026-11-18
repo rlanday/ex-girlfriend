@@ -1,5 +1,6 @@
 #ifndef PREPR_H
 #define PREPR_H
+#include "../meld.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,8 @@ typedef unsigned short U16;
 typedef unsigned int   U32;
 typedef uint64_t       U64;
 
-void setpos(FILE *file, U64 newpos) { fseeko(file, newpos, SEEK_SET); }
-U64 curpos(FILE *file) { return ftello(file); }
+void setpos(FILE *file, U64 newpos) { fseek(file, (long)newpos, SEEK_SET); }
+U64 curpos(FILE *file) { return ftell(file); }
 U64 blockread(FILE *file,U8 *ptr, U64 count) {return fread(ptr,1,count,file);}
 U64 blockwrite(FILE *file,U8 *ptr, U64 count) {return fwrite(ptr,1,count,file);}
 
@@ -21,7 +22,7 @@ U64 blockwrite(FILE *file,U8 *ptr, U64 count) {return fwrite(ptr,1,count,file);}
 // earliest point where the impossible input would appear; the decoder needs
 // none, because it only sees streams this encoder produced.
 static void phda9_check_failed(const char *what) {
-  fprintf(stderr, "preprocess: %s (stream does not match this build)\n", what);
+  fprintf(stderr, "%s\n", what);
   exit(1);
 }
 
@@ -193,11 +194,9 @@ void hent6(char *in,char *out){
         k=*in++;
         if (k==5){// escape char
             k=utf8len(in);
-            int nu=utf8towc(in,k);
+            int nu=utf8towc(in,k);   // >= 0
             *out='&';
-            sprintf(out+1, "#%d;",   nu);
-            int a=numlen(out+1+1);
-            out=out+2+a+1;
+            out=out+1+sprintf(out+1, "#%d;",   nu);   // behind "&#<digits>;"
             in=in+k;
         }
         else   *out++=k;
@@ -323,36 +322,33 @@ void hent5( char *in,char *out){
   while (j!=0);
 }
 
-void hent9( char *in,char *out){
-    int j, k;
-     int t=0;
-
-#define PROCESS(sym, src, dst, CONDITION) \
-  {\
-     char *t,  *p = src,  *q = dst,  *end = p + strlen(src);\
-    while ( (t=strchr(p, sym)) != 0) {   \
-        memcpy(q, p, t-p);  q+=t-p;      \
-        int count = 0;                   \
-        while(*t++ == sym)  ++count;     \
-        if ((CONDITION) && (count==1 || count==2))  count = 3-count;\
-        memset(q, sym, count);  q+=count;\
-        p = t-1;\
-    }\
-    memcpy(q, p, end-p);  q[end-p]=0; \
+// One pass of hent9: runs of 1 or 2 times sym in src swap their length
+// (1 <-> 2) in dst; everything else is copied.
+static void hent9_lauf(char sym, char *src, char *dst) {
+  char *t, *p = src, *q = dst, *end = p + strlen(src);
+  while ((t = strchr(p, sym)) != 0) {
+    memcpy(q, p, t - p);  q += t - p;
+    int count = 0;
+    while (*t++ == sym) ++count;
+    if (count == 1 || count == 2) count = 3 - count;
+    memset(q, sym, count);  q += count;
+    p = t - 1;
   }
-   // breaks wordmodel
-   PROCESS('{', in, out, 1)
-   PROCESS('}', out, in, 1)
-    PROCESS('[', in, out, 1)
-    PROCESS(']', out, in, 1)
-    PROCESS('&', in, out, 1)
-    //PROCESS(0x27, out,in, 1)
-   // PROCESS('\'', out, in, 1)
-   do {
-           j=*in++; *out++=j;
-        }
-        while (j!=0);
+  memcpy(q, p, end - p);  q[end - p] = 0;
+}
 
+// Brace and bracket runs swapped ({ } [ ]); the result ends up in both in
+// and out.  (The inherited fifth pass over '&' wrote out and was overwritten
+// by the copy below; it is removed.)
+void hent9( char *in,char *out){
+  hent9_lauf('{', in, out);   // breaks wordmodel
+  hent9_lauf('}', out, in);
+  hent9_lauf('[', in, out);
+  hent9_lauf(']', out, in);
+  int j;
+  do {
+    j = *in++; *out++ = j;
+  } while (j != 0);
 }
 void skipline( char *in,char *out ){
     int j;
@@ -498,7 +494,7 @@ static void name_index_init(name_index_t *t, int cap, size_t acap) {
   t->ulen = (int*)malloc((size_t)(cap + 1) * sizeof(int));
   t->arena = (char*)malloc(acap + 1);
   if (!t->slot || !t->noff || !t->nlen || !t->uoff || !t->ulen || !t->arena) {
-    fprintf(stderr, "preprocess: out of memory\n"); exit(1);
+    msg_stop(150); exit(1);
   }
   for (int i = 0; i < s; ++i) t->slot[i] = -1;
 }
@@ -608,7 +604,7 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
     int i, j, f = 0, lastID = 0,tf=0;
     wfgets(s, 22, in);
     U64 winfo=atoi(&s[0]);
-    U64 insize=ftello(in);
+    U64 insize=ftell(in);
     U64 tsize=size;
     U64 bodystart;
     setpos(in,insize+1);
@@ -617,18 +613,18 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
     char *h1=(char*)calloc(headerlenght+1,1);
     char *h1p=h1;
     wfgets(s, 16, in);
-    if (atoi(&s[0]) != 0) phda9_check_failed("lang stream not empty");
+    if (atoi(&s[0]) != 0) __builtin_unreachable();
 
-    if (!headerlenght) phda9_check_failed("metablock empty");
+    if (!headerlenght) __builtin_unreachable();
     blockread(in,(U8*)h1,U64(headerlenght));
     bodystart = curpos(in);
     if (bodystart != insize + 1 + winfo)
-      phda9_check_failed("metablock end differs from the head line");
-    if (bodystart > (U64)size) phda9_check_failed("metablock longer than the stream");
+      __builtin_unreachable();
+    if (bodystart > (U64)size) __builtin_unreachable();
     {
       char *rs = (char*)malloc(5 * (size_t)headerlenght + 4096);
-      if (!rs) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
-      int rslen = (int)header_sort_apply(h1, (size_t)headerlenght, rs, 0);
+      if (!rs) { msg_stop(150); exit(1); }
+      int rslen = (int)header_sort_apply<0>(h1, (size_t)headerlenght, rs);
       free(h1);
       h1 = rs;
       h1p = h1;
@@ -636,7 +632,7 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
     }
     {
       char *cf = (char*)malloc(2 * (size_t)headerlenght + 4096);
-      if (!cf) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
+      if (!cf) { msg_stop(150); exit(1); }
       int cflen = (int)hcf_apply(h1, (size_t)headerlenght, cf, 0);
       free(h1);
       h1 = cf;
@@ -718,9 +714,7 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
             header=1;
         }
 
-            skipline(s,o);// remove this
-            hent9(o,s);
-            skipline(o,s);   // plain copy o -> s
+            hent9(s,o);   // s and o both hold the result
 
             int skip=0;
             char *p = strstr(s, "<text ");//, *w;
@@ -760,11 +754,11 @@ void encode_txt_wit(FILE* in, FILE* out) {
     j=wfgets(s, 8192*8, in);
 
     if (f==2) {
-        if (*(int*)&s[4]==0x3E736E3C) phda9_check_failed("ns record in the metablock");
+        if (*(int*)&s[4]==0x3E736E3C) __builtin_unreachable();
         // id
         int curID = atoi(&s[8]);
         if (*(int*)&s[4] != 0x3E64693C){
-        phda9_check_failed("page record without <id>");
+        __builtin_unreachable();
         }//return 0;// just fail it '>di<'
         //if (curID <= lastID)        return 0;
        sprintf(o,  ">%d%c", curID - lastID, 10);
@@ -792,7 +786,7 @@ void encode_txt_wit(FILE* in, FILE* out) {
             if (p)  p[0] = 10,  p[1] = 0;
         }
         if (s[0]!=' ' ||s[1]!=' ' ||s[2]!=' ' ||s[3]!=' ') {
-          phda9_check_failed("revision line without indentation");
+          __builtin_unreachable();
            }
         int s2=0; //lenght
         if (f==3) {
@@ -806,13 +800,13 @@ void encode_txt_wit(FILE* in, FILE* out) {
           // four-space tag (at six-space indentation s[4] is a blank).
           if (*(int*)&s[4]==0x7665723C || *(int*)&s[4]==0x7365723C) s2=5;//'ver<' 'ser<'
           else {
-            if (s[4]=='<') phda9_check_failed("unexpected element at level 4");
+            if (s[4]=='<') __builtin_unreachable();
             s2=7;
           }
           if (*(int*)&s[6]==0x6E6F633C) {//'noc<'
            // `<contributor deleted` does not occur in enwik9: loud guard
            // instead of the inherited special case.
-           if (*(int*)&s[6+4+4+4]==0x6C656420) phda9_check_failed("contributor deleted");
+           if (*(int*)&s[6+4+4+4]==0x6C656420) __builtin_unreachable();
            f=3;
           }
         }
@@ -849,33 +843,27 @@ void encode_txt_wit(FILE* in, FILE* out) {
       if (*(int*)&s[i]==0x6F632F3C && *(int*)&s[i+4]==0x6972746E) f=0;//'oc/<' 'irtn'
   }
   while (!feof(in));
-  if (g1_pn) { fprintf(stderr, "page form: %lu bytes without page anchor at stream end\n", (unsigned long)g1_pn); exit(1); }
+  if (g1_pn) { __builtin_unreachable(); exit(1); }
   g1_bericht();
   // output tail to main file and report tail size as info
   U64 msize=curpos(body);
   int tsize=0;                       // the language-link stream is always empty
   int headersize=curpos(out3);
    setpos(out3,0);
-   char *hdr_buf = 0;
-   {
-     char *raw = (char*)malloc((size_t)headersize + 1);
-     hdr_buf = (char*)malloc(2 * (size_t)headersize + 4096);
-     if (!raw || !hdr_buf) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
-     blockread(out3, (U8*)raw, (U64)headersize);
-     memcpy(hdr_buf, raw, (size_t)headersize);
-     free(raw);
-   }
+   char *hdr_buf = (char*)malloc(2 * (size_t)headersize + 4096);
+   if (!hdr_buf) { msg_stop(150); exit(1); }
+   blockread(out3, (U8*)hdr_buf, (U64)headersize);
    {
      char *cf = (char*)malloc(2 * (size_t)headersize + 4096);
-     if (!cf) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
+     if (!cf) { msg_stop(150); exit(1); }
      headersize = (int)hcf_apply(hdr_buf, (size_t)headersize, cf, 1);
      free(hdr_buf);
      hdr_buf = cf;
    }
    {
      char *rs = (char*)malloc(2 * (size_t)headersize + 4096);
-     if (!rs) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
-     headersize = (int)header_sort_apply(hdr_buf, (size_t)headersize, rs, 1);
+     if (!rs) { msg_stop(150); exit(1); }
+     headersize = (int)header_sort_enc(hdr_buf, (size_t)headersize, rs);
      free(hdr_buf);
      hdr_buf = rs;
    }
@@ -890,11 +878,11 @@ void encode_txt_wit(FILE* in, FILE* out) {
    free(hdr_buf);
    {
      if (curpos(out) != (U64)(22 + j + headersize))
-       phda9_check_failed("metablock end differs from the length lines");
+       __builtin_unreachable();
      setpos(body, 0);
      const size_t cbn = 1u << 20;
      U8 *cb = (U8*)malloc(cbn);
-     if (!cb) { fprintf(stderr, "preprocess: out of memory\n"); exit(1); }
+     if (!cb) { msg_stop(150); exit(1); }
      U64 n, ges = 0;
      while ((n = blockread(body, cb, (U64)cbn)) > 0) { blockwrite(out, cb, n); ges += n; }
      free(cb);
@@ -902,7 +890,7 @@ void encode_txt_wit(FILE* in, FILE* out) {
      // is a file of its
      // own that starts at 0 - so it is the page part WITHOUT the head line.
      if (ges != msize)
-       phda9_check_failed("page part incomplete");
+       __builtin_unreachable();
      fclose(body);
    }
 
@@ -924,28 +912,22 @@ void encode_txt_wit(FILE* in, FILE* out) {
 }
 // end WIT
 
-bool cat(char const * filename_from1, char const * filename_from2, char const * filename_to) {
-  FILE* ifile1 = fopen(filename_from1, "rb");
-  FILE* ifile2 = fopen(filename_from2, "rb");
-  FILE* ofile = fopen(filename_to, "wb");
-
-  do {
-    int c=getc(ifile1);
-    if (c==EOF) break;
-    putc(c,ofile);
+// Writes the files of the null-terminated list `from` one after the other
+// into `to`, then the n bytes at `tail`.  false if a file cannot be opened.
+bool cat(char const * to, char const * const * from, const void* tail = 0, size_t n = 0) {
+  FILE* o = fopen(to, "wb");
+  if (!o) return false;
+  bool ok = true;
+  char b[1 << 16];
+  for (; *from; ++from) {
+    FILE* i = fopen(*from, "rb");
+    if (!i) { ok = false; break; }
+    size_t k;
+    while ((k = fread(b, 1, sizeof b, i)) > 0) fwrite(b, 1, k, o);
+    fclose(i);
   }
-  while (!feof(ifile1));
-  do {
-    int c=getc(ifile2);
-    if (c==EOF) break;
-    putc(c,ofile);
-  }
-  while (!feof(ifile2));
-  fclose(ifile1);
-  fclose(ifile2);
-  fclose(ofile);
-
-  return true;
+  if (n) fwrite(tail, 1, n, o);
+  return (fclose(o) == 0) & ok;
 }
 
 int phda9_prepr() {

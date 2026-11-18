@@ -1,55 +1,76 @@
 {
-  "schema": "EX_GIRLFRIEND_1_0_VERIFICATION_V1",
-  "observed_utc": "2026-10-14T08:01:56.455590+00:00",
-  "candidate": "original FINAL",
-  "release_name": "Ex-Girlfriend 1.0",
-  "upstream_commit": "1c9ea5ed57ec9718bcb681d20b79e81a60b7a728",
-  "full_fresh_decode_cmp": "PASS",
-  "independent_output_sha256_match": "PASS",
-  "decode_completed_utc": "2026-10-14T07:01:24Z",
+  "schema": "EX_GIRLFRIEND_2_VERIFICATION_V1",
+  "status": "PASS",
+  "program": "Ex-Girlfriend 2.0",
+  "author": "Ryan Landay",
+  "base": {
+    "program": "cmix-neif 2.0",
+    "author": "Marcus Wölk",
+    "source_package": "cmix-neif-2.0.tar.gz",
+    "source_package_sha256": "62da32b97f9909ce5f2d4988a84e1b9cfbff4c9947538cbc6659a2915b024874",
+    "published_archive9_bytes": 89346392
+  },
+  "dataset": {
+    "name": "enwik9",
+    "bytes": 1000000000,
+    "sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc"
+  },
   "artifacts": {
     "archive9": {
-      "bytes": 91778237,
-      "sha256": "a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c"
+      "bytes": 88983124,
+      "sha256": "0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3",
+      "parts_bytes": {
+        "decoder_stub": 198577,
+        "weights_container": 3744629,
+        "payload": 85039910,
+        "trailer": 8
+      }
     },
     "comp9": {
-      "bytes": 3995122,
-      "sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
-    },
-    "enwik9": {
-      "bytes": 1000000000,
-      "sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc"
-    },
-    "enwik9_uncompressed": {
-      "bytes": 1000000000,
-      "sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc"
+      "bytes": 4057131,
+      "sha256": "8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a"
     }
   },
+  "improvement_vs_base_bytes": 363268,
+  "improvement_vs_base_percent": 0.407,
+  "improvement_vs_ex_girlfriend_1_0_bytes": 2795113,
   "encode": {
+    "invocation": "./comp9 (no arguments; ./enwik9 in the working directory; writes ./archive9)",
+    "environment": "env -i PATH=/usr/bin:/bin LC_ALL=C LANG=C TZ=UTC, one logical CPU (taskset)",
+    "finished_utc": "2026-11-14T07:31:16Z",
     "exit_code": 0,
-    "wall_seconds": 220071.89,
-    "user_seconds": 206994.02,
-    "sys_seconds": 12422.59,
-    "peak_rss_mib": 10204.5
+    "wall_s": 340598,
+    "peak_rss_kib": 25473304,
+    "coder_stream_bytes": 501062281,
+    "coder_stream_sha256": "c35d3073eeba70f22a2e08a50202b53eb95466e3e9f1f2702f6f9b3f96fd8718"
   },
-  "decode": {
+  "fresh_decode": {
+    "invocation": "./archive9 (no arguments; fresh directory containing only a copy of archive9)",
+    "environment": "env -i PATH=/usr/bin:/bin LC_ALL=C LANG=C TZ=UTC, one logical CPU (taskset)",
+    "started_utc": "2026-11-14T09:26:08Z",
+    "finished_utc": "2026-11-18T08:33:55Z",
     "exit_code": 0,
-    "wall_seconds": 241636.66,
-    "user_seconds": 227764.75,
-    "sys_seconds": 13807.27,
-    "peak_rss_mib": 10194.0
+    "wall_s": 342467.3,
+    "user_s": 329853.356,
+    "sys_s": 12486.227,
+    "peak_rss_kib": 25449428,
+    "output_bytes": 1000000000,
+    "output_sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc",
+    "cmp_against_enwik9_exit_code": 0
   },
-  "machine": "AMD Ryzen Threadripper 3970X (Zen 2), Linux x86-64; one pinned core on shared host",
-  "stock_neif_archive_bytes": 91913343,
-  "saving_bytes": 135106,
-  "saving_percent": 0.1469928038630909,
-  "source_rebuild": {
-    "status": "PASS",
-    "evidence": "retained October 10 release-tree rebuild; inspected October 12 and October 14",
-    "comp9_sha256": "952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67"
+  "machine": {
+    "cpu": "AMD Ryzen Threadripper 3970X (Zen 2)",
+    "os": "Ubuntu 24.04.5 LTS, Linux x86-64",
+    "notes": "shared server with other workloads; host reports about 252 GiB RAM; no GPU used"
   },
-  "limits": [
-    "Wall times include shared-host contention; no controlled per-feature full-corpus speed ratio.",
-    "Static x86-64-v3 portability review passed; no separate Intel full decode has been performed."
+  "enwik8": "not measured",
+  "evidence": [
+    "encode.log",
+    "encode_receipt.json",
+    "decode_receipt.json",
+    "source_identity.json",
+    "build.log",
+    "upstream_diff.patch",
+    "port_history.txt"
   ]
 }

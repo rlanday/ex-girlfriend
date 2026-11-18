@@ -14,8 +14,7 @@ void CombinedContext::Update() {
   context_ = (context2_ << shift_) + context1_;
 }
 
-bool CombinedContext::IsEqual(Context* c) const {
-  CombinedContext* p = Context::As<CombinedContext>(c);
+bool CombinedContext::IsEqual(const CombinedContext* p) const {
   if (!p) return false;
   if (&(p->context1_) != &context1_) return false;
   if (&(p->context2_) != &context2_) return false;

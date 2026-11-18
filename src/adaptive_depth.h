@@ -1,5 +1,6 @@
 #ifndef ADAPTIVE_DEPTH_H_
 #define ADAPTIVE_DEPTH_H_
+#include "meld.h"
 
 // ---------------------------------------------------------------------------
 // ATTRIBUTION. The mechanism implemented here ("adaptive depth": a small online
@@ -27,11 +28,12 @@
 // MECHANISM
 //   features f  = [1, x[0] (bracket), fxcm final prediction, x[lo..hi-1]] --
 //                 that is everything already computed BEFORE the cascade, minus
-//                 the 560 individual fxcm columns (zmix likewise takes only the
+//                 the 544 individual fxcm columns (zmix likewise takes only the
 //                 output of fxcm's own final stage there).
 //   z           = w . f, clamped to +-30
 //   p_pre       = Logistic(z)
-//   SKIP        <=> |z| > tau  (tau = 8.0 by default, set in per mille below)
+//   SKIP        <=> |z| > tau  (tau = 7.0 in the release configuration, 8.0 by
+//                   default; set in per mille below)
 //   training    AdaGrad, lr 0.01, eps 1e-8, on EVERY coded bit -- including the
 //               skipped ones (otherwise the model only ever sees the hard bits).
 //
@@ -40,7 +42,7 @@
 //                weight row), Mix(), Perceive() of all layer-0 mixers and of the
 //                final mixer, SSE::Predict()/Perceive(), and the BITLSTM.
 //   keeps going: EVERY model (bracket, direct, match, grammar, indirect, PPMd,
-//                byte LSTM, transformer) with Predict/Perceive/ByteUpdate, the
+//                transformer, semantic cache) with Predict/Perceive/ByteUpdate, the
 //                context manager, the SSE BIT CONTEXT (PerceiveContextOnly --
 //                zmix calls it sse.advanceParse), the per-bit cost counters
 //                of the other models, and the pre-stage model itself.
@@ -80,7 +82,7 @@
 
 namespace adaptive_depth {
 
-static const float kTau = (float)(8000) * 0.001f;   // zmix 1.0: 8.0
+static const float kTau = (float)(7000) * 0.001f;   // zmix 1.0: 8.0
 static const float kLr  = (float)(1000)  * 0.00001f;   // zmix 1.0 (and depth4): 0.01
 
 struct State {
@@ -110,7 +112,7 @@ struct State {
     f[k++] = fxfinal;
     for (unsigned int i = lo; i < hi; ++i) {
       if (k >= 64) {
-        fprintf(stderr, "adaptive depth: %u features, capacity %d\n", 3u + (hi - lo), (int)64);
+        msg_note(37);
         fflush(stderr);
         exit(4);
       }
@@ -141,11 +143,14 @@ struct State {
 
 inline constexpr bool MetaOff() { return false; }
 
+// Defined in src/adaptive_depth.cpp (own TU, strict FP semantics).  Gather() stays
+// inline above on purpose: it only copies floats, and a copy is exact under
+// every code generation.
 float ZDet(const State& s);
 float LogDet(float z);
 float Gate(State& s);          // z AND s.p in one call
 void  TrainStep(State& s, int bit);
 
-}
+}  // namespace adaptive_depth
 
 #endif

@@ -9,19 +9,42 @@
 // The inference engine comes from fx2-cmix-transformer (Vladimir Ivanov,
 // GPL-3).  After every byte the engine takes the PPMd byte distribution as its
 // prior input and produces the distribution over the next byte, which it hands
-// to a byte-model slot of its own (Tf1Slot::SetProbs, mixer/byte-mixer.h).  The
-// small online byte LSTM stays in the byte mixer.
+// to a byte-model slot of its own (Tf1Slot::SetProbs, mixer/byte-mixer.h).
 //
 // The engine works on the frozen 208-value byte set below.  At construction it
 // compares the runtime vocabulary element by element against that set and
 // fails on any byte outside it; checking only the size (205 in the original)
 // would not catch a different set of the same size.
-
-
-
-
-
 //
+// The network of the release configuration: 16 layers of width 192 in the
+// layer pattern of the original (three linear-attention layers of the Kimi
+// type, then one sliding-window attention layer, here over 2048 tokens), MLP
+// width up to 1024, and the form of cmix-neif-beehive (Vladimir Malinovskii,
+// 2026): an AttnRes depth mix in place of the residual sums
+// (Kimi Team, "Attention Residuals", arXiv 2603.15031), one K/V head shared
+// by the three query heads of a window layer, value embeddings in the window
+// layers and the per-token prior logit head of the original training code.
+
+// ---- the transformer side of the text form ---------------------------------
+// In the release configuration the prompt of the transformer carries:
+//   * the block mark "#<word>" as the first prompt row of every page of a
+//     block of the article order, in the place where the pages of the front
+//     redirect block get `#rd`.  Membership by page index: the order puts
+//     these pages into contiguous ranges (stamped table, built into tf1/tf1_prompt.cpp):
+//     class marks in stream form (calendar, census with the US-place runs in
+//     front of it, disambiguation pages of three kinds), the ship block and
+//     the topic regions; no mark in the image and project blocks.  Causal:
+//     the page index is known at the separator.
+//   * the forced title prefixes: `Image:`, `Help:`, `MediaWiki:` and
+//     `Wikipedia:` stand without exception in contiguous page ranges of the
+//     order (the same table).  Coder and decoder take these bytes from
+//     the table and observe them without coding (Predictor::ObserveKnownBit);
+//     page index and title position come from the prompt automaton.  The
+//     training dump keeps the rows that predict them masked (flags bit 1).
+//   * the link context (below).
+// The ranges of that table are page indices of the order with the
+// calendar block at the calendar position; with another order they would
+// mark and force the wrong pages.
 
 #include "alias_title_subst.h"
 
@@ -46,23 +69,41 @@ inline bool Verbrauche() { return --g_rest == 0; }
 }
 namespace tf_author_prompt {
 inline bool g_ist_autor = false;
-inline void Beginn(int n) { g_ist_autor = true; alias_prompt::Beginn(n); }
+
+inline void Beginn(int n) {
+  g_ist_autor = true;
+  comment_tag::g_j = comment_tag::g_offen ? 0 : 2;
+  comment_tag::g_offen = false;
+  alias_prompt::Beginn(n);
+}
 inline void Ende() { alias_prompt::Ende(); g_ist_autor = false; }
 inline bool Laeuft() { return g_ist_autor; }
-}
+}  // namespace tf_author_prompt
 namespace timestamp_skip {
 inline bool g_an = false;
 inline void Beginn() { g_an = true; }
 inline void Ende() { g_an = false; }
 inline bool Laeuft() { return g_an; }
-}
+}  // namespace timestamp_skip
+#include "tf1/tf1_config.h"
 
+namespace tf_copy_end {
+// the end mark follows the row at which the rest counter of the prompt class
+// (alias_prompt::g_rest, that byte counted) equals g_nach; 0 = none.  Set
+// around the block by the caller, on both sides.
+inline int g_nach = 0;
+}
 
 #include "alias_substring_dedup.h"
 #include "alias_title_subst.h"
 
-#include "tf1/tf1_prior0_set_v9.h"
+#include "tf1/tf1_prior0_set_v14.h"
 
+
+namespace tf_z3 {
+
+constexpr int kEndeKlasse = 5;
+}  // namespace tf_z3
 
 #include <stdlib.h>
 #include <string.h>
@@ -86,6 +127,19 @@ constexpr bool InSet(int v) {
   return ((kSetBitmap[v >> 3] >> (v & 7)) & 1) != 0;
 }
 
+// The run-time readers index g_b2i, a copy
+// of kByteToIndex in .bss filled once before main (tf1_engine.cpp); the
+// constant table stays for the compile-time uses only.  Hidden, so a reader
+// keeps its absolute addressing (no GOT load).
+extern int g_b2i[256] __attribute__((visibility("hidden")));
+constexpr bool B2iFormel() {
+  int k = 0;
+  for (int i = 0; i < 256; ++i)
+    if (kByteToIndex[i] != (InSet(i) ? k++ : k)) return false;
+  return true;
+}
+static_assert(B2iFormel(), "g_b2i is filled by the rank rule (set bytes below i), which must give kByteToIndex");
+
 inline bool& BlobForm() {
   static bool blob = false;
   return blob;
@@ -97,9 +151,9 @@ inline void SetBlobForm() { BlobForm() = true; }
 // the blob form (the self-invocations with -C/-D, which code the appended data
 // blocks without the transformer) and the auxiliary-stream flag below; nothing
 // is read from the environment.
-inline const char* WeightsPath() { return "weights-poc8m_w2048_p15f_v3bf16_gestrichen_v4.c4"; }
+inline const char* WeightsPath() { return "weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5"; }
 inline unsigned long long WeightsFingerprint() {
-  return 0xb263b35196aa775bULL;
+  return 0xaec368ac6a568632ULL;
 }
 inline bool Mute() { return false; }
 
@@ -128,6 +182,6 @@ inline int MatchLengthClass(int raw_bits) {
   return c > 15 ? 15 : c;
 }
 
-}
+}  // namespace transformer
 
 #endif

@@ -13,11 +13,9 @@
 
 #include "word_label.h"
 #include "page_registry.h"
-#include "port_cfg.h"
 
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -25,28 +23,22 @@ namespace word_label {
 namespace {
 
 // --------------------------------------------------------------------------
-// Compile-time geometry and constants.
+// Geometry and constants of the fixed form (header: FIXED FORM).
 // --------------------------------------------------------------------------
-constexpr int kD = 96;
-constexpr int kNodeBits = 17;
+constexpr int kD = 96;            // embedding / weight-row width (zmix sweep:
+                                  // 97.7 % of the value of 192 at half the RAM)
+constexpr int kNodeBits = 17;     // log2 of the trie-node table
 constexpr uint32_t kNodeMask = (1u << kNodeBits) - 1u;
 constexpr uint32_t kNodeCount = kNodeMask + 1u;
 // Byte-0 nodes are 1..127, byte-1 nodes 128..16639, byte-2 nodes start here.
 constexpr uint32_t kNodeBase2 = 16640u;
-constexpr int kVMax = 54857;
-constexpr int kCtx = 16;
-
-constexpr float kEtaN = (float)60 / 1000.0f;
-constexpr float kEtaE = (float)30 / 1000.0f;
-#if PORT_ETA0
-// WL2 eta0 (Z: -Dwordlbl-eta0=0.0225): its own eta for byte-0 trie nodes.
-constexpr float kEta0 = 0.0225f;
-constexpr bool kEta0Live = true;
-#else
-constexpr float kEta0 = (float)60 / 1000.0f;
-constexpr bool kEta0Live = (60 != 60);
-#endif
-constexpr float kLambda = (float)850 / 1000.0f;
+constexpr int kCtx = 16;          // words in the tied-decay context
+// The literals are the correctly rounded floats of 60/1000, 30/1000 and
+// 850/1000, i.e. the very values (float)N / 1000.0f had as build parameters.
+constexpr float kEtaN = 0.060f;   // node rows and biases (all depths)
+constexpr float kEtaE = 0.030f;   // embedding rows
+constexpr float kLambda = 0.85f;  // decay per context word
+static_assert(kD % 8 == 0, "the elementwise loops have no scalar tail");
 
 // The three numbers the instrument does not expose as build options; they are
 // constants here, not switches, because nothing was ever swept over them.
@@ -55,10 +47,10 @@ constexpr float kTopicW = 0.25f;       // topic weight inside cvec
 constexpr float kGradClamp = 0.5f;     // elementwise embedding-gradient clamp
 constexpr float kLogitClamp = 20.0f;   // node logit clamp before the squash
 constexpr double kInitScale = 0.05;    // embedding init half-width (mode 1)
-constexpr uint64_t kSeed = 0x243F6A8885A308D3ull;
+constexpr uint64_t kSeed = 0x243F6A8885A308D3ull;  // instrument rnd() seed
 inline float SquashF(float x) {
-  if (x < -30.0f) x = -30.0f;
-  else if (x > 30.0f) x = 30.0f;
+  // No +-30 clamp as in the instrument: the one caller (Forward) clamps the
+  // logit to +-kLogitClamp (20) first, so it could never act.
   const float e = (float)std::exp((double)(-x));
   return 1.0f / (1.0f + e);
 }
@@ -88,53 +80,46 @@ inline uint32_t NodeId(int bytepos, uint32_t b0, uint32_t b1, uint32_t nodeix) {
 // --------------------------------------------------------------------------
 // The state.
 // --------------------------------------------------------------------------
+// The scalars stand first: their offsets fit a one-byte displacement on the
+// per-bit path.  The state heads the one block of Create(); the tables follow.
 struct State {
-  // learned tables
+  // learned tables (inside the block, behind the state)
   float* nd;      // [kNodeCount][kD]  trie-node weight rows
   float* nb;      // [kNodeCount]      trie-node biases
-  float* e1;      // [kVMax][kD]       (CTX>0: THE shared table)
-  float* e2;      // [kVMax][kD]       v1 only
-  float* e3;      // [kVMax][kD]       v1 only
-  float topic[kD];
-
-  // per-token working state
-  float cvec[kD];
-  float gacc[kD];
-  bool cvec_valid;
-
-  // word history
-  uint32_t w1, w2, w3;            // v1
-  uint32_t ring[kCtx];            // v2, ring[0] = most recent
-  float lampow[kCtx];             // lambda^s by iterated f32 multiply
-
-  // causal parse of the coded byte stream (see the geometry note below)
-  uint32_t breg;      // partial-byte register, 1 = byte boundary
-  int nbits_in;       // bits received for the current byte
-  int first_bit;      // MSB of the current byte
-  int expecting;      // 0 = token boundary, 1/2 = awaiting continuation byte
-  uint32_t pfx0, pfx1;
-  bool escape_next;
+  float* e1;      // [kVMax][kD]       the shared embedding table
 
   // per-bit state carried from Forward() to Perceive()
   uint32_t nodeix;
-  bool live;
   uint32_t nid;
   float plbl;
+  bool live;
 
+  bool cvec_valid;
+  bool escape_next;
+
+  // causal parse of the coded byte stream (see the geometry note below)
+  uint32_t breg;      // partial-byte register, 1 = byte boundary, >= 256 = full
+  int first_bit;      // MSB of the current byte
+  int expecting;      // 0 = token boundary, 1/2 = awaiting continuation byte
+  uint32_t pfx0, pfx1;
+
+  // word history
+  uint32_t ring[kCtx];            // ring[0] = most recent
+  float lampow[kCtx];             // lambda^s by iterated f32 multiply
+
+  // per-token working state
+  float topic[kD];
+  float cvec[kD];
+  float gacc[kD];
+
+  // glibc hands a large calloc out at mmap + 16; with sizeof(State) = 48 mod
+  // 64 the node and embedding rows (384 B) start on a cache line: 6 lines per
+  // row instead of 7.  Layout only, no value depends on it.
+  char pad_[48];
 };
+static_assert(sizeof(State) % 64 == 48, "rows on cache lines (see pad_)");
 
 namespace {
-
-void* Xalloc(size_t n, bool zero, const char* what) {
-  void* p = zero ? calloc(n, 1) : malloc(n);
-  PAGE_REGISTRY_ADD(p, n);
-  if (p == nullptr) {
-    fprintf(stderr, "\nword label: %zu B for %s not available (D=%d, nodes=%d, vmax=%d)\n", n, what, kD, kNodeBits, kVMax);
-    fflush(stderr);
-    abort();
-  }
-  return p;
-}
 
 // The instrument rnd(): a fixed-seed xorshift64 mapped to [0,1).
 inline double Rnd(uint64_t* st) {
@@ -156,17 +141,22 @@ inline void BuildCvec(State* s) {
   s->cvec_valid = true;
 }
 
-inline void ParseAbort(State* s) {
-  // Invalid continuation: treat the bytes as literals and never reach token
-  // end; discard the aborted token gradient and reset.  No abort occurred on
-  // the measured inputs, so this is armour, not a hot path.
+// Back to the token boundary; the token gradient is spent.  The common end of
+// TokenDone() and of a parse abort, therefore not inlined.
+__attribute__((noinline)) void TokenEnde(State* s) {
   s->expecting = 0;
   s->cvec_valid = false;
   memset(s->gacc, 0, sizeof(s->gacc));
 }
 
+inline void ParseAbort(State* s) {
+  // Invalid continuation: treat the bytes as literals and never reach token
+  // end; discard the aborted token gradient and reset.  No abort occurred on
+  // the measured inputs, so this is armour, not a hot path.
+  TokenEnde(s);
+}
+
 void TokenDone(State* s, uint32_t r) {
-  s->expecting = 0;
   const size_t ri = (r < (uint32_t)kVMax) ? (size_t)r : (size_t)(kVMax - 1);
   // Each ring word descends the lambda^s-WEIGHTED gradient, clamped per
   // element AFTER the weighting; duplicates in the ring update sequentially.
@@ -175,8 +165,8 @@ void TokenDone(State* s, uint32_t r) {
     float* e = s->e1 + (size_t)s->ring[sx] * kD;
     for (int k = 0; k < kD; ++k) {
       float gk = kEtaE * w * s->gacc[k];
-      if (gk > kGradClamp) gk = kGradClamp;
-      else if (gk < -kGradClamp) gk = -kGradClamp;
+      gk = gk > kGradClamp ? kGradClamp : gk;     // two selections: the same
+      gk = gk < -kGradClamp ? -kGradClamp : gk;   // values as if / else if
       e[k] -= gk;
     }
   }
@@ -184,10 +174,9 @@ void TokenDone(State* s, uint32_t r) {
     const float* er = s->e1 + ri * kD;
     for (int k = 0; k < kD; ++k) s->topic[k] += kTopicRate * (er[k] - s->topic[k]);
   }
-  for (int sx = kCtx - 1; sx > 0; --sx) s->ring[sx] = s->ring[sx - 1];
+  memmove(&s->ring[1], &s->ring[0], (kCtx - 1) * sizeof(s->ring[0]));
   s->ring[0] = (uint32_t)ri;
-  memset(s->gacc, 0, sizeof(s->gacc));
-  s->cvec_valid = false;
+  TokenEnde(s);   // also clears expecting, which nothing above reads
 }
 
 void ByteDone(State* s, uint32_t byte) {
@@ -233,7 +222,7 @@ void ByteDone(State* s, uint32_t byte) {
   } else {
     ParseAbort(s);
   }
-  s->expecting = 0;
+  // every branch above ends in TokenEnde(): expecting is 0 here
 }
 
 }  // namespace
@@ -243,40 +232,40 @@ void ByteDone(State* s, uint32_t byte) {
 // --------------------------------------------------------------------------
 
 State* Create() {
-  State* s = (State*)Xalloc(sizeof(State), true, "State");
-  s->nd = (float*)Xalloc((size_t)kNodeCount * kD * sizeof(float), true, "nd");
-  s->nb = (float*)Xalloc((size_t)kNodeCount * sizeof(float), true, "nb");
-  const size_t etab = (size_t)kVMax * kD * sizeof(float);
-  s->e1 = (float*)Xalloc(etab, false, "e1");
-  s->e2 = nullptr;
-  s->e3 = nullptr;
-  // Fixed-seed xorshift, the instrument draw order: one table after the other,
-  // sequentially, no burn-in.
+  // ONE allocation: the state, then node rows, embeddings and biases.  calloc
+  // hands out zero pages that stay lazy until touched (header, divergence C),
+  // and a reset gives the whole block back with one free().
+  constexpr size_t kNd = (size_t)kNodeCount * kD;
+  constexpr size_t kE = (size_t)kVMax * kD;
+  constexpr size_t kBytes = sizeof(State) + (kNd + kE + kNodeCount) * sizeof(float);
+  State* s = (State*)calloc(kBytes, 1);
+  PAGE_REGISTRY_ADD(s, kBytes);
+  if (s == nullptr) abort();   // no 69 MiB: a host fault, SIGABRT is loud
+  float* t = (float*)(s + 1);
+  s->nd = t;
+  s->e1 = t + kNd;
+  s->nb = t + kNd + kE;
+  // Fixed-seed xorshift, the instrument draw order, no burn-in.
   uint64_t st = kSeed;
-  const size_t n = (size_t)kVMax * kD;
-  for (size_t i = 0; i < n; ++i)
-    s->e1[i] = (float)((Rnd(&st) - 0.5) * 2.0 * kInitScale);
+  // The factor 2.0 * kInitScale folds to the double 0.1 exactly and x * 2.0
+  // is exact, so the product is the instrument's (x * 2.0) * kInitScale.
+  for (size_t i = 0; i < kE; ++i)
+    s->e1[i] = (float)((Rnd(&st) - 0.5) * (2.0 * kInitScale));
   float w = 1.0f;
   for (int i = 0; i < kCtx; ++i) { s->lampow[i] = w; w *= kLambda; }
   s->breg = 1;
   s->nodeix = 1;
-  s->cvec_valid = false;
   return s;
 }
 
-void Destroy(State* s) {
-  if (s == nullptr) return;
-  free(s->nd);
-  free(s->nb);
-  free(s->e1);
-  free(s->e2);
-  free(s->e3);
-  free(s);
+State* Neu(State* alt) {
+  free(alt);
+  return Create();
 }
 
 float Forward(State* s) {
   s->live = false;
-  if (s->nbits_in == 0) return 0.0f;
+  if (s->breg == 1) return 0.0f;       // the MSB: codeword / literal flag
   if (s->escape_next) return 0.0f;     // the escaped literal byte
   const int bp = s->expecting;
   if (bp == 0 && s->first_bit == 0) return 0.0f;   // literal byte
@@ -285,23 +274,45 @@ float Forward(State* s) {
   const float* nv = s->nd + (size_t)nid * kD;
   float zl = s->nb[nid];
   for (int k = 0; k < kD; ++k) zl += s->cvec[k] * nv[k];
-  if (zl > kLogitClamp) zl = kLogitClamp;
-  else if (zl < -kLogitClamp) zl = -kLogitClamp;
+  zl = zl > kLogitClamp ? kLogitClamp : zl;
+  zl = zl < -kLogitClamp ? -kLogitClamp : zl;
   s->nid = nid;
   s->plbl = SquashF(zl);
   s->live = true;
   return zl;
 }
 
+#if PORT_CMX_MEAS
+void PerceiveG(State* s, int bit, float extra) {
+  const int y = bit & 1;
+  if (s->live) {
+    const float g = (s->plbl - (float)y) + extra;
+    float* nv = s->nd + (size_t)s->nid * kD;
+    const float ge = kEtaN * g;
+    for (int k = 0; k < kD; ++k) {
+      s->gacc[k] += g * nv[k];
+      nv[k] -= ge * s->cvec[k];
+    }
+    s->nb[s->nid] -= ge;
+    s->nodeix = s->nodeix * 2u + (uint32_t)y;
+    s->live = false;
+  }
+  if (s->breg == 1) s->first_bit = y;
+  s->breg = (s->breg << 1) | (uint32_t)y;
+  if (s->breg < 256u) return;
+  const uint32_t byte = s->breg & 0xFFu;
+  s->breg = 1;
+  s->nodeix = 1;
+  ByteDone(s, byte);
+}
+#endif
+
 void Perceive(State* s, int bit) {
   const int y = bit & 1;
   if (s->live) {
     const float g = s->plbl - (float)y;
     float* nv = s->nd + (size_t)s->nid * kD;
-    // Per-depth eta: byte-0 trie nodes are EXACTLY ids 1..127, so nid < 128 is
-    // the instrument test (bp == 0).  Dead when ETA0 == ETAN (the default).
-    const float eta = (kEta0Live && s->nid < 128u) ? kEta0 : kEtaN;
-    const float ge = eta * g;
+    const float ge = kEtaN * g;
     // Instrument order: gacc from the OLD node row, then descend that row.
     for (int k = 0; k < kD; ++k) {
       s->gacc[k] += g * nv[k];
@@ -311,16 +322,13 @@ void Perceive(State* s, int bit) {
     s->nodeix = s->nodeix * 2u + (uint32_t)y;
     s->live = false;
   }
-  if (s->nbits_in == 0) s->first_bit = y;
+  if (s->breg == 1) s->first_bit = y;
   s->breg = (s->breg << 1) | (uint32_t)y;
-  ++s->nbits_in;
-  if (s->nbits_in < 8) return;
+  if (s->breg < 256u) return;
   const uint32_t byte = s->breg & 0xFFu;
   s->breg = 1;
-  s->nbits_in = 0;
   s->nodeix = 1;
   ByteDone(s, byte);
 }
 
-}
-
+}  // namespace word_label

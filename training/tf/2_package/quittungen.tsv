@@ -1,0 +1,11 @@
+# Quittances of the line check, bound to their places (zeilen_vgl.py --quittung-soll).
+# A key named in QUITTUNG may differ between a tool line and the end line only at the
+# feeder places listed here (file, kind bed = #if condition / code = code line, count of
+# equal lines, text without comments; line numbers do not count).  File "-": no feeder
+# place at all.  A further place stops the recipe (exit 2): a new reason must be written here.
+# Columns: schluessel, datei, art, anzahl, text, grund
+schluessel	datei	art	anzahl	text	grund
+TF1_ROWFLOOR	src/tf1/tf1_engine.cpp	code	2	if (!(s.probs[i] >= NEIF_TF1_ROWFLOOR)) s.probs[i] = NEIF_TF1_ROWFLOOR;	floor of the transformer row the slot hands to the mixer, applied after the row is written (probs_writer); the dump build computes no head row: no effect on stream, rows, match channel or priors
+KG5_UMRECHNUNG	-	-	0	-	rule at the final prediction (predictor.cpp, neif_kg5.h), read by no feeder source; tool lines 1, end line 0, no effect on the dump
+SEMCACHE	src/tf1/tf1_engine.h	bed	1	defined(NEIF_SEMCACHE) && NEIF_SEMCACHE	the reading accessor Tf1Engine::LastKey(); its only caller is the final stage of the coder (predictor.cpp); the cache writes into the final mixer, the final stage and BITLSTM columns, never into a transformer input, the match model or PPMd
+SEMCACHE	src/tf1/tf1_engine.cpp	bed	1	NEIF_SEMCACHE	definition of Tf1Engine::LastKey(), see above

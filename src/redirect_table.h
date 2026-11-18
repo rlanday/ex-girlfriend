@@ -4,7 +4,9 @@
 
 #include <string.h>
 
-#include "author_block.h"
+#include "author_block.h"   // author mark byte
+
+// Is stream page `page` (0-based) inside the front block?
 static inline int redirect_block(long long page) {
   const long long p = page + (long long)0;
   return p >= 0 && p < (long long)71148;
@@ -28,9 +30,9 @@ static inline int redirect_codebyte(unsigned char c) {
 // Only a mark that ends as a WORD is coded: the WRT writes `redirect` as its
 // dictionary code only when no letter or digit follows, and the consumers
 // recognised the mark by exactly that code.  One front-block page carries
-// `#redirecting[[...]]` (stream page 21.873): coded it would become a
-// redirect the consumers never saw before.  It stays verbatim (it begins
-// with `#`), so every consumer keeps its old answer.
+// `#redirecting[[...]]` (stream page 21,873): coded it would become a
+// redirect the consumers never see otherwise.  It stays verbatim (it begins
+// with `#`), so every consumer reads it as plain text.
 static inline int redirect_word_end(const char* body, size_t bodyl) {
   if (bodyl == 9) return 1;
   const unsigned char c = (unsigned char)body[9];
@@ -40,8 +42,8 @@ static inline int redirect_word_end(const char* body, size_t bodyl) {
 
 // ENCODER.  `body`/`bodyl` is the page text; returns the byte to write in
 // front of it (0 = none) and advances `*skip` over the bytes the code
-// replaces.  `zaehler[k]` counts the classes (0 gross, 1 klein, 2 erst,
-// 3 soft, 4 verbatim `#`, 5 escape, 6 empty).
+// replaces.  `zaehler[k]` counts the classes (0 `#REDIRECT`, 1 `#redirect`,
+// 2 `#Redirect`, 3 soft, 4 verbatim `#`, 5 escape, 6 empty).
 static inline unsigned char redirect_encode(const char* body, size_t bodyl,
                                            size_t* skip, long long* zaehler) {
   *skip = 0;
@@ -89,6 +91,7 @@ static inline const char* redirect_decode(const char* body, size_t bodyl,
 
 #include "alias_context_set.h"   // stamped mark table, link bytes
 #include "metablock.h"
+#include "cold_size.h"
 
 namespace redirect_table {
 
@@ -116,13 +119,18 @@ struct Rec {
 
 class Tab {
  public:
-  // The running page (bed relative, as the consumers count pages).
+  Tab() {
+    mb_.Zensus();
+    mb_.Textanfang();
+  }
+  bool ImTextanfang() const { return mb_.ImTextanfang(); }
+  // The running page (counted as the consumers count pages).
   const Rec* Seite(long long page) const {
     return page == seite_ ? &cur_ : (page == fertig_seite_ ? &fertig_rec_ : nullptr);
   }
   // EVENT: the byte just fed decided a page (end of its window or of the
-  // page) - the byte on which the consumers used to evaluate their own
-  // windows.  Ziel() is that page's link target, valid until the next byte.
+  // page), the byte on which the consumers evaluate the page.  Ziel() is that
+  // page's link target, valid until the next byte.
   bool Fertig() const { return fertig_; }
   int Ziel(const unsigned char** p) const {
     if (!fertig_ || fertig_rec_.ziel_n == 0) return 0;
@@ -132,13 +140,14 @@ class Tab {
   // The bytes a consumer that copies text gets for the byte just fed: the
   // stream as it was before the codes (0 bytes while a code is still open).
   int Alt(const unsigned char** p) const { *p = alt_; return alt_n_; }
+  bool FromBytes() const { return zustand_ == kAus; }
 
-  void Byte(unsigned char b) {
+  COLD_SIZE_ATTR void Byte(unsigned char b) {
     alt_[0] = b; alt_n_ = 1;
     fertig_ = false;
     if (zustand_ == kVor) {                  // only the metablock needs it
       mb_.Byte(b);
-      if (mb_.Endet()) NeuSeite(0);          // page 0 starts behind the block
+      if (mb_.TaFertig()) NeuSeite(0);
       return;
     }
     if (zustand_ == kAus) return;
@@ -197,21 +206,21 @@ class Tab {
     for (int i = 0; i < extra; ++i) alt_[alt_n_++] = e[i];
   }
   // The first bytes of a front-block text decide its class.
-  void Klasse(unsigned char b) {
+  COLD_SIZE_ATTR void Klasse(unsigned char b) {
     if (offen_) {                                       // `0x40` before
       offen_ = false;
       if (b == 0x72) { Setze(kErst); Bild(kErst, 0, nullptr); }
       else { const unsigned char e[2] = {0x40, b}; Setze(kGross); Bild(kGross, 2, e); }
       return;
     }
-    if (b == 0x23 || b == 0x0a) { kl_ = kKeine; ++n_kl_[kKeine]; return; }  // `#` / leer
+    if (b == 0x23 || b == 0x0a) { kl_ = kKeine; ++n_kl_[kKeine]; return; }  // `#` / empty
     if (b == 0x01) { Setze(kEsc); alt_n_ = 0; return; }
     if (b == 0x72) { Setze(kKlein); Bild(kKlein, 0, nullptr); return; }
     if (b == 0xac) { Setze(kSoft); Bild(kSoft, 0, nullptr); return; }
     if (b == 0x40) { offen_ = true; alt_n_ = 0; return; }
     Setze(kGross); Bild(kGross, 1, &b);
   }
-  void Text(unsigned char b) {
+  COLD_SIZE_ATTR void Text(unsigned char b) {
     if (wn_ < 200) w_[wn_++] = b;
     if (kl_ < 0 && ImBlock()) Klasse(b);
     else if (kl_ < 0) kl_ = kKeine;
@@ -256,6 +265,6 @@ class Tab {
 
 inline Tab tab;
 
-}
+}  // namespace redirect_table
 
 #endif

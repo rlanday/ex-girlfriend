@@ -1,0 +1,65 @@
+{
+ "container": "<W>/start/beehive.c4",
+ "n_container_tensors": 597,
+ "unused_container_tensors": [
+  "config.ints",
+  "config.kimi",
+  "rope.cos",
+  "rope.inv_freq",
+  "rope.sin"
+ ],
+ "pruned_neurons_reinserted": {
+  "2": 7,
+  "4": 11,
+  "5": 2,
+  "6": 38,
+  "7": 6,
+  "8": 2,
+  "9": 4,
+  "10": 21,
+  "11": 4,
+  "12": 4,
+  "13": 1,
+  "14": 2
+ },
+ "zero_scale_rows": {
+  "tensors": 34,
+  "rows": 85
+ },
+ "int_check": {
+  "tensors": 155,
+  "mismatch": 0
+ },
+ "revived": {
+  "2": 7,
+  "4": 11,
+  "5": 2,
+  "6": 38,
+  "7": 6,
+  "8": 2,
+  "9": 4,
+  "10": 21,
+  "11": 4,
+  "12": 4,
+  "13": 1,
+  "14": 2
+ },
+ "sentinel_null": {
+  "embedding": [
+   208,
+   216
+  ],
+  "last_table": [
+   [
+    208,
+    216
+   ],
+   [
+    425,
+    433
+   ]
+  ]
+ },
+ "warm_tensors": 277,
+ "n_params_fp32_model": 9325119
+}

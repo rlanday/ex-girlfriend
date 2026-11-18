@@ -4,10 +4,10 @@ r"""Reader of the dump record format v2
 One module for all tools: package builder, acceptance test and loader read the
 same code, so that they cannot drift apart.
 
-The contract is the record format written by the dump mode that
-`training/tf/1_dump/trainmodes.patch` adds to a copy of the entry's source
-(`cmix_dump`, `cmix_priors`; `training/tf/1_dump/README.md` section 2
-describes it); this module only says what the reader makes of it.
+The contract is the record format written by the dump mode of the dump tool
+(`cmix_dump` of `training/tf/1_dump/build_dump_tools.sh`;
+`training/tf/1_dump/README.md` section 4 describes it); this module only says
+what the reader makes of it.
 
     Record 0 is a header record: `src == -2`, then 'P' 'K' 'D', format
     version, record size, number of used flag bits.

@@ -4,9 +4,6 @@
 
 
 #include <stddef.h>
-#include <elf.h>
-#include <link.h>
-#include <sys/auxv.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -17,25 +14,18 @@ struct Table {
   unsigned long a[256];
   unsigned long b[256];
   unsigned char h[256];
-  unsigned int n = 0;
-  unsigned int lost = 0;
+  // No member initialisers: the table is trivial, lies zeroed in .bss and
+  // needs no guarded initialisation at its first use.
+  unsigned int n;
+  unsigned int lost;
 };
 inline Table& T() { static Table t; return t; }
 
-// Start of the writable PT_LOAD of the executable (.data/.bss), from the
-// auxiliary vector - no /proc needed.  0 if not found.
-inline unsigned long DataStart() {
-  const ElfW(Phdr)* ph = (const ElfW(Phdr)*)getauxval(AT_PHDR);
-  unsigned long num = getauxval(AT_PHNUM);
-  if (!ph) return 0;
-  unsigned long bias = 0, lo = 0;
-  for (unsigned long i = 0; i < num; ++i)       // PIE: bias from PT_PHDR
-    if (ph[i].p_type == PT_PHDR) bias = (unsigned long)ph - ph[i].p_vaddr;
-  for (unsigned long i = 0; i < num; ++i)
-    if (ph[i].p_type == PT_LOAD && (ph[i].p_flags & PF_W))
-      lo = bias + ph[i].p_vaddr;
-  return lo;
-}
+// Start of the last writable PT_LOAD of the executable: .bss (the linker
+// script places .encoder_only between .got.plt and .bss, so .bss starts its own
+// segment).  The linker defines __bss_start; no /proc, no auxiliary vector.
+extern "C" char __bss_start[];
+inline unsigned long DataStart() { return (unsigned long)__bss_start; }
 
 inline unsigned char& NaechsteHeiss() { static unsigned char f = 0; return f; }
 // Counter of refused 2-MiB blocks; the message comes once, at the first failure.
@@ -58,7 +48,8 @@ inline void Wunsch(unsigned long a, unsigned long b) {
   }
 }
 
-inline void Add(const void* p, size_t n) {
+// Out of line: it was inlined at about 20 allocation sites.
+__attribute__((noinline)) inline void Add(const void* p, size_t n) {
   // ALWAYS take the mark first, even if the area is below MINMAP_MB and dropped right
   // away -- otherwise it would wander to the next, unrelated registration.
   const unsigned char heiss = NaechsteHeiss();
@@ -74,7 +65,7 @@ inline void Add(const void* p, size_t n) {
   else ++t.lost;
 }
 
-}
+}  // namespace pageregistry
 
 #define PAGE_REGISTRY_ADD(p, n) ::pageregistry::Add((const void*)(p), (size_t)(n))
 

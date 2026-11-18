@@ -145,16 +145,17 @@ int main(int argc, char** argv) {
   split4Decomp();
   phda9_resto();
   ::sort();
-  if (!cmtidx_inplace(".main_decomp_restored_sorted", ".cmtidx_resto", 0)) {
+  if (!cmtidx_inplace<0>(".main_decomp_restored_sorted", ".cmtidx_resto")) {
     std::fprintf(stderr, "comment index: inverse transform failed\n");
     return 1;
   }
-  if (!cat(".intro_decomp", ".main_decomp_restored_sorted", "un1_d") ||
-      !cat("un1_d", ".coda_decomp", ".census_resto")) {
+  static const char* const teile[] = {".intro_decomp", ".main_decomp_restored_sorted",
+                                      ".coda_decomp", nullptr};
+  if (!cat(".census_resto", teile)) {
     std::fprintf(stderr, "final enwik9 merge failed\n");
     return 1;
   }
-  if (!census_file(".census_resto", output_enwik9.c_str(), 0)) {
+  if (!census_file<0>(".census_resto", output_enwik9.c_str())) {
     std::fprintf(stderr, "census: inverse transform failed\n");
     return 1;
   }

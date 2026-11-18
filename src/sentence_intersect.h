@@ -7,8 +7,8 @@
 // sentence also occur in a stored one (AVX2 compare, 8 codes per step).
 namespace sentence_intersect {
 
-static inline int Anfang(int laenge, int num) {
-  const int k0 = laenge - num;
+static inline int Anfang(int span_len, int num) {
+  const int k0 = span_len - num;
   return k0 > 0 ? k0 : 0;
 }
 
@@ -36,6 +36,6 @@ static inline unsigned int CountShared(const unsigned int* cur, int curcount,
   return codesum;
 }
 
-}
+}  // namespace sentence_intersect
 
 #endif

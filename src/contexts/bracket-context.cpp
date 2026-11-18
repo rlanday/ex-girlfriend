@@ -41,8 +41,7 @@ void BracketContext::Update() {
   }
 }
 
-bool BracketContext::IsEqual(Context* c) const {
-  BracketContext* p = Context::As<BracketContext>(c);
+bool BracketContext::IsEqual(const BracketContext* p) const {
   if (!p) return false;
   if (distance_limit_ == p->distance_limit_ && stack_limit_ == p->stack_limit_)
     return true;

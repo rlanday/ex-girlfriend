@@ -7,9 +7,9 @@ namespace mixer_lr {
 inline int g_layer = 0;
 
 inline float Gain(int layer) {
-  return (float)(layer == 1 ? (750) : (1300)) * 0.001f;
+  return (float)(layer == 1 ? (5000) : (2200)) * 0.001f;
 }
 
-}
+}  // namespace mixer_lr
 
 #endif

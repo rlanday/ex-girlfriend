@@ -1,0 +1,52 @@
+{
+ "overrides": {
+  "n_key_value_heads": 1,
+  "value_embedding_pattern": [
+   null,
+   null,
+   null,
+   0,
+   null,
+   null,
+   null,
+   1,
+   null,
+   null,
+   null,
+   2,
+   null,
+   null,
+   null,
+   3
+  ],
+  "d_mlp": 1024,
+  "skip_connections": false,
+  "token_embedding_connections": false,
+  "prior_logit_mixing": true,
+  "window_size": 2048
+ },
+ "arch": {
+  "attnres": {
+   "mode": "replace",
+   "block": 2,
+   "impl": "fused"
+  }
+ },
+ "seed": 1,
+ "ve_sentinel": "clamp",
+ "fastmuon": true,
+ "name": "tf2_fisher",
+ "out": "<W>/t3/fisher",
+ "phase": "bf16",
+ "init": "<W>/b3/ende/model.tch",
+ "batches": 48,
+ "levels": [
+  1,
+  3,
+  7
+ ],
+ "budgets": [
+  1.0
+ ],
+ "rate": "class"
+}

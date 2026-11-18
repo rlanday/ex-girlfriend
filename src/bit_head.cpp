@@ -18,6 +18,7 @@
 // training on a trace follow the same model.  The online backward pass, the
 // optimiser, the state projections and the parameters are our own.
 
+#include "meld.h"
 #include "bit_head.h"
 #include "cold_size.h"
 
@@ -28,6 +29,10 @@
 #include <cstring>
 
 #include "isa_floor.h"
+#include "port_cfg.h"
+#if PORT_CMX_MEAS
+#include "cmx_meas.h"   // research BITL_SEQ (reset period of the frozen head's state)
+#endif
 #include <immintrin.h>
 
 #include "bit_head_weights.h"
@@ -317,17 +322,21 @@ constexpr double PowTenNeg(int n) {
 constexpr float kEps = (float)PowTenNeg(8);
 
 struct Head {
-  static constexpr int cells = 16;
-  static constexpr int n1 = STAGE1_COL(28);
+  static constexpr int cells = 32;
+  // stage-1 row width: the row plus the 13 columns of the fast-weight logit,
+  // the bit position and the path state, and the semantic-cache columns
+  static constexpr int n1 = 22 + 13 + 4;
+  // the bit-position column of the row (second column of MlAppend)
+  static constexpr int kBposCol = 22 + 1;
   static constexpr int nsse = ((0) & kFeatSse) ? kSseExtra : 0;
   static constexpr int ndrop =
-      1 ? (STAGE1_COL(20) - STAGE1_COL(7) + 1) : 0;
+      1 ? (16 - 3 + 1) : 0;
   static constexpr int ndrop2 =
-      1 ? (STAGE1_COL(27) - STAGE1_COL(27) + 1) : 0;
-  static constexpr int n1keep = n1 - ndrop - ndrop2;
+      0 ? (29 - 29 + 1) : 0;
+  // every column but column 0 and kBposCol
+  static constexpr int n1keep = n1 - 2;
   static constexpr int nhid = 32;
   static constexpr int ntf = kNTf;
-  static constexpr int nlhid = 32;
   static constexpr int nzone = 0;   // gate-zone one-hot: not used
   // Layout of the feature row:
   //   [0 .. n1keep-1]              stage-1 row (selected columns)
@@ -336,17 +345,16 @@ struct Head {
   //   [n1keep+4 .. n1keep+11]      bit-position one-hot(8)
   //   [n1keep+12, n1keep+13]       SSE pair (only with feat & kFeatSse)
   //   [kPrev]                      prev_bit
-  //   [kHid ..] [kTf ..] [kLhid ..] [kZone ..]   optional blocks, empty here
+  //   [kHid ..] [kTf ..] [kZone ..]   optional blocks, empty here
   static constexpr int kPrev = n1keep + kBaseExtra + nsse;
   static constexpr int kHid = kPrev + 1;
   static constexpr int kTf = kHid + nhid;
-  static constexpr int kLhid = kTf + ntf;
-  static constexpr int kZone = kLhid + nlhid;
+  static constexpr int kZone = kTf + ntf;
   static constexpr int nin =                // features without prev_bit
-      n1keep + kBaseExtra + nsse + nhid + ntf + nlhid + nzone;
+      n1keep + kBaseExtra + nsse + nhid + ntf + nzone;
   static constexpr int inw = ((nin + 1) + 7) & ~7;   // padded to 8
 
-  static constexpr float lr = (float)(300 / 1000000.0);
+  static constexpr float lr = (float)(3000 / 1000000.0);
   static constexpr float mom = (float)(900000 / 1000000.0);
   static constexpr float b2 = (float)(999000 / 1000000.0);
   static constexpr float eps = kEps;
@@ -355,7 +363,10 @@ struct Head {
   static constexpr int prec = (0) ? 1 : 0;
   static constexpr int seq = 1024;
   static constexpr int feat = 0;
-  double b1t = 1.0, b2t = 1.0;
+  // Adam bias-correction powers (opt == 3).  Every start value of g_head that
+  // is not zero is set in Init() instead of here, so the object lives in .bss
+  // (a non-zero member initialiser puts all of it into .data).
+  double b1t = 0.0, b2t = 0.0;
   static constexpr int accum = 16;
   static constexpr int meang = (1) ? 1 : 0;
   static constexpr float clip = (float)(1000 / 1000.0);
@@ -388,7 +399,7 @@ struct Head {
   float* c = nullptr;
   float* hprev = nullptr;
   float* cprev = nullptr;
-  float prev_bit = 0.5f;
+  float prev_bit = 0.0f;      // 0.5 from Init()
   unsigned long long i = 0;   // coded-bit index
 
   // ---- per-bit scratch, live between Adjust() and Observe() ----
@@ -412,13 +423,10 @@ struct Head {
   // Registered by the coder before Adjust(); constant across the eight bits of
   // a byte.  Pure observation - nothing the head computes from them re-enters
   // the predictor.
-  const float* aux_hid = nullptr;   // TF residual stream / LSTM cell state
+  const float* aux_hid = nullptr;   // TF residual stream
   int aux_n_hid = 0;
   const float* aux_tf = nullptr;    // kTfAll per-byte scalars
   int aux_n_tf = 0;
-  const float* aux_lhid = nullptr;  // state of the byte-LSTM beside the TF
-  int aux_n_lhid = 0;
-  int aux_lhid_pre = 0;             // the vector IS already the sketch
   // A pointer, not a value: the zone is written once per byte by the gate
   // automaton and read live here, so the head needs no per-bit setter call
   // across the translation-unit boundary (this unit is built without -flto).
@@ -426,13 +434,15 @@ struct Head {
   int hid_proj = 0;                 // 1 = fixed +-1/sqrt(n) sketch
   float* hidP = nullptr;            // nhid x aux_n_hid
   float* hidC = nullptr;            // nhid, the sketch OF THIS BYTE
-  unsigned long long hid_byte = ~0ULL;   // byte hidC belongs to
-  int lhid_proj = 0;
-  float* lhidP = nullptr;
-  float* lhidC = nullptr;
-  unsigned long long lhid_byte = ~0ULL;
-  int frozen = 0;
+  unsigned long long hid_byte = 0;   // byte hidC belongs to, ~0 from Init()
+  // the head never learns (release configuration), the learning path folds away
+  static constexpr int frozen = 1;
   const char* load_path = nullptr;
+  int slot = 0;                     // weight slot in force (0 metablock, 1 text 1, 2 text 2)
+  int seen3 = 0;                    // slot 0: a HDRBLOCK bit was coded
+  unsigned long long trig = 0;      // 1 + head bit index where the next slot's zone began, 0 = not yet
+  static constexpr bool SlotHas(int k) { return kBlobTafelN[k] != 0; }
+  void NextSlot();
 
   // ---- SSE-correction window ----
   float* sd_ring = nullptr;
@@ -466,15 +476,6 @@ struct Head {
   // see it.
   float* wsh = nullptr;  float* wsc = nullptr;
 
-  // ---- learning-curve counters (measurement only) ----
-  // Costs of the same bits under the coder's base probability and under the
-  // head's corrected one.  Nothing here feeds back into the model.
-  const char* log_path = nullptr;
-  unsigned long long log_n = 8388608ULL;   // report every N coded bits
-  double log_base = 0.0, log_head = 0.0;   // bits, current window
-  double log_base_tot = 0.0, log_head_tot = 0.0;
-  unsigned int pend_base_p = 32768, pend_head_p = 32768;
-
   int nparams = 0;
 
   void Build();
@@ -491,6 +492,13 @@ struct Head {
 
 Head g_head;
 bool g_init_done = false;
+// The stamp tool checks that all slot blobs share one geometry and writes it
+// here, so a blob of another form stops the build, not the run at the slot
+// switch (error E51 would only come with slot 2, more than half way through).
+static_assert(7 == 0 ||
+                  (32 == Head::cells && 81 == Head::nin &&
+                   88 == Head::inw && 39 == Head::n1),
+              "the stamped slot blobs have another geometry (cells/inputs/input width/stage-1 width) than this head");
 
 float* Alloc(int n) {
   float* p = (float*)std::calloc((size_t)n > 0 ? (size_t)n : 1, sizeof(float));
@@ -515,30 +523,26 @@ void Head::Free() {
   std::free(gbg); std::free(gwout); std::free(dhn); std::free(dcn);
   std::free(zbuf); std::free(wsh); std::free(wsc);
   std::free(hidP); std::free(hidC);
-  std::free(lhidP); std::free(lhidC);
   std::memset(this, 0, sizeof(*this));
 }
 
 void Head::Build() {
   const int C = cells;
 
-  // Build guard for the two state-vector blocks.  A block that is switched
+  // Build guard for the state-vector block.  A block that is switched
   // on but has nothing registered, or is WIDER than the vector it reads, must
   // stop the run - it would otherwise read past the vector, or read a column
-  // of constant zeros, and a full run started from a silently dead arm costs
-  // days and reads as a null result.  Same principle as the row-width check
-  // in Adjust() below.
+  // of constant zeros, and the model would run with a dead input block that
+  // no output reveals.  Same principle as the row-width check in Adjust()
+  // below.
   {
     const char* what = nullptr;
     int want = 0, have = 0;
-    if (nhid > aux_n_hid) { what = "transformer state"; want = nhid; have = aux_n_hid; }
-    if (what == nullptr && nlhid > aux_n_lhid) {
-      what = "lstm state"; want = nlhid; have = aux_n_lhid;
-    }
+    if (nhid > aux_n_hid) { what = "E42"; want = nhid; have = aux_n_hid; }
     if (what != nullptr) {
-      std::fprintf(stderr,
-          "\ncorrection model: %s width %d, %d values registered\n",
-          what, want, have);
+      msg_stop(44)
+
+;
       std::fflush(stderr);
       std::abort();
     }
@@ -555,21 +559,6 @@ void Head::Build() {
       }
     }
   }
-  // The same sketch for the second state vector, but an OWN draw
-  // stream -- the two vectors must not get the same projection, or their
-  // comparison would be co-determined by it.
-  lhid_proj = (!aux_lhid_pre && nlhid < aux_n_lhid) ? 1 : 0;
-  if (lhid_proj) {
-    lhidP = Alloc(nlhid * aux_n_lhid);
-    lhidC = Alloc(nlhid);
-    Rng prng(0x4c484450ULL);   // "LHDP"
-    const float sc = 1.0f / std::sqrt((float)aux_n_lhid);
-    for (int r = 0; r < nlhid; ++r) {
-      for (int cc = 0; cc < aux_n_lhid; ++cc) {
-        lhidP[r * aux_n_lhid + cc] = (prng.Uniform(1.0f) >= 0.0f) ? sc : -sc;
-      }
-    }
-  }
 
   win = Alloc(C * inw);   bin = Alloc(C);
   wih = Alloc(4 * C * C); whh = Alloc(4 * C * C);
@@ -578,18 +567,14 @@ void Head::Build() {
   // `m1wih + k*C` unconditionally, and pointer arithmetic on a null pointer is
   // undefined behaviour even when the result is never dereferenced.  A few
   // dozen KB is not worth a class of bug that only shows up under -O3.
-  m1win = Alloc(C * inw);   m1bin = Alloc(C);
-  m1wih = Alloc(4 * C * C); m1whh = Alloc(4 * C * C);
-  m1bg = Alloc(4 * C);      m1wout = Alloc(C);
-  m2win = Alloc(C * inw);   m2bin = Alloc(C);
-  m2wih = Alloc(4 * C * C); m2whh = Alloc(4 * C * C);
-  m2bg = Alloc(4 * C);      m2wout = Alloc(C);
+  // A head that never learns has no optimiser state.
   h = Alloc(C); c = Alloc(C); hprev = Alloc(C); cprev = Alloc(C);
   x = Alloc(inw); z = Alloc(C); sg = Alloc(C); a = Alloc(C);
   gi = Alloc(C); gf = Alloc(C); gg = Alloc(C); go = Alloc(C); tc = Alloc(C);
   pre = Alloc(4 * C); dpre = Alloc(4 * C); da = Alloc(C);
   sd_ring = Alloc(kSdCap);
-  if (tbptt) {
+  // Nor window buffers and gradient accumulators.
+  if (tbptt && !1) {
     const int W = wlen;
     bx = Alloc(W * inw);
     bz = Alloc(W * C); bsg = Alloc(W * C); ba = Alloc(W * C);
@@ -610,110 +595,59 @@ void Head::Build() {
   // exactly zero.  delta is therefore 0 on the first bit and the head begins
   // as an exact no-op on the coder - it can only move away from the base
   // prediction once it has seen evidence.
-  Rng rng(0x42495431ULL);  // fixed seed ("BIT1" in ASCII)
-  const float bin_lim = 1.0f / std::sqrt((float)inw);
-  for (int r = 0; r < C; ++r) {
-    for (int j = 0; j < inw; ++j) win[r * inw + j] = rng.Uniform(bin_lim);
-    // Columns beyond nin+1 are never fed anything but 0; keep them at 0 so
-    // the padding cannot contribute a bias term.
-    for (int j = nin + 1; j < inw; ++j) win[r * inw + j] = 0.0f;
-    bin[r] = rng.Uniform(bin_lim);
-  }
-  const float hid_lim = 1.0f / std::sqrt((float)C);
-  for (int k = 0; k < 4 * C * C; ++k) wih[k] = rng.Uniform(hid_lim);
-  for (int k = 0; k < 4 * C * C; ++k) whh[k] = rng.Uniform(hid_lim);
-  for (int k = 0; k < 4 * C; ++k) bg[k] = rng.Uniform(hid_lim);
-  // Forget-gate bias +1: the classic Gers/Schmidhuber initialisation.  With
-  // backpropagation truncated to short windows the recurrent path learns
-  // slowly, so the cell has to default to remembering rather than forgetting.
-  for (int r = 0; r < C; ++r) bg[1 * C + r] += 1.0f;
-  for (int r = 0; r < C; ++r) wout[r] = 0.0f;
-  bout = 0.0f;
-  if (prec) {
-    for (int k = 0; k < C * inw; ++k) win[k] = Bf16(win[k]);
-    for (int k = 0; k < C; ++k) bin[k] = Bf16(bin[k]);
-    for (int k = 0; k < 4 * C * C; ++k) wih[k] = Bf16(wih[k]);
-    for (int k = 0; k < 4 * C * C; ++k) whh[k] = Bf16(whh[k]);
-    for (int k = 0; k < 4 * C; ++k) bg[k] = Bf16(bg[k]);
-  }
+  // With a loaded blob every value drawn and
+  // rounded below (win incl. its padding columns, bin, wih, whh, bg, wout,
+  // bout) is overwritten by LoadBlob() before the first bit, and the draw
+  // stream is the head's own (fixed seed), so no other model sees it.  The
+  // release configuration leaves the draw out; the weights the coder runs
+  // with are the same.
 
   nparams = C * (nin + 1) + C + 8 * C * C + 4 * C + C + 1;
-  LoadBlob();
+  if (SlotHas(0)) LoadBlob();   // slot 0 runs its blob frozen or learns online from the draw
 }
 
-void Head::LoadBlob() {
-  // The blob is part of the binary (.rodata, which the decoder keeps),
-  // read through a memory stream so the checks below are those of the file form.
-  const char* path = "the embedded weights";
-  FILE* f = fmemopen(const_cast<unsigned char*>(kBlob), sizeof(kBlob), "r");
-  if (f == nullptr) {
-    std::fprintf(stderr, "correction model: cannot open %s\n", path);
-    std::exit(3);
-  }
-  char mg[4]; std::uint32_t ver = 0; std::int32_t g[4] = {0, 0, 0, 0};
-  if (std::fread(mg, 1, 4, f) != 4 || std::memcmp(mg, "NBLB", 4) != 0) {
-    std::fprintf(stderr, "correction model: %s is not a weight file\n", path);
-    std::exit(3);
-  }
-  if (std::fread(&ver, 4, 1, f) != 1 ||
-      std::fread(g, sizeof(std::int32_t), 4, f) != 4) {
-    std::fprintf(stderr, "correction model: %s: header too short\n", path);
-    std::exit(3);
-  }
-  if (ver != 1u && ver != 2u && ver != 4u && ver != 5u) {
-    std::fprintf(stderr, "correction model: weight file version %u, expected 1, 2, 4 or 5\n",
-                 (unsigned)ver);
-    std::exit(3);
-  }
-  if (ver == 4u || ver == 5u) {
-    // versions 4 and 5 carry a learned projection of the transformer state,
-    // this head reads a fixed one
-    std::fprintf(stderr,
-        "correction model: weight file version %u has a learned projection, "
-        "this build a fixed one\n", (unsigned)ver);
-    std::exit(3);
-  }
-  if (g[0] != cells || g[1] != nin || g[2] != inw || g[3] != n1) {
-    std::fprintf(stderr,
-        "correction model: weight file shape %d/%d/%d/%d, this build "
-        "%d/%d/%d/%d (cells/inputs/input width/stage-1 width)\n",
-        g[0], g[1], g[2], g[3], cells, nin, inw, n1);
-    std::exit(3);
-  }
-  const int C = cells;
-  const size_t nw = (size_t)C * (size_t)inw;
-  const size_t ng = (size_t)4 * (size_t)C * (size_t)C;
-  const size_t nb = (size_t)4 * (size_t)C;
-  const bool blob_f32 = (ver == 1u || ver == 4u);
-  auto rd = [f, blob_f32](float* dst, size_t n) -> bool {
-    if (blob_f32) return std::fread(dst, sizeof(float), n, f) == n;
-    for (size_t i = 0; i < n; ++i) {
-      std::uint16_t h = 0;
-      if (std::fread(&h, sizeof(h), 1, f) != 1) return false;
-      const std::uint32_t u = (std::uint32_t)h << 16;
-      std::memcpy(dst + i, &u, sizeof(u));
+COLD_SIZE_ATTR __attribute__((noinline)) void Head::LoadBlob() {
+  const unsigned char* e = kBlobW + kSlotOff[slot];
+  const unsigned H = kSlotH[slot];
+  const unsigned char* cm = kSlotCols[slot];
+  float* const d[7] = {win, bin, wih, whh, bg, wout, &bout};
+  static constexpr unsigned n[7] = {(unsigned)(cells * inw), (unsigned)cells, (unsigned)(4 * cells * cells),
+                                    (unsigned)(4 * cells * cells), (unsigned)(4 * cells), (unsigned)cells, 1u};
+  for (int k = 0; k < 7; ++k)
+    for (unsigned i = 0; i < n[k]; ++i) {
+      const unsigned q = i / (unsigned)cells, m = i % (unsigned)cells;
+      float* p;
+      bool live;
+      if (k == 0) {   // win column by column
+        p = win + m * (unsigned)inw + q;
+        live = m < H && (cm[q >> 3] >> (q & 7) & 1);
+      } else {
+        p = d[k] + i;
+        live = q % (unsigned)cells < H && m < H;
+      }
+      std::uint32_t u = 0;
+      if (live) {
+        const unsigned s = e[kBlobN];
+        u = (std::uint32_t)(s & 0x80) << 24 | (std::uint32_t)e[0] << 23 | (std::uint32_t)(s & 0x7f) << 16;
+        ++e;
+      }
+      __builtin_memcpy(p, &u, sizeof(u));
     }
-    return true;
-  };
-  bool ok = true;
-  ok = ok && rd(win, nw);
-  ok = ok && rd(bin, (size_t)C);
-  ok = ok && rd(wih, ng);
-  ok = ok && rd(whh, ng);
-  ok = ok && rd(bg, nb);
-  ok = ok && rd(wout, (size_t)C);
-  ok = ok && rd(&bout, 1);
-  std::fclose(f);
-  if (!ok) {
-    std::fprintf(stderr, "correction model: %s: short read\n", path);
-    std::exit(3);
+}
+
+// The switch to the next weight slot, called by Adjust() on the first bit of
+// a window (h and c are reset right behind it, see the header).  The
+// previous bit restarts at 0.5, as the offline trainer starts a zone.  A
+// slot with a blob loads it frozen; a slot without one learns on from the
+// weights in force, after a blob with fresh optimiser state (online to online
+// keeps weights and optimiser).
+COLD_SIZE_ATTR __attribute__((noinline)) void Head::NextSlot() {
+  ++slot;
+  trig = 0;
+  prev_bit = 0.5f;
+  if (SlotHas(slot)) {
+    LoadBlob();
   }
-  // Loaded weights start frozen: forward pass only.  In the release
-  // configuration Observe() switches the head to online learning at the first
-  // 1,024-bit window boundary after the end of the training range.  The
-  // trainer's warm start (the other load mode) keeps learning from the first
-  // bit, which is how one epoch hands over to the next.
-  frozen = (1 == 2) ? 0 : 1;
 }
 
 void Head::Forward() {
@@ -746,7 +680,7 @@ void Head::Forward() {
     _mm256_storeu_ps(h + r, _mm256_mul_ps(vo, th));
   }
   delta = DotPadded(wout, h, C) + bout;
-  if (tbptt) {
+  if (tbptt && !1) {   // no window buffers without learning
     const size_t n = sizeof(float) * (size_t)C;
     const int o0 = nbuf * C;
     std::memcpy(bx + (size_t)nbuf * (size_t)inw, x, sizeof(float) * (size_t)inw);
@@ -983,8 +917,8 @@ COLD_SIZE_ATTR bool Init() {
   if (g_init_done) return true;
   g_init_done = true;
   Head& s = g_head;
-  s.log_path = nullptr;
-  s.log_n = 8388608ULL;
+  s.prev_bit = 0.5f;
+  s.hid_byte = ~0ULL;
   s.Build();
   return true;
 }
@@ -992,10 +926,10 @@ COLD_SIZE_ATTR bool Init() {
 int Cells() { return g_head.cells; }
 int NumParams() { return g_head.nparams; }
 
-// The per-byte channel.  All four are registered ONCE, in the coder's
+// The per-byte channel.  All three are registered ONCE, in the coder's
 // constructor and BEFORE Init() - every pointer handed over is stable for the
-// whole run (the transformer's residual stream, the LSTM's hidden valarray,
-// the predictor's scalar staging, the gate's context state), and the head
+// whole run (the transformer's residual stream, the predictor's scalar
+// staging, the gate's context state), and the head
 // sizes its projections from the widths.  A per-bit setter would be a call
 // across the translation-unit boundary, and this unit is built WITHOUT -flto.
 void SetAux(const float* hid, int n_hid) {
@@ -1005,11 +939,6 @@ void SetAux(const float* hid, int n_hid) {
 void SetTf(const float* tf, int n_tf) {
   g_head.aux_tf = tf;
   g_head.aux_n_tf = (tf != nullptr) ? n_tf : 0;
-}
-void SetLhid(const float* hid, int n_hid, int pre_projected) {
-  g_head.aux_lhid = hid;
-  g_head.aux_n_lhid = (hid != nullptr) ? n_hid : 0;
-  g_head.aux_lhid_pre = pre_projected ? 1 : 0;
 }
 void SetZone(const unsigned int* zone) { g_head.aux_zone = zone; }
 
@@ -1023,12 +952,38 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
                     float m1raw, int override_active) {
   Head& s = g_head;
   if (__builtin_expect(s.i == 0, 0) && n_stage1 != Head::n1) {
-    std::fprintf(stderr,
-        "\ncorrection model: stage-1 row width %d, compiled %d (rebuild with %d)\n",
-        n_stage1, (int)Head::n1, n_stage1);
+    msg_stop(53)
+
+;
     std::fflush(stderr);
     std::abort();
   }
+  // The zone of this bit marks where the next slot's zone begins (slot 0:
+  // first bit outside the metadata block behind a bit inside it; slot 1:
+  // first bit of the first calendar page of the order); the switch waits for
+  // the window boundary, so the state reset below follows it.  Gate state is
+  // causal per byte.
+  if (s.slot == 0) {
+    if (tf_gate::ctx.zone == 3u) s.seen3 = 1;
+    else if (s.seen3 && s.trig == 0) s.trig = s.i + 1;
+  } else if (s.slot == 1 && s.trig == 0 &&
+             tf_gate::ctx.pages >= (unsigned int)143227) {
+    s.trig = s.i + 1;
+  }
+#if PORT_CMX_MEAS
+  // research BITL_SEQ (src/cmx_meas.h): 1024 = the release expression below; otherwise the state is zeroed at a
+  // weight-set switch and every BITL_SEQ head bits (0: never), the switch grid and the windows stay at 1,024 bits
+  bool cmx_switch = false;
+  if (s.trig != 0 && s.nbuf == 0) { s.NextSlot(); cmx_switch = true; }
+  const long long cmx_seq = cmx_meas::g_bitl_seq;
+  const bool cmx_reset = cmx_seq == 1024
+      ? (s.seq > 0 && (s.tbptt ? (s.nbuf == 0) : ((s.i % (unsigned long long)s.seq) == 0)))
+      : (cmx_switch || (cmx_seq > 0 && (s.i % (unsigned long long)cmx_seq) == 0));
+  if (cmx_reset) {
+    for (int r = 0; r < s.cells; ++r) { s.h[r] = 0.0f; s.c[r] = 0.0f; }
+  }
+#else
+  if (s.trig != 0 && s.nbuf == 0) s.NextSlot();
 
   // Sequence reset, as in the reference head: the recurrent state is zeroed
   // at the start of every window of seq bits (seq == 0 would mean never).
@@ -1036,6 +991,7 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
                             : ((s.i % (unsigned long long)s.seq) == 0))) {
     for (int r = 0; r < s.cells; ++r) { s.h[r] = 0.0f; s.c[r] = 0.0f; }
   }
+#endif
   // Remember the state the window starts from: the h_prev / c_prev of step 0
   // in the backward pass.
   // wsh/wsc are read by BackwardWindow() alone - a frozen head has no
@@ -1056,15 +1012,12 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
   for (int j = 0; j < s.inw; ++j) x[j] = 0.0f;
   const int n1 = Head::n1keep;
   const float xs = s.xscale ? inv_t : 1.0f;
-  // Dropped stage-1 columns (in the release configuration column 27, the
-  // appended bit prediction of the byte LSTM) are not fed.  The row is
-  // compacted, so the input matrix C*(nin+1) shrinks with it instead of
-  // carrying a masked column.
+  // every column but column 0 and the bit-position column,
+  // compacted in column order.
   {
     int w = 0;
-    for (int j = 0; j < Head::n1; ++j) {
-      if (j >= STAGE1_COL(7) && j <= STAGE1_COL(20)) continue;
-      if (j >= STAGE1_COL(27) && j <= STAGE1_COL(27)) continue;
+    for (int j = 1; j < Head::n1; ++j) {
+      if (j == Head::kBposCol) continue;
       const float v = (j < n_stage1) ? stage1[j] : 0.0f;
       x[w++] = v * xs;
     }
@@ -1074,7 +1027,13 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
   x[n1 + 1] = tl;
   x[n1 + 2] = tl * tl;
   x[n1 + 3] = Sgn(t);
-  x[n1 + 4 + (int)(s.i & 7)] = 1.0f;
+  {
+    // the true bit position (bits of the byte already coded)
+    int bp = (int)stage1[Head::kBposCol];
+    if (bp < 0) bp = 0;
+    if (bp > 7) bp = 7;
+    x[n1 + 4 + bp] = 1.0f;
+  }
   // sd is the SSE/APM correction in logit space: logit(sigmoid(m1raw)) is
   // m1raw itself, so sd = t - m1raw costs one subtraction.
   const float sd = t - m1raw;
@@ -1110,38 +1069,11 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
   } else {
     for (int r = 0; r < Head::nhid; ++r) x[Head::kHid + r] = 0.0f;
   }
-  // The state vector of the byte-LSTM beside the transformer, same
-  // cache (every eight bits the head sees).  `aux_lhid_pre` says the vector already IS the
-  // sketch (a replay on a pre-projected trace): then its first nlhid columns
-  // are exactly the nlhid-sketch, by the prefix property.
-  if (s.aux_lhid != nullptr) {
-    if (s.lhid_proj) {
-      const unsigned long long b = s.i >> 3;
-      if (b != s.lhid_byte) {
-        s.lhid_byte = b;
-        for (int r = 0; r < Head::nlhid; ++r) {
-          const float* pr = s.lhidP + (size_t)r * s.aux_n_lhid;
-          float acc = 0.0f;
-          for (int cc = 0; cc < s.aux_n_lhid; ++cc) {
-            acc += pr[cc] * s.aux_lhid[cc];
-          }
-          s.lhidC[r] = acc;
-        }
-      }
-      for (int r = 0; r < Head::nlhid; ++r) x[Head::kLhid + r] = s.lhidC[r];
-    } else {
-      for (int r = 0; r < Head::nlhid; ++r) x[Head::kLhid + r] = s.aux_lhid[r];
-    }
-  } else {
-    for (int r = 0; r < Head::nlhid; ++r) x[Head::kLhid + r] = 0.0f;
-  }
 
   s.Forward();
 
   s.skip = override_active ? 1 : 0;
   if (override_active) {
-    s.pend_base_p = base_p;
-    s.pend_head_p = base_p;
     return base_p;
   }
 
@@ -1152,8 +1084,6 @@ unsigned int Adjust(unsigned int base_p, const float* stage1, int n_stage1,
   unsigned int q = (unsigned int)(1.0f + 65534.0f * pnew);
   if (q < 1) q = 1;
   if (q > 65535) q = 65535;
-  s.pend_base_p = base_p;
-  s.pend_head_p = q;
   return q;
 }
 
@@ -1186,22 +1116,7 @@ void Observe(int bit) {
   }
   s.prev_bit = (float)bit;
   s.i = s.i + 1;
-  // Thaw the loaded head after the training range.  Only at a window
-  // boundary (nbuf == 0): the next Adjust() then saves wsh/wsc and the window
-  // buffers fill from step 0, so the first backward pass sees a complete
-  // window.  Everything the backward pass and Adam read is still in its
-  // initial state - moments, gradient accumulators, agrp/nvalid and the bias
-  // correction powers b1t/b2t were never touched while frozen - so the head
-  // continues exactly like an online head started from the blob weights.
-  // `i` and `nbuf` run through identical values in encoder and decoder.
-  if (s.frozen && s.nbuf == 0 &&
-      s.i >= (unsigned long long)418837176) {
-    s.frozen = 0;
-    g_unfrozen = 1;
-  }
 }
 
-int g_unfrozen = 0;
-
-}
+}  // namespace bit_head
 

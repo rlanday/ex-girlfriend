@@ -1,0 +1,29 @@
+{
+  "schema": "CLAUDE_LTCB_A1_FRESH_DECODE_V1",
+  "archive": {
+    "path": "<encode dir>/archive9 (copied into an empty decode directory)",
+    "bytes": 88983124,
+    "sha256": "0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3"
+  },
+  "started_utc": "2026-11-14T09:26:08Z",
+  "no_GPU": true,
+  "no_submission_sent": true,
+  "status": "passed_full_final_archive_roundtrip",
+  "exit_code": 0,
+  "cmp_exit_code": 0,
+  "decoded_sha256": "159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc",
+  "decoded_bytes": 1000000000,
+  "no_Hutter_eligibility_claim": true,
+  "seconds": 342467.3,
+  "finished_utc": "2026-11-18T08:33:55Z",
+  "peak_vmhwm_kib": 25449428,
+  "children_maxrss_kib": 25449428,
+  "children_user_s": 329853.356039,
+  "children_sys_s": 12486.227465,
+  "cleanup_verified": true,
+  "invocation": "cd <decode dir> (empty except archive9) && taskset -c 26 env -i PATH=/usr/bin:/bin HOME=<decode dir> TMPDIR=<decode dir> LC_ALL=C LANG=C TZ=UTC ./archive9 ; cmp -s enwik9_uncompressed <enwik9>",
+  "decoder_stdout": [
+    "dictionary: Loaded 54857 words",
+    "decoding preprocessed enwik9: 85039910 bytes -> 797128456 bytes in 342430.15 s."
+  ]
+}

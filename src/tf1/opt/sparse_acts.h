@@ -1,6 +1,6 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/sparse_acts.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
 // sparse_acts.h - self-contained sparse view of a quantized activation
 // vector (prior probabilities row).
 //
@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstdint>
+#include "../tf1_config.h"
 
 namespace fx2 {
 

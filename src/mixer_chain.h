@@ -40,7 +40,7 @@
 //   cascade runs (predictor.cpp, the auxiliary_average block); the SSE
 //   consumes the layer-1 probability and feeds nothing back; the coder
 //   consumes p and returns only the data bit.  The layer-1 places beyond the N
-//   cascade columns (aux_aux_in, the byte-mixer column, the TF1 slot column,
+//   cascade columns (aux_aux_in, the transformer slot column,
 //   the correction-model column) are leaf values too and contribute nothing
 //   to dz/dh_i.
 //
@@ -67,7 +67,6 @@
 // ===========================================================================
 
 #include <immintrin.h>
-#include "fast_math.h"
 
 #define MIXER_CHAIN_W(x) ((float)(x))
 
@@ -94,6 +93,6 @@ static inline float RmsScale(float ss, float n) {
   return _mm_cvtss_f32(_mm_div_ss(_mm_set_ss(1.0f), rms));
 }
 
-}
+}  // namespace mixer_chain
 
 #endif

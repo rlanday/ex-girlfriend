@@ -32,26 +32,22 @@ void EncodeBytes(unsigned int bytes, FILE* output) {
   }
 }
 
-void AppendEncodedByte(unsigned char c, std::string* output) {
-  if (c == kEndUpper || c == kEscape || c == kUppercase ||
-      c == kCapitalized || c >= 0x80) {
-    output->push_back(static_cast<char>(kEscape));
-  }
-  output->push_back(static_cast<char>(c));
 }
 
-void AppendEncodedBytes(unsigned int bytes, std::string* output) {
-  output->push_back(static_cast<char>(bytes & 0xFF));
-  if (bytes & 0xFF00) {
-    output->push_back(static_cast<char>((bytes & 0xFF00) >> 8));
+// See dictionary.h.
+__attribute__((noinline)) unsigned char* CodeWord(unsigned r, unsigned char* o) {
+  if (r < 80) { *o++ = (unsigned char)(0x80 + r); return o; }
+  if (r < 3920) {
+    r -= 80; *o++ = (unsigned char)(0xD0 + r / 80);
+  } else if (r < 44880) {
+    r -= 3920; *o++ = (unsigned char)(0xF0 + r / 2560);
+    *o++ = (unsigned char)(0xD0 + (r / 80) % 32);
   } else {
-    return;
+    r -= 44880; *o++ = (unsigned char)(0xF0 + r / 1280);
+    *o++ = (unsigned char)(0xF0 + (r / 80) % 16);
   }
-  if (bytes & 0xFF0000) {
-    output->push_back(static_cast<char>((bytes & 0xFF0000) >> 16));
-  }
-}
-
+  *o++ = (unsigned char)(0x80 + r % 80);
+  return o;
 }
 
 Dictionary::Dictionary(FILE* dictionary, bool encode, bool decode) {
@@ -59,41 +55,33 @@ Dictionary::Dictionary(FILE* dictionary, bool encode, bool decode) {
   unsigned long long len = ftell(dictionary);
   fseek(dictionary, 0L, SEEK_SET);
   word_map_.Reserve((unsigned int)(len / 2 + 64), (unsigned int)(len + 64));
-  std::string line;
+  char line[256];
+  char* p = line;
   int line_count = 0;
   const int kBoundary1 = 80, kBoundary2 = kBoundary1 + 3840,
       kBoundary3 = kBoundary2 + 40960;
   const int kBoundary4 = kBoundary3 + 20480;
   for (unsigned pos = 0; pos < len; ++pos) {
     unsigned char c = getc(dictionary);
-    if (c >= 'a' && c <= 'z') line += c;
-    else if (!line.empty()) {
-      if (line.size() > longest_word_) longest_word_ = line.size();
+    if (c >= 'a' && c <= 'z') {
+      if (p == line + sizeof(line)) abort();
+      *p++ = (char)c;
+    } else if (p != line) {
+      const unsigned int n = (unsigned int)(p - line);
+      if (n > longest_word_) longest_word_ = n;
       unsigned int bytes;
       bytes = 0;
-      if (line_count < kBoundary1) {
-        bytes = 0x80 + line_count;
-      } else if (line_count < kBoundary2) {
-        bytes = 0xD0 + ((line_count-kBoundary1) / 80);
-        bytes += (0x80 + ((line_count-kBoundary1) % 80)) << 8;
-      } else if (line_count < kBoundary3) {
-        bytes = 0xF0 + (((line_count-kBoundary2) / 80) / 32);
-        bytes += (0xD0 + (((line_count-kBoundary2) / 80) % 32)) << 8;
-        bytes += (0x80 + ((line_count-kBoundary2) % 80)) << 16;
+      if (line_count < kBoundary4) {   // bands 1-4: byte i of the code word in bits 8i
+        unsigned char cw[4] = {0, 0, 0, 0};
+        CodeWord((unsigned)line_count, cw);
+        bytes = cw[0] | (cw[1] << 8) | (cw[2] << 16);
       }
-      else if (line_count < kBoundary4) {
-        const int j = line_count - kBoundary3;
-        bytes = 0xF0 + (j / 1280);                 // 1280 = 16*80
-        bytes += (0xF0 + ((j / 80) % 16)) << 8;
-        bytes += (0x80 + (j % 80)) << 16;
-      }
-      if (bytes == 0) { ++line_count; line.clear(); continue; }
+      if (bytes == 0) { ++line_count; p = line; continue; }
       if (encode || decode) {
-        word_map_.Add(line.data(), (unsigned int)line.size(), bytes,
-            encode, decode);
+        word_map_.Add(line, n, bytes, encode, decode);
       }
       ++line_count;
-      line.clear();
+      p = line;
     }
   }
 }
@@ -152,60 +140,6 @@ void Dictionary::Encode(FILE* input, int len, FILE* output) {
   }
 }
 
-void Dictionary::EncodeString(const std::string& input, std::string* output) {
-  std::string word;
-  int num_upper = 0, num_lower = 0;
-  for (int pos = 0; pos < static_cast<int>(input.size()); ++pos) {
-    const unsigned char c = static_cast<unsigned char>(input[pos]);
-    bool advance = false;
-    if (word.size() > longest_word_) {
-      advance = true;
-    } else if (c >= 'a' && c <= 'z') {
-      if (num_upper > 1) {
-        advance = true;
-      } else {
-        ++num_lower;
-        word += static_cast<char>(c);
-      }
-    } else if (c >= 'A' && c <= 'Z') {
-      if (num_lower > 0) {
-        advance = true;
-      } else {
-        ++num_upper;
-        word += static_cast<char>(c - 'A' + 'a');
-      }
-    } else {
-      advance = true;
-    }
-    if (pos == static_cast<int>(input.size()) - 1 && !advance) {
-      EncodeWordString(word, num_upper, false, output);
-    }
-    if (advance) {
-      if (word.empty()) {
-        AppendEncodedByte(c, output);
-      } else {
-        bool next_lower = (c >= 'a' && c <= 'z');
-        EncodeWordString(word, num_upper, next_lower, output);
-        num_lower = 0;
-        num_upper = 0;
-        word.clear();
-        if (next_lower) {
-          ++num_lower;
-          word += static_cast<char>(c);
-        } else if (c >= 'A' && c <= 'Z') {
-          ++num_upper;
-          word += static_cast<char>(c - 'A' + 'a');
-        } else {
-          AppendEncodedByte(c, output);
-        }
-        if (pos == static_cast<int>(input.size()) - 1 && !word.empty()) {
-          EncodeWordString(word, num_upper, false, output);
-        }
-      }
-    }
-  }
-}
-
 void Dictionary::EncodeWord(const std::string& word, int num_upper,
     bool next_lower, FILE* output) {
   if (num_upper > 1) putc(kUppercase, output);
@@ -223,87 +157,23 @@ void Dictionary::EncodeWord(const std::string& word, int num_upper,
   }
 }
 
-void Dictionary::EncodeWordString(const std::string& word, int num_upper,
-    bool next_lower, std::string* output) {
-  if (num_upper > 1) output->push_back(static_cast<char>(kUppercase));
-  else if (num_upper == 1) output->push_back(static_cast<char>(kCapitalized));
-  unsigned int fast_code;
-  if (word_map_.Find(word.data(), (unsigned int)word.size(), &fast_code)) {
-    AppendEncodedBytes(fast_code, output);
-  } else if (!EncodeSubstringString(word, output)) {
-    output->append(word);
-  }
-  if (num_upper > 1 && next_lower) {
-    output->push_back(static_cast<char>(kEndUpper));
-  }
-}
-
+// The partial-word rule (dictionary.h, kWrtSubMin): prefix only, the code
+// always starts the word.
 bool Dictionary::EncodeSubstring(const std::string& word, FILE* output) {
-  if (word.size() <= 7) return false;
+  if (word.size() <= kWrtSubMin) return false;
   unsigned int size = word.size() - 1;
   if (size > longest_word_) size = longest_word_;
-  std::string suffix = word.substr(word.size() - size, size);
-  while (suffix.size() >= 7) {
+  for (; size >= kWrtSubMin; --size) {
     unsigned int fast_code;
-    if (word_map_.Find(suffix.data(), (unsigned int)suffix.size(), &fast_code)) {
-      for (unsigned int i = 0; i < word.size() - suffix.size(); ++i) {
-        putc((unsigned char)word[i], output);
-      }
+    if (word_map_.Find(word.data(), size, &fast_code)) {
       EncodeBytes(fast_code, output);
-      return true;
-    }
-    suffix.erase(0, 1);
-  }
-  std::string prefix = word.substr(0, size);
-  while (prefix.size() >= 7) {
-    unsigned int fast_code;
-    if (word_map_.Find(prefix.data(), (unsigned int)prefix.size(), &fast_code)) {
-      EncodeBytes(fast_code, output);
-      for (unsigned int i = prefix.size(); i < word.size(); ++i) {
+      for (unsigned int i = size; i < word.size(); ++i) {
         putc((unsigned char)word[i], output);
       }
       return true;
     }
-    prefix.erase(prefix.size() - 1, 1);
   }
   return false;
-}
-
-bool Dictionary::EncodeSubstringString(const std::string& word,
-    std::string* output) {
-  if (word.size() <= 7) return false;
-  unsigned int size = word.size() - 1;
-  if (size > longest_word_) size = longest_word_;
-  std::string suffix = word.substr(word.size() - size, size);
-  while (suffix.size() >= 7) {
-    unsigned int fast_code;
-    if (word_map_.Find(suffix.data(), (unsigned int)suffix.size(), &fast_code)) {
-      output->append(word.data(), word.size() - suffix.size());
-      AppendEncodedBytes(fast_code, output);
-      return true;
-    }
-    suffix.erase(0, 1);
-  }
-  std::string prefix = word.substr(0, size);
-  while (prefix.size() >= 7) {
-    unsigned int fast_code;
-    if (word_map_.Find(prefix.data(), (unsigned int)prefix.size(), &fast_code)) {
-      AppendEncodedBytes(fast_code, output);
-      output->append(word.data() + prefix.size(), word.size() - prefix.size());
-      return true;
-    }
-    prefix.erase(prefix.size() - 1, 1);
-  }
-  return false;
-}
-
-unsigned char Dictionary::Decode(FILE* input) {
-  while (output_buffer_.empty()) {
-    AddToBuffer(input);
-  }
-  unsigned char next = output_buffer_.front();
-  output_buffer_.pop_front();
-  return next;
 }
 
 unsigned char NextChar(FILE* input) {
@@ -315,50 +185,51 @@ unsigned char NextChar(FILE* input) {
   return c;
 }
 
-void Dictionary::AddToBuffer(FILE* input) {
-  unsigned char c = NextChar(input);
-  if (c == kEscape) {
-    decode_upper_ = false;
-    output_buffer_.push_back(NextChar(input));
-  } else if (c == kUppercase) {
-    decode_upper_ = true;
-  } else if (c == kCapitalized) {
-    decode_capital_ = true;
-  } else if (c == kEndUpper) {
-    decode_upper_ = false;
-  } else if (c >= 0x80) {
-    unsigned int bytes = c;
-    if (c > 0xCF) {
-      c = NextChar(input);
-      bytes += c << 8;
+// Returns the next decoded byte.  A dictionary code leaves its word in
+// word_map_ (wort_, rest_); its letters are handed out one per call, with the
+// case flags as they stood when the code was read (nothing changes them
+// before the word is used up).
+unsigned char Dictionary::Decode(FILE* input) {
+  for (;;) {
+    if (rest_) {
+      unsigned char x = (unsigned char)*wort_++;
+      --rest_;
+      if (decode_capital_) { x = (x - 'a') + 'A'; decode_capital_ = false; }
+      if (decode_upper_) x = (x - 'a') + 'A';
+      return x;
+    }
+    unsigned char c = NextChar(input);
+    if (c == kEscape) {
+      decode_upper_ = false;
+      return NextChar(input);
+    } else if (c == kUppercase) {
+      decode_upper_ = true;
+    } else if (c == kCapitalized) {
+      decode_capital_ = true;
+    } else if (c == kEndUpper) {
+      decode_upper_ = false;
+    } else if (c >= 0x80) {
+      unsigned int bytes = c;
       if (c > 0xCF) {
         c = NextChar(input);
-        bytes += c << 16;
+        bytes += c << 8;
+        if (c > 0xCF) {
+          c = NextChar(input);
+          bytes += c << 16;
+        }
       }
-    }
-    // look up the code without inserting (an unknown code yields an empty word)
-    const char* fast_w = nullptr; unsigned int fast_len = 0;
-    std::string word = word_map_.FindCode(bytes, &fast_w, &fast_len)
-        ? std::string(fast_w, fast_len) : std::string();
-    for (unsigned int i = 0; i < word.size(); ++i) {
-      if (i == 0 && decode_capital_) {
-        word[i] = (word[i] - 'a') + 'A';
-        decode_capital_ = false;
+      // an unknown code leaves rest_ at 0 (empty word)
+      word_map_.FindCode(bytes, &wort_, &rest_);
+    } else {
+      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+        decode_upper_ = false;
       }
-      if (decode_upper_) {
-        word[i] = (word[i] - 'a') + 'A';
+      if (decode_capital_ || decode_upper_) {
+        c = (c - 'a') + 'A';
       }
-      output_buffer_.push_back(word[i]);
+      decode_capital_ = false;
+      return c;
     }
-  } else {
-    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
-      decode_upper_ = false;
-    }
-    if (decode_capital_ || decode_upper_) {
-      c = (c - 'a') + 'A';
-    }
-    if (decode_capital_) decode_capital_ = false;
-    output_buffer_.push_back(c);
   }
 }
 

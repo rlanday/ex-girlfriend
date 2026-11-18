@@ -2,20 +2,19 @@
 #define BYTE_MODEL_H
 
 #include "model.h"
-#include "../lstm_sharpen.h"
-#include "../lstm_fx_link.h"
 
 #include <valarray>
 #include <vector>
 
 class ByteModel : public Model {
  public:
-  virtual ~ByteModel() {}
+  // No virtual destructor: PPMD and Bracket live in std::optional members of
+  // the Predictor, never deleted through a ByteModel*.
   ByteModel(const std::vector<bool>& vocab);
   const std::valarray<float>& BytePredict();
    std::valarray<float>& Predict() ;
   void Perceive(int bit);
-  int ex;
+  // the live byte interval [bot_, top_] (read by Predictor::MlPath)
   int Lx1Bot() const { return bot_; }
   int Lx1Top() const { return top_; }
  protected:

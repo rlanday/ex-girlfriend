@@ -1,89 +1,92 @@
+// Port switches of our integration tree (h3_neif2_port_20261031/merge2, Claude Opus 5.5, 2026-10-31).
+// Every switch defaults to 0, and with every switch 0 the tree compiles to exactly the upstream program
+// (cmix-neif-2.0): the release recipe reproduces the published comp9 byte for byte.
+//
+//   PORT_CMX_MEAS  research measurement knobs (src/cmx_meas.h), for cheap prefix A/Bs of `comp9 -e enwik9 archive`.
+//                  The environment is read in a top-level -e run only (the -D children of the self-extraction
+//                  inherit it and ignore it); the decoder never reads it.  Knobs unset = the coding is unchanged.
+//                  Observers (never change a coded bit):
+//                    CMX_LOG_EVERY=N   a line "CMX <coder_pos> <coded_bytes> <code_bits> <wall_s>" on stderr every N
+//                                      coder bytes, at CMX_STOP_AT and at the end of the stream; code_bits is the
+//                                      exact code length of the coder interval (8 * coded bytes + 32 - log2 range).
+//                                      Also one "CMXMARK <name> <coder_pos> <coded_bytes> <code_bits>" line at each
+//                                      region boundary of the stream (meta_end, census_end, slot1/2/4_end,
+//                                      text_start = the first byte of page 0 (the front redirect block),
+//                                      first_article = the first byte of page 71,148, behind the redirect block).
+//                    CMX_AT=p1,p2,...  extra CMX lines at these coder positions (checkpoints, e.g. 20000000 for a
+//                                      Delta(50M - 20M) differencing A/B with CMX_STOP_AT=50000000).
+//                    CMX_PAGES=k,...   a "CMXMARK page<k>" line where page k of the article order begins.
+//                    CMX_BYTECOST=1    per-coder-byte code length (bits, float32) to ./bytecost.f32 at CMX_STOP_AT or
+//                                      at the end of the stream.
+//                    CMX_STOP_AT=N     stop after N coder bytes: the coder is flushed (the output file is a prefix
+//                                      of the archive payload, 5 header bytes included), then _exit(0).  Preprocessing
+//                                      runs in full as in the release; only the coding stops early.
+//                  Ablations (change the coding; encoder-side measurement only, such an output is NOT decodable):
+//                    CMX_TFOFF=1       the transformer row never reaches the models: every byte takes the gated
+//                                      form of Perceive (neutral row in the transformer slot, fast-weight head
+//                                      neutral), the form the release itself uses inside the metadata blocks (gate
+//                                      zone HDRBLOCK), in title masks and on fed rows; so the coding of the metadata
+//                                      blocks is unchanged.  SEMCACHE and the top-1 path stage abstain with it (they
+//                                      key on a live row).  The engine still steps (its prompt automaton, forced
+//                                      bytes, link context and gate stay in sync with the stream), so there is no
+//                                      time saving, and BITLSTM still reads the engine's state.
+//                    CMX_TFOFF=2       as 1, and BITLSTM's transformer-state input reads zeros (from byte 0).
+//                    CMX_SEMCACHE_OFF=1  SEMCACHE takes its no-live-row path at every byte: no lookup, no store, its
+//                                      mixer inputs, BITLSTM columns and end stage see "no neighbours", as on every
+//                                      byte without a live transformer row; the top-1 path stage keeps running.
+//                  Lever switches of the 10-31 batch (encoder-side size screening; full list in src/cmx_meas.h):
+//                    CMX_MIXROW=1|2|3, CMX_MIXTEL=1 (layer-0 mixer row cap / re-key at page 1 / fallback telemetry),
+//                    CMX_FX_DECCODE, CMX_FX_VERB, CMX_FX_APM_OFF (fxcm stream-position constants),
+//                    CMX_MIXSKIP_L0, CMX_MIXSKIP_L1 (x/4096 mixer error-limit skip), CMX_Z3LR (census-block mixer LR),
+//                    CMX_ZVAR (census number-coder variants V2 / RK / RF), CMX_SEMTEL=1 (SEMCACHE telemetry).
+//                  Research modes: -n STREAM OUT (code a finished coder stream, no preprocessing) and -r IN OUT V
+//                  (recode the census line of a coder stream with number-coder variant V).
+//
+//   PORT_ENTRY     the entry form of recipe "candidate A" (branch entry, Claude Fable 5.2, 2026-11-09): the research
+//                  code is compiled in (PORT_ENTRY 1 implies PORT_CMX_MEAS 1) and the recipe is a set of constants that
+//                  main() forces into the knobs (cmx_meas::EntryApply, src/cmx_meas.h) in EVERY mode that codes or
+//                  decodes the main stream: -e, a top-level -d, -n, and both no-argument forms (comp9 = -e enwik9
+//                  archive9, archive9 = the self-extracting decoder).  So the encoder and the decoder run the same
+//                  model.  The helper blocks (-D children of an -e run, coded at build time by cmix_aux -c) keep the
+//                  release defaults: the mode is decided on argv before the -D -> -d rewrite, and the build helper
+//                  (AUX_BUILD) never forces.  The recipe:
+//                    CMX_SEMKEYS=R,12 (two extra caches: the release key with its own seed, the mixer read of layer
+//                    12; CMX_SEMKEY2_USE=3: layer-0 input + end-mixer column, and the serial end stages),
+//                    CMX_FW_BLOCKS=4 (fast-weight head on blocks 4..15), BITL_SEQ=0 (no periodic reset of the BITLSTM
+//                    state; it is zeroed at a weight-set switch only),
+//                    and the SEMCACHE geometry kM 63, kFlip 15, kNLog 25, kWhLog 26, kPre 512, kDedupLog 10
+//                    (src/semantic_cache.h, constants under PORT_ENTRY).
+//                  The shipping form (PORT_ENTRY 1, PORT_ENTRY_TEST 0) never reads the environment: cmx_meas::Read()
+//                  is not called, the research mode -r is not compiled, no observer runs (cmx_meas::g_hook stays
+//                  false, so Compress() runs the model calls of Decompress() and nothing else).  -n stays (it codes a
+//                  finished coder stream with the entry recipe).
+//   PORT_ENTRY_TEST  with PORT_ENTRY 1 only: a top-level -e or -n run reads the environment as PORT_CMX_MEAS does,
+//                  then EntryApply() puts every coding knob back (recipe values and release defaults), so only the
+//                  observers CMX_LOG_EVERY, CMX_STOP_AT, CMX_AT, CMX_BYTECOST(+_PATH) and CMX_SEMTEL stay in effect.
+//                  For byte-equality certification against the research build; never the form that ships.
 #ifndef PORT_CFG_H_
 #define PORT_CFG_H_
 
-// Lane C A/B arm switches (work/h3_neif_port_20261006, 2026-10-06).  Each arm
-// tree carries its own copy of this header; the code is the same in every arm.
-//
-//   PORT_GEOM  layer-0 row 588 -> 589 and final mixer 27 -> 28.  The new
-//              columns are 0 (neutral) unless PORT_FW wires them.  Adaptive
-//              depth gathers the old 588 columns only and BITLSTM keeps its
-//              28-wide row (final-mixer cols 0..26 + byte-LSTM logit).
-//   PORT_FW    FW-DUAL/FWRH: fast weights on the last MLP of the transformer
-//              (dual head, FW-ROW per-feature RMS step, DIC kappa 6e-3 ->
-//              1.5e-3, tau 8000), its distribution as layer-0 col 588 and
-//              (FW1) as final-mixer col 27.  All FW math is in the precise TU
-//              src/tf1/opt/model_opt.cpp.
-//   PORT_PRL   per-row mixer decay: max(global step schedule, row schedule
-//              1.0/0.7/0.3/floor at row updates < 1k/5k/25k/else).
-//   PORT_ETA0  word-label eta for byte-0 trie nodes = 0.0225 (WL2 eta0).
-//
-// Lane C second wave (2026-10-07), LTCB-only capacity knobs, each on top of B
-// (GEOM+FW) and switchable so they can be stacked:
-//   PORT_CASCADE  (W1) the mixer cascade (layer-0 mixers, final mixer, SSE)
-//              runs on EVERY bit.  Adaptive depth still computes its skip
-//              decision and trains on every bit as before; the decision now
-//              only gates BITLSTM (Adjust/Observe in coder/encoder.cpp and
-//              decoder.cpp, unchanged), so BITLSTM's bit set and position
-//              counter are the same as with adaptive depth.  On a would-be-
-//              skipped bit the coder takes the cascade p instead of p_pre.
-//   PORT_RESTORE  (W2) undo neif's Hutter-RAM cuts (README 3.3 "two models
-//              removed, two maps halved" + shared map):
-//                PORT_RESTORE_IND    double-indirect models ind2/ind3 with
-//                  their tables (16M + 32M uint32), update rule and position
-//                  (between ind1 and ind5) as in fx2-cmix-transformer
-//                  (training/tf/tree_upstream); layer-0 row +2 (589 -> 591);
-//                  the two columns sit inside the adaptive-depth gather, as
-//                  before the removal (AD: 33 -> 35 features).
-//                PORT_RESTORE_MAPS16 text-model stationary maps maps1/maps2
-//                  at 16 context bits (neif: 15).
-//                PORT_RESTORE_SHARED shared indirect map 1,000,000 rows
-//                  (neif: 500,000).
-//   PORT_BIGTAB   (W3) bigger text-model tables:
-//                PORT_BIGTAB_CM3 every ContextMap3 table x2 (m = m1*4,
-//                  neif m1*2; fxcmv1.cpp ContextMap3::Init).
-//                PORT_BIGTAB_DSM the five direct state maps +1 bit each
-//                  (28/29/24/27/26 -> 29/30/25/28/27).
-#define PORT_GEOM 1
-#define PORT_FW 1
-#define PORT_PRL 0
-#define PORT_ETA0 0
-#define PORT_FW_LAYERS 4   /* F4: FW on the last 4 MLP blocks (see F4/src port_cfg.h) */
-#define PORT_CASCADE 0
-#define PORT_RESTORE 0
-#define PORT_BIGTAB 1
-
-#ifndef PORT_RESTORE_IND
-#define PORT_RESTORE_IND PORT_RESTORE
+#ifndef PORT_CMX_MEAS
+#define PORT_CMX_MEAS 0   /* 1: CMX_LOG_EVERY / CMX_BYTECOST / CMX_STOP_AT / CMX_TFOFF / CMX_SEMCACHE_OFF (-e only) */
 #endif
-#ifndef PORT_RESTORE_MAPS16
-#define PORT_RESTORE_MAPS16 PORT_RESTORE
+#ifndef PORT_ENTRY
+#define PORT_ENTRY 1   /* 1: recipe "candidate A" as constants in the encoder and the decoder (implies PORT_CMX_MEAS 1) */
 #endif
-#ifndef PORT_RESTORE_SHARED
-#define PORT_RESTORE_SHARED PORT_RESTORE
+#ifndef PORT_ENTRY_TEST
+#define PORT_ENTRY_TEST 0   /* 1 (with PORT_ENTRY 1): observer environment for certification runs; never ships */
 #endif
-#ifndef PORT_BIGTAB_CM3
-#define PORT_BIGTAB_CM3 PORT_BIGTAB
+#if PORT_ENTRY
+#undef PORT_CMX_MEAS
+#define PORT_CMX_MEAS 1
+#elif PORT_ENTRY_TEST
+#error "PORT_ENTRY_TEST 1 needs PORT_ENTRY 1"
 #endif
-#ifndef PORT_BIGTAB_DSM
-#define PORT_BIGTAB_DSM PORT_BIGTAB
-#endif
-
-#if PORT_FW && !PORT_GEOM
-#error "PORT_FW needs PORT_GEOM (the FW columns are the new ones)"
-#endif
-
-#if PORT_RESTORE_IND
-#define PORT_IND_COLS 2
-#else
-#define PORT_IND_COLS 0
-#endif
-
-#if PORT_GEOM
-#define PORT_N0 (589 + PORT_IND_COLS)
-#define PORT_N1 28
-#else
-#define PORT_N0 (588 + PORT_IND_COLS)
-#define PORT_N1 27
+#if !PORT_CMX_MEAS
+// The lap macros of the research CMX_CM_TICKS (src/cmx_meas.h with PORT_CMX_MEAS 1) expand to no token here.
+#define CMXK_START(t)
+#define CMXK_LAP(sec, t)
+#define CMXK_LAP2(sec, t)
 #endif
 
 #endif

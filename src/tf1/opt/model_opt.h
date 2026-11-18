@@ -3,7 +3,7 @@
 
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/model_opt.h.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md,
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0,
 // among them set_gelesen() for rows whose output is not read.
 // model_opt.h - TransformerOpt: the optimized fx2 transformer (SPEC section 6
 // interface) assembled from the four kernel workstreams:
@@ -22,9 +22,10 @@
 #include <cstdint>
 #include <memory>
 
+#include "../tf1_config.h"
 #include "../tf1_paket.h"
-#include "../../port_cfg.h"
 
+#include "../tf1_config.h"
 
 namespace fx2 {
 namespace opt {
@@ -79,26 +80,25 @@ struct TransformerOpt {
   // until the next step)
   const float* last_logits() const;
 
-  // The normalised residual
-  // stream of the last step -- the d_model vector the UNEMBEDDING reads, i.e.
-  // the transformer's counterpart of Lstm::Hidden().  Valid until the next
-  // step.  Observation only; nothing is written and nothing is copied.
+  // The normalised residual stream of the last step, the d_model vector the
+  // unembedding reads (the transformer's per-byte state for the BITLSTM
+  // head).  Valid until the next step.  Observation only; nothing is written
+  // and nothing is copied.
   const float* last_hidden() const;
   static int hidden_size();
+  const float* last_key() const;
 
   AttnKind attn_kind() const;
 
-#if PORT_FW
-  // FW-DUAL (Lane C port of Z third_party/fx2_transformer, h3_fw*/fwdual/
-  // fw_rules/fw_row patches): fast weights dW on the last MLP; every read row
-  // also produces the distribution of a second head on x + dW h.
-  // fw_update(y): one step of dW on the prediction of the LAST read row with
-  // target token y (< 208).  Call before the next read row overwrites it.
+  // fast weights after ex-girlfriend 1.0 (Ryan Landay, GPL-3.0-only,
+  // github.com/rlanday/ex-girlfriend, commit e923faec), code adapted from its
+  // model_opt.cpp, arena_build.cpp, tf1_engine.cpp and predictor.cpp: every read
+  // row also gives a second head on x + sum_b dW_b h_b.  fw_update(y): one step
+  // of the dW_b on the LAST read row with target y, before the next read row.
   void fw_update(uint8_t target);
-  // the 208 FW-head probabilities of the last read row (valid until the
+  // the V second-head probabilities of the last read row (valid until the
   // next read row)
   const float* fw_probs() const;
-#endif
 
  private:
   std::unique_ptr<TransformerOptImpl> impl;

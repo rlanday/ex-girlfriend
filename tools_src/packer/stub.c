@@ -1,3 +1,40 @@
+/* stub.c - stage 2 of the self-extraction stub: x86-aware
+ * context-mixing unpacker (cm_core.h, with the exact address transform of
+ * x86t.h in place of a BCJ filter) with a TRUNCATABLE encoder block.
+ *
+ * Stage 1 (stub_boot.c) carries the 6-field header (u32, file offset 120) in plain
+ * form, decodes THIS code to its link address (s2.lds) and calls
+ * s2_main(sp, &header).  The cut of the self-extraction (self_extract.h)
+ * takes the .decomp_bin prefix and rewrites two fields of that header.
+ *
+ * The inner ELF is linked so that all encoder-only code sits in a section
+ * of its own at the END OF THE FILE (linker script).  Up to offset bcj_split
+ * (= Nd) the image is a complete DECOMPRESSOR.  The coder is a sequential
+ * arithmetic coder, so a PREFIX of length K is enough for the first Nd
+ * output bytes.
+ *
+ *   Compressor package: [stub][full stream]      decode_len = image_len = Nf
+ *   .decomp_bin:        [stub][stream prefix K]  decode_len = bcj_split = Nd
+ *
+ * The rest up to image_len is padded with ZEROS, so the ELF program header
+ * of the inner binary stays untouched; the encoder area is never executed on
+ * the -d path.  The address transform works per executable PT_LOAD and
+ * leaves a range that starts at or behind decode_len alone, so the prefix
+ * does not depend on the truncated part.
+ *
+ * The real path of the package travels along in the memfd image
+ * ([path][u32 length][16-B mark]), otherwise the self-extraction does not
+ * find the appended blocks.
+ *
+ * The image is started from an anonymous memory file only (memfd_create +
+ * execveat, Linux 3.19 or later); if that fails, the stub exits with 107.
+ *
+ * The probe macro (test build only, never shipped): instead of executing the
+ * image, write it to stdout and exit; the build script of the packer uses
+ * this to check the real stub code path against the input image.
+ *
+ * No libc: direct syscalls.
+ */
 #include <stdint.h>
 #include <stddef.h>
 
@@ -19,16 +56,11 @@ static long sys6(long n, long a, long b, long c, long d, long e, long f) {
 #define SYS_exit_group 231
 #define SYS_openat 257
 #define SYS_memfd_create 319
-#define SYS_execve 59
 #define SYS_execveat 322
-#define SYS_unlinkat 263
 #define SYS_readlinkat 267
 #define AT_FDCWD (-100)
 #define AT_EMPTY_PATH 0x1000
 #define O_RDONLY 0
-#define O_RDWR 2
-#define O_CREAT 0100
-#define O_TRUNC 01000
 
 static long s_open(const char *p, long fl, long mo) { return sys6(SYS_openat, AT_FDCWD, (long)p, fl, mo, 0, 0); }
 static long s_read(long fd, void *b, long n) { return sys6(SYS_read, fd, (long)b, n, 0, 0, 0); }
@@ -47,30 +79,33 @@ static void *cm_mmap(size_t n) {
   return (void *)r;
 }
 #define CM_ALLOC(n) cm_mmap(n)
+static unsigned char in_buf[1u << 21];
+static unsigned char out_buf[1u << 21];
+/* flat stage-2 image (s2.lds): the warm-up data of the x86-CM (cm_core.h) */
+extern const unsigned char s2_base[], s2_textend[], s2_filend[];
+#define CM_WARM_P out_buf
+#define CM_WARM_N ((size_t)(s2_filend - s2_base))
+#define CM_WARM_T ((long)(s2_textend - s2_base))
 #include "cm_core.h"
 #include "x86t.h"
 
-/* Header: 16-B mark + six little-endian u64, lives in stage 1.  Written by
- * the packer (pack_tool.c, "pack") and rewritten by the -e path
- * (selfextract_comp) for .decomp_bin: comp_len <- dec_clen,
- * decode_len <- bcj_split (a historical field name: the cut point Nd). */
+/* Header: six little-endian u32 at file offset 120, lives in stage 1.
+ * Written by the packer
+ * (pack_tool.c, "pack") and rewritten by the -e path (selfextract_comp) for
+ * .decomp_bin: comp_len <- dec_clen, decode_len <- bcj_split (a historical
+ * field name: the cut point Nd). */
 typedef struct {
-  char     magic[16];
-  uint64_t payload_off;   /* file offset of the stream                    */
-  uint64_t comp_len;      /* available compressed bytes                   */
-  uint64_t decode_len;    /* output bytes to decode (Nd or Nf)            */
-  uint64_t image_len;     /* final image size (Nf), rest = zeros          */
-  uint64_t bcj_split;     /* Nd: boundary decomp part / encoder part      */
-  uint64_t dec_clen;      /* K: stream length for the first Nd bytes      */
+  uint32_t payload_off;   /* file offset of the stream                    */
+  uint32_t comp_len;      /* available compressed bytes                   */
+  uint32_t decode_len;    /* output bytes to decode (Nd or Nf)            */
+  uint32_t image_len;     /* final image size (Nf), rest = zeros          */
+  uint32_t bcj_split;     /* Nd: boundary decomp part / encoder part      */
+  uint32_t dec_clen;      /* K: stream length for the first Nd bytes      */
 } cut_hdr_t;
 
-static unsigned char in_buf[1u << 21];
-static unsigned char out_buf[1u << 21];
 static char selfpath[] = "/proc/self/exe";
 static char memname[] = "cmix";
 static char empty[] = "";
-static char cwdtmpl[] = "./.b5c_run";
-static char tmpl[] = "/tmp/.b5cstub";
 static const char fx_mark[16] = {'B','5','C','2','S','E','L','F',
                                  'P','A','T','H','_','V','1','\0'};
 static char pathbuf[4096];
@@ -85,18 +120,6 @@ static int s_writeall(long fd, const unsigned char *buf, uint64_t n) {
     buf += w; n -= (uint64_t)w;
   }
   return 0;
-}
-
-/* Fallback: write the original ELF to <path>, CLOSE the fd (no ETXTBSY),
- * then start it via execve. Return = failure -> next path. */
-static void try_path_exec(const char *path, uint64_t olen, char **argv, char **envp) {
-  long fd = s_open(path, O_RDWR | O_CREAT | O_TRUNC, 0700);
-  if (fd < 0) return;
-  if (s_writeall(fd, out_buf, olen)) { sys6(SYS_close, fd, 0, 0, 0, 0, 0); return; }
-  s_writeall(fd, tailbuf, taillen);
-  sys6(SYS_close, fd, 0, 0, 0, 0, 0);
-  sys6(SYS_execve, (long)path, (long)argv, (long)envp, 0, 0, 0);
-  sys6(SYS_unlinkat, AT_FDCWD, (long)path, 0, 0, 0, 0);
 }
 
 __attribute__((section(".text.s2entry")))
@@ -121,6 +144,11 @@ void s2_main(long *sp, volatile cut_hdr_t *hp) {
   }
   sys6(SYS_close, fd, 0, 0, 0, 0, 0);
 
+  /* Warm-up data: a copy of this unpacker's flat image, with the
+   * address transform of the image; cm_decompress learns from it first and
+   * then overwrites out_buf. */
+  memcpy(out_buf, s2_base, CM_WARM_N);
+  x86t_range(out_buf, 0, CM_WARM_T, CM_WARM_VA, (int)CM2_xt >> 1, +1);
   if (!cm_decompress(in_buf, (size_t)clen, out_buf, (size_t)dlen)) s_exit(111);
   /* Undo the exact x86 address transform over the executable PT_LOADs of
    * the decoded image (ranges read from its own ELF header).  A range that
@@ -148,18 +176,12 @@ void s2_main(long *sp, volatile cut_hdr_t *hp) {
     memcpy(tailbuf + n + 4, fx_mark, 16);
     taillen = (uint64_t)n + 20;
   }
-#ifdef PACK_NO_MEMFD
-  mfd = -1;
-#else
   mfd = sys6(SYS_memfd_create, (long)memname, 0, 0, 0, 0, 0);
-#endif
   if (mfd >= 0) {
     if (!s_writeall(mfd, out_buf, ilen) && !s_writeall(mfd, tailbuf, taillen))
       sys6(SYS_execveat, mfd, (long)empty, (long)argv, (long)envp, AT_EMPTY_PATH, 0);
     sys6(SYS_close, mfd, 0, 0, 0, 0, 0);
   }
-  try_path_exec(cwdtmpl, ilen, argv, envp);
-  try_path_exec(tmpl, ilen, argv, envp);
   s_exit(107);
 #endif
 }

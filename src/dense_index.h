@@ -24,6 +24,6 @@ static_assert(kDigits.m[0] == 0,
     "0x00 is inside the frozen byte set; the "
     "virtual pre-stream bytes would collide with a real byte.");
 
-}
+}  // namespace dense_index
 
 #endif

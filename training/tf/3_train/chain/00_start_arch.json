@@ -1,0 +1,41 @@
+{
+ "name": "tf2_bh_strict",
+ "phase": "fp32",
+ "overrides": {
+  "n_key_value_heads": 1,
+  "value_embedding_pattern": [
+   null,
+   null,
+   null,
+   0,
+   null,
+   null,
+   null,
+   1,
+   null,
+   null,
+   null,
+   2,
+   null,
+   null,
+   null,
+   3
+  ],
+  "d_mlp": 1024,
+  "skip_connections": false,
+  "token_embedding_connections": false,
+  "prior_logit_mixing": true
+ },
+ "arch": {
+  "attnres": {
+   "mode": "replace",
+   "block": 2,
+   "impl": "fused"
+  }
+ },
+ "seed": 1,
+ "ve_sentinel": "clamp",
+ "epochs": 0,
+ "eval": true,
+ "init_strict": true
+}

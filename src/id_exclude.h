@@ -1,13 +1,13 @@
 
 #ifndef ID_EXCLUDE_H_
 #define ID_EXCLUDE_H_
+#include "meld.h"
 
 #ifndef AUX_BUILD
 #define AUX_BUILD 0
 #endif
 
 #include "metablock.h"
-#include "neif_levers.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +27,7 @@ namespace id_exclude {
 // Corpus invariants of enwik9 (build-time constants).  A guard aborts if a
 // value lies outside, instead of a silent fallback.
 static const int kPgLo = 1, kPgHi = 326490;          // page id range
-static const long long kRevLo = 15898943LL, kRevHi = 42164216LL;
+static const long long kRevLo = 15898943LL, kRevHi = 42164216LL;  // revision id range
 struct Tree {
   int D = 0;
   long long B = 100;               // place-value base (base 100)
@@ -45,7 +45,7 @@ struct Tree {
     for (int i = 1; i <= 18; ++i)
       pow10[i] = (i <= D) ? pow10[i-1] * B : pow10[i-1];
     if (hi >= pow10[D]) {
-      fprintf(stderr, "id model: %lld does not fit %d digits\n", hi, D);
+      msg_note(76);
       exit(1);
     }
     for (int k = 0; k <= D; ++k) {
@@ -54,12 +54,12 @@ struct Tree {
       size_[k] = hi / s - off[k] + 1;
       if (k == D) {
         leaf_ = (unsigned char*)malloc((size_t)((size_[k] + 7) / 8));
-        if (!leaf_) { fprintf(stderr, "id model: out of memory\n"); exit(1); }
+        if (!leaf_) { msg_note(77); exit(1); }
         memset(leaf_, 0xFF, (size_t)((size_[k] + 7) / 8));
         continue;
       }
       free_[k] = (int*)malloc((size_t)size_[k] * sizeof(int));
-      if (!free_[k]) { fprintf(stderr, "id model: out of memory\n"); exit(1); }
+      if (!free_[k]) { msg_note(77); exit(1); }
       for (long long p = 0; p < size_[k]; ++p) free_[k][p] = (int)All(k, p + off[k]);
     }
   }
@@ -78,12 +78,12 @@ struct Tree {
   }
   void Mark(long long v) {
     if (v < lo || v > hi) {
-      fprintf(stderr, "id model: value %lld outside [%lld,%lld]\n",
-              v, lo, hi);
+      msg_note(78)
+;
       exit(1);
     }
     if (Free(D, v) == 0) {
-      fprintf(stderr, "id model: duplicate value %lld\n", v);
+      msg_note(79);
       exit(1);
     }
     for (int k = 0; k < D; ++k) {
@@ -112,7 +112,7 @@ struct Fen {
   void Init(int N) {
     n = N;
     t = (int*)malloc((size_t)(n + 1) * sizeof(int));
-    if (!t) { fprintf(stderr, "id model: out of memory\n"); exit(1); }
+    if (!t) { msg_note(77); exit(1); }
     Fill();
   }
   void Fill() {
@@ -144,26 +144,25 @@ inline void Init() {
 
 inline int  armed = 0;          // well-formed rows in a row so far
 inline int  col = 0;            // byte position in the current row
-inline int  fld = 1;            // 1 = page id delta, 2 = revision id, 3 = rest,
-                                // 4 = B1 revid residual (E1: after '+')
+inline int  fld = 1;            // 1 = page id delta, 2 = revision id, 3 = rest
+                                // (4 = residual of a forecast revid)
 inline int  fcol = 0;           // byte position inside the field
 inline int  bad = 0;            // the row has already broken the form
 inline int  neg = 0;            // field 1 starts with '-'
 inline long long pfx = 0;       // digit prefix of the current field
 inline long long revpfx = 0;
-#if NEIF_E1
-// E1: a B1 row is "<delta> '+' [-]<residual>[\t<restr>]".  '+' ends field 1;
-// the residual field carries no exclusion (its value depends on the
-// interpolation, not on the free set), the row marks only its page id.
-static const unsigned int kB1Mark = 0x2b;
-// Share of the field-end weight given to '+' - the same factor on the free
-// and on the total count, so the page-id evidence (free/total) is unchanged.
-static const double kB1Share = 1.0 / 101.0;
-// B2 revids are >= 17,000,000: first base-100 digit >= 17.
-static const int kB2FirstMin = 17;
-inline int b1row = 0;           // the row is a B1 row ('+' seen)
+// After E1 of ex-girlfriend 1.0 (Ryan Landay, GPL-3.0-only, id_exclude.h):
+// a row with a forecast revid is `<delta> '+' [-]<residual>[TAB restr]`.  The
+// mark ends field 1; the residual depends on the interpolation, not on the
+// free set, so it carries no exclusion and the row marks only its page id.
+// The mark gets 1/101 of the field-end weight (the same factor on free and
+// total, so the page-id evidence is unchanged); a revid written in full is
+// >= 17,000,000, so its first base-100 digit is >= 17 and the bytes below are
+// excluded.
+static const double kB1Anteil = 1.0 / 101.0;
+static const int kB2Erste = 17;
+inline int b1row = 0;
 inline int rneg = 0;            // the residual starts with '-'
-#endif
 inline long long cur_id = 0;    // absolute page id of the previous row
 inline long long asc = 0;       // length of the current ascending run
 inline unsigned long long stat_fire = 0, stat_hard = 0, stat_lines = 0,
@@ -172,7 +171,7 @@ inline unsigned long long stat_fire = 0, stat_hard = 0, stat_lines = 0,
 
 // Candidate table of the current byte (computed once per byte, not per bit).
 inline int    cw_n = 0;
-// A base-100 alphabet needs at least 102 entries (E1: 1 + 100 + 10 = 111).
+// A base-100 alphabet needs at least 102 entries.
 inline unsigned char cw_b[112];
 inline double cw_w[112], cw_u[112];
 inline int    cw_valid = 0;
@@ -184,7 +183,7 @@ inline void MarkId(long long v) {
     exit(1);
   }
   if (pgf.Range(v, v) == 0) {
-    fprintf(stderr, "id model: duplicate page id %lld\n", v);
+    msg_note(80);
     exit(1);
   }
   pgf.Add((int)v, -1);
@@ -220,30 +219,23 @@ inline void Byte(unsigned int ch) {
   int ok = 1;
   if (ch == '\t') {
     if (fld == 2) { ok = (fcol == 4); fld = 3; fcol = 0; }
-#if NEIF_E1
     else if (fld == 4) { ok = (fcol >= 1 + rneg); fld = 3; fcol = 0; }
-#endif
     else if (fld == 1) { ok = 0; }
     else { ++fcol; }
   } else if (ch == '\n') {
     // row end, handled below
   } else if (fld == 1 && MpAlpha(ch)) {
     ok = (fcol >= 1 + neg);
-#if NEIF_E1
-    if ((int)(ch - (unsigned int)0x80) < kB2FirstMin) ok = 0;
-#endif
     fld = 2; fcol = 0;
     revpfx = revpfx * 100 + (long long)(ch - (unsigned int)0x80);
     ++fcol;
-#if NEIF_E1
-  } else if (fld == 1 && ch == kB1Mark) {
+  } else if (fld == 1 && ch == metablock::meta_fields::kMarke) {
     ok = (fcol >= 1 + neg);
     fld = 4; fcol = 0; b1row = 1;
   } else if (fld == 4) {
-    if (fcol == 0 && ch == '-') { rneg = 1; }
+    if (fcol == 0 && ch == '-') rneg = 1;
     else ok = (ch >= '0' && ch <= '9');
     ++fcol;
-#endif
   } else if (fld == 1) {
     if (fcol == 0 && ch == '-') { neg = 1; }
     else {
@@ -263,28 +255,19 @@ inline void Byte(unsigned int ch) {
   if (ch == '\n') {
     ++stat_lines;
     const long long id = cur_id + (neg ? -pfx : pfx);
-#if NEIF_E1
     const int good = b1row
         ? (!bad && ((fld == 4 && fcol >= 1 + rneg) || fld == 3) &&
            id >= kPgLo && id <= kPgHi)
         : (!bad && ((fld == 2 && fcol == 4) || fld == 3) &&
            id >= kPgLo && id <= kPgHi &&
            revpfx >= kRevLo - kRevBase && revpfx <= kRevHi - kRevBase);
-#else
-    const int good = (!bad && ((fld == 2 && fcol == 4) || fld == 3) &&
-                      id >= kPgLo && id <= kPgHi &&
-                      revpfx >= kRevLo - kRevBase && revpfx <= kRevHi - kRevBase);
-#endif
     if (good) {
       if (armed >= 64) {
         Revive();
         ++stat_mark;
         MarkId(id);
-#if NEIF_E1
-        if (!b1row) revt.Mark(revpfx);
-#else
+        if (!b1row)
         revt.Mark(revpfx);
-#endif
       }
       asc = (id > cur_id) ? asc + 1 : 0;
       cur_id = id;
@@ -297,9 +280,7 @@ inline void Byte(unsigned int ch) {
       armed = 0; cur_id = 0; asc = 0;
     }
     col = 0; fld = 1; fcol = 0; bad = 0; neg = 0; pfx = 0; revpfx = 0;
-#if NEIF_E1
     b1row = 0; rneg = 0;
-#endif
   } else {
     ++col;
   }
@@ -356,7 +337,7 @@ inline void PrepareByte() {
     }
     return;
   }
-  if (fld != 1) return;                    // (E1: no candidates in field 4)
+  if (fld != 1) return;
   // Field 1: signed delta, variable length, at most 6 digits.  The field end
   // is the first revision id byte (one of 100 alphabet bytes), not a tab.
   {
@@ -370,24 +351,17 @@ inline void PrepareByte() {
     }
     if (nd >= 1) {                         // field end possible
       SpanW(s, pfx, pfx, &w, &u);
-#if NEIF_E1
-      // E1: the field ends with '+' (B1 row) or with the first byte of a B2
-      // revid; the end weight is split between them by the same factor for
-      // free and total.  A B2 revid's first digit is >= 17, so the bytes
-      // below are excluded (no free value, full total).
-      AddCand((unsigned char)kB1Mark, w * kB1Share, u * kB1Share);
+      // the field ends with the forecast mark or with the first byte of a
+      // revid written in full; the end weight is split between them by the
+      // same factor for free and total.  First digits below 17 are excluded.
+      AddCand(metablock::meta_fields::kMarke, w * kB1Anteil, u * kB1Anteil);
       {
-        const double wa = w * (1.0 - kB1Share) / 100.0;
-        const double ua = u * (1.0 - kB1Share) / 100.0;
+        const double wa = w * (1.0 - kB1Anteil) / 100.0;
+        const double ua = u * (1.0 - kB1Anteil) / 100.0;
         for (int d = 0; d < 100; ++d)
           AddCand((unsigned char)((unsigned)0x80 + (unsigned)d),
-                  d < kB2FirstMin ? 0.0 : wa, ua);
+                  d < kB2Erste ? 0.0 : wa, ua);
       }
-#else
-      for (int d = 0; d < 100; ++d)
-        AddCand((unsigned char)((unsigned)0x80 + (unsigned)d),
-                w / 100.0, u / 100.0);
-#endif
     }
     if (nd < 6) {
       for (int d = 0; d < 10; ++d) {
@@ -505,6 +479,6 @@ inline float MixPBit(unsigned int c0, int bpos) {
   return (float)q;
 }
 
-}
+}  // namespace id_exclude
 
 #endif

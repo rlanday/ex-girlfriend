@@ -1,0 +1,16 @@
+# The values of the stream form of this entry for the ENTRY form of
+# ../2_package/build_package.sh, as the development tree gives them: the page
+# anchor, the end mark of the text-start articles, the arms of the manifest and
+# the geometry of the training package (key=value).
+anchor=20204c2fdf984e0a
+slot_end_mark=0x0B
+arme=paket,match,z3,z3_klein,z3_quelle2,z3_wahl2,block2,syn,alias,a2,a2n,x0row,redirmerge,okb_alias,census,censwert,textanfang7,autart2,autokb3,textform7
+v=208
+nsent=8
+x=2
+dslot=16
+x0row=1
+redirmerge=1
+fenster=2048
+nl=16
+prior0_set=14

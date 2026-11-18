@@ -81,6 +81,6 @@ class StrPool {
   }
 };
 
-}
+}  // namespace string_pool
 
 #endif

@@ -45,5 +45,5 @@ static const unsigned char kGrenze3[10][10] = {
   {  8,  8,  8,  8,  8, 14,  9,  9, 14,  9 },  // c1 = WRT>=0x80
   {  8,  8,  9,  9, 10,  8,  8, 14, 16,  8 },  // c1 = other
 };
-}
+}  // namespace ppmd_order_table
 #endif

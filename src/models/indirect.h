@@ -40,6 +40,7 @@ Indirect<StateType>::Indirect(const StateType& state,
     divisor_(1.0 / delta), state_(state), map_(map) {
   map_div_.Init(map_.size() - 257);
   map_offset_ = rand() % (map_.size() - 257);
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
   for (int i = 0; i < 256; ++i) {
     predictions_[i] = state_.InitProbability(i);
   }

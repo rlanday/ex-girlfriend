@@ -3,7 +3,8 @@
 
 class State {
  public:
-  virtual ~State() {}
+  // No virtual destructor: the states are members, never deleted through a
+  // State*.
   float InitProbability(int state) const { return 0.5; }
   int Next(int state, int bit) const { return 0; }
 };

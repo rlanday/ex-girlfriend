@@ -18,7 +18,6 @@ inline void Sweep(const char* p) {
 // archive9, the `argc == 1` path.  Order as the run creates them.
 inline void AfterDecompress() {
   Sweep(
-      ".dict.comp_decomp\0"
       ".dict\0"
       ".ready4cmix_decomp\0"
       ".input_decomp\0"
@@ -27,8 +26,8 @@ inline void AfterDecompress() {
       ".coda_decomp\0"
       ".main_decomp_restored\0"
       ".main_decomp_restored_sorted\0"
-      "un1_d\0"
-      "weights-poc8m_w2048_p15f_v3bf16_gestrichen_v4.c4" "\0"
+      ".vs3\0"
+      "weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5" "\0"
       "");
 }
 
@@ -36,7 +35,6 @@ inline void AfterDecompress() {
 // here; it is the one file the caller asked for.
 inline void AfterCompress() {
   Sweep(
-      "test.dat\0"
       ".new_article_order.comp\0"
       ".new_article_order\0"
       ".dict\0"
@@ -45,17 +43,12 @@ inline void AfterCompress() {
       ".coda\0"
       ".main_reordered\0"
       ".main_phda9prepr\0"
-      "un1\0"
       ".ready4cmix\0"
-      "dec1\0"
-      "dec2\0"
-      "header4archive.dat\0"
-      "weights-poc8m_w2048_p15f_v3bf16_gestrichen_v4.c4" "\0"
+      "weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5" "\0"
       ".decomp_bin\0"
-      ".dict.comp\0"
       "");
 }
 
-}
+}  // namespace selfx_clean
 
 #endif

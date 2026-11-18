@@ -1,5 +1,7 @@
 #ifndef IP_PACK_H_
 #define IP_PACK_H_
+#include "meld.h"
+#include "u8_append.h"
 
 #include "metablock.h"
 
@@ -22,44 +24,24 @@ static_assert(0x04 == 0 ||
               0x04 > 0x80 + 15,
     "the hint byte lies INSIDE the alphabet - decoding would be ambiguous");
 
- inline const unsigned char* Alpha() {
-  static unsigned char a[kBase];
-  static bool init = false;
-  if (!init) {
-    for (int i = 0; i < kBase; ++i)
-      a[i] = (unsigned char)(0x80 + i);
-    init = true;
-  }
-  return a;
-}
-
- inline const signed char* Index() {
-  static signed char idx[256];
-  static bool init = false;
-  if (!init) {
-    memset(idx, -1, sizeof(idx));
-    const unsigned char* a = Alpha();
-    for (int i = 0; i < kBase; ++i) idx[a[i]] = (signed char)i;
-    init = true;
-  }
-  return idx;
+inline int Index(unsigned char c) {
+  const unsigned d = (unsigned)c - (unsigned)0x80;
+  return d < (unsigned)kBase ? (int)d : -1;
 }
 
 // forward: four octets into kLen characters
 inline void Kodiere(const unsigned char* o, unsigned char* out) {
-  const unsigned char* a = Alpha();
   for (int i = 0; i < 4; ++i) {
-    out[2 * i] = a[o[i] >> 4];
-    out[2 * i + 1] = a[o[i] & 15];
+    out[2 * i] = (unsigned char)(0x80 + (o[i] >> 4));
+    out[2 * i + 1] = (unsigned char)(0x80 + (o[i] & 15));
   }
 }
 
 // backward: kLen characters into the dotted literal; returns its length
 inline int Dekodiere(const unsigned char* in, unsigned char* out) {
-  const signed char* idx = Index();
   unsigned char o[4];
   for (int i = 0; i < 4; ++i)
-    o[i] = (unsigned char)((idx[in[2 * i]] << 4) | idx[in[2 * i + 1]]);
+    o[i] = (unsigned char)((Index(in[2 * i]) << 4) | Index(in[2 * i + 1]));
   int n = 0;
   for (int i = 0; i < 4; ++i) {
     if (i) out[n++] = '.';
@@ -97,8 +79,8 @@ inline int LiesIp(const unsigned char* d, size_t n, size_t p, unsigned char* o) 
   return (int)(q - p);
 }
 
- inline bool LiesDatei(const std::string& pfad, std::vector<unsigned char>* v) {
-  FILE* f = fopen(pfad.c_str(), "rb");
+ inline bool LiesDatei(const char* pfad, std::vector<unsigned char>* v) {
+  FILE* f = fopen(pfad, "rb");
   if (!f) return false;
   fseek(f, 0L, SEEK_END);
   long n = ftell(f);
@@ -109,9 +91,8 @@ inline int LiesIp(const unsigned char* d, size_t n, size_t p, unsigned char* o) 
   return ok;
 }
 
- inline bool SchreibDatei(const std::string& pfad,
-                         const std::vector<unsigned char>& v) {
-  FILE* f = fopen(pfad.c_str(), "wb");
+ inline bool SchreibDatei(const char* pfad, const std::vector<unsigned char>& v) {
+  FILE* f = fopen(pfad, "wb");
   if (!f) return false;
   bool ok = v.empty() || fwrite(&v[0], 1, v.size(), f) == v.size();
   fclose(f);
@@ -123,16 +104,15 @@ inline void Wacht(bool block_fertig, unsigned long long n_ip,
   if (!block_fertig) return;
   if (n_ip == (unsigned long long)35618 &&
       kuerzung == (unsigned long long)143576) return;
-  fprintf(stderr,
-      "ip pack: compiled %llu addresses / %llu B, counted %llu / %llu\n",
-      (unsigned long long)35618,
-      (unsigned long long)143576, n_ip, kuerzung);
+  __builtin_unreachable()
+
+;
 }
 
 // Coder side: replace every IPv4 literal by hint plus kLen characters.
  inline bool Pack(const std::string& pfad) {
   std::vector<unsigned char> d;
-  if (!LiesDatei(pfad, &d)) return false;
+  if (!LiesDatei(pfad.c_str(), &d)) return false;
   std::vector<unsigned char> out;
   out.reserve(d.size());
   unsigned char o[4], blk[kLen];
@@ -147,7 +127,7 @@ inline void Wacht(bool block_fertig, unsigned long long n_ip,
     if (len) {
       Kodiere(o, blk);
       out.push_back(kHint);
-      out.insert(out.end(), blk, blk + kLen);
+      u8_append::Anh(out, blk, blk + kLen);
       for (int q = 0; q < len; ++q) gr.Byte(d[p + (size_t)q]);
       p += (size_t)len;
       ++n_ip;
@@ -158,14 +138,13 @@ inline void Wacht(bool block_fertig, unsigned long long n_ip,
     }
   }
   Wacht(gr.Fertig(), n_ip, (unsigned long long)(n - out.size()));
-  return SchreibDatei(pfad, out);
+  return SchreibDatei(pfad.c_str(), out);
 }
 
 // Decoder side: the same stage backwards, the first thing after the coder.
  inline bool Unpack(const std::string& pfad) {
   std::vector<unsigned char> d;
-  if (!LiesDatei(pfad, &d)) return false;
-  const signed char* idx = Index();
+  if (!LiesDatei(pfad.c_str(), &d)) return false;
   std::vector<unsigned char> out;
   out.reserve(d.size() + d.size() / 8);
   unsigned char txt[16];
@@ -177,10 +156,10 @@ inline void Wacht(bool block_fertig, unsigned long long n_ip,
         im_block &&
         d[p] == kHint && p + 1 + (size_t)kLen <= n) {
       bool ok = true;
-      for (int k = 0; k < kLen && ok; ++k) ok = idx[d[p + 1 + k]] >= 0;
+      for (int k = 0; k < kLen && ok; ++k) ok = Index(d[p + 1 + k]) >= 0;
       if (ok) {
         int m = Dekodiere(&d[p + 1], txt);
-        out.insert(out.end(), txt, txt + m);
+        u8_append::Anh(out, txt, txt + m);
         for (int q = 0; q < m; ++q) gr.Byte(txt[q]);
         p += 1 + (size_t)kLen;
         continue;
@@ -190,9 +169,9 @@ inline void Wacht(bool block_fertig, unsigned long long n_ip,
     out.push_back(d[p]);
     ++p;
   }
-  return SchreibDatei(pfad, out);
+  return SchreibDatei(pfad.c_str(), out);
 }
 
-}
+}  // namespace ip_pack
 
 #endif

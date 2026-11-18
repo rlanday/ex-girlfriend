@@ -5,6 +5,6 @@
 namespace match_recovery {
 // Consecutive failed pre-recovery rounds the backup survives (zmix value).
 constexpr int kPatience = 3;
-}
+}  // namespace match_recovery
 
 #endif

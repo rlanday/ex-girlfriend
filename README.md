@@ -1,43 +1,58 @@
-# Ex-Girlfriend 1.0
+# Ex-Girlfriend 2.0
 
 The project is named after **“Ex-Girlfriend,” the No Doubt song**.
 
-Ex-Girlfriend is Ryan Landay's modification of **cmix-neif 1.0**, by Marcus Wölk,
-for lossless compression of the 1,000,000,000-byte **enwik9** benchmark.
-The verified self-extracting archive is **91,778,237 bytes**, including the
-decoder, model weights and required assets. It is **135,106 bytes smaller
-(0.146993%)** than cmix-neif 1.0's 91,913,343-byte archive.
+Ex-Girlfriend 2.0 is Ryan Landay's modification of **cmix-neif 2.0**, by
+Marcus Wölk, for lossless compression of the 1,000,000,000-byte **enwik9**
+benchmark. The verified self-extracting archive is **88,983,124 bytes**,
+including the decoder, transformer weights, dictionary and every other asset
+it needs. It is **363,268 bytes smaller (0.407%)** than cmix-neif 2.0's
+89,346,392-byte archive, and 2,795,113 bytes smaller than Ex-Girlfriend 1.0
+(91,778,237 bytes).
 
-The verified **1.0 release** is identified as **FINAL** in the experiment
-evidence. The [LTCB table](https://mattmahoney.net/dc/text.html)
-checked on October 14 still lists cmix-neif first; our result would improve
-that published size, subject to the benchmark maintainer's verification.
-This release targets LTCB; it does not claim a Hutter Prize award.
+The [LTCB table](https://mattmahoney.net/dc/text.html) checked on November 17
+lists cmix-neif 2.0 first. Our archive is smaller, pending the benchmark
+maintainer's own check. This release is for the Large Text Compression
+Benchmark. It is **not** a Hutter Prize entry: it uses
+about 24.3 GiB of memory and about 95 hours in each direction on our machine,
+outside that contest's limits.
+
+How 2.0 relates to 1.0: version 1.0 modified cmix-neif 1.0.
+Marcus Wölk then released cmix-neif 2.0, which adopted three of 1.0's changes
+(the fast-weight head and two metadata forecasts) and added much else,
+including a semantic retrieval cache (SEMCACHE) and a retrained transformer.
+Version 2.0 starts again from cmix-neif 2.0. It makes that cache search harder,
+adds two more caches with their own keys, spreads the online fast-weight
+updates over three times as many transformer blocks, and stops resetting the
+BITLSTM correction model's recurrent state every 1,024 bits. The
+[1.0 changes are documented separately](docs/EX-GIRLFRIEND-1.0.md).
 
 ## Build and run
 
-Download the verified [**archive9** (91,778,237 bytes)](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/archive9),
-[compressor `comp9`](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/comp9),
-[source tarball](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/ex-girlfriend-1.0-source.tar.gz)
-and [SHA256SUMS](https://github.com/rlanday/ex-girlfriend/releases/download/v1.0/SHA256SUMS)
-from the [v1.0 release](https://github.com/rlanday/ex-girlfriend/releases/tag/v1.0).
+Download the verified [**archive9** (88,983,124 bytes)](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/archive9),
+[compressor `comp9`](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/comp9),
+[source tarball](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/ex-girlfriend-2.0-source.tar.gz)
+and [SHA256SUMS](https://github.com/rlanday/ex-girlfriend/releases/download/v2.0/SHA256SUMS)
+from the [v2.0 release](https://github.com/rlanday/ex-girlfriend/releases/tag/v2.0).
 Binary artifacts are kept out of Git history.
 
-Use **x86-64 Linux with AVX2/FMA (x86-64-v3)**. Allow at least **25 GB of free
-working space** and memory above the measured ~10 GiB process RSS for the
-operating system and other applications. PPMd also uses a sparse paging file;
-filesystem cache is not included in RSS. Compression and decompression use
-one CPU core and no GPU. See the measured times below before starting a full run.
+Use **x86-64 Linux with AVX2/FMA (x86-64-v3)**. Allow at least **32 GiB of
+RAM** (the measured peak resident set is 24.3 GiB in both directions) and
+**30 GB of free disk** in the working directory. PPMd also keeps a sparse
+paging file, `ppm.page`, in the working directory; its apparent size is
+14.68 GB, of which only a small part is allocated. Compression and
+decompression each use one CPU core and no GPU. Each direction took about
+95 hours on our machine; see the measured times below before starting.
 
 ### Decode the supplied archive
 
-Save `archive9` in a new, writable directory. It is self-extracting and includes
-its decoder, weights and dictionary; no build or external model files are needed.
-From that directory:
+Save `archive9` in a new, writable directory. It is self-extracting and
+contains its decoder, weights and dictionary; no build, model files or network
+access are needed. From that directory:
 
 ```sh
 printf '%s  %s\n' \
-  a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c archive9 \
+  0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3 archive9 \
   | sha256sum -c -
 chmod +x archive9
 ./archive9
@@ -48,684 +63,385 @@ printf '%s  %s\n' \
 
 The output is `enwik9_uncompressed`, exactly 1,000,000,000 bytes. If you have
 the original dataset, also run `cmp /absolute/path/to/enwik9 enwik9_uncompressed`.
-The decoder needs no Python environment or network access.
 
-### Build the compressor and encode
+### Encode with the supplied compressor
 
-The release tree has been rebuilt to **byte-identical `comp9`** with Ubuntu
-clang/LLVM/lld **18.1.3-1ubuntu1** and GNU binutils **2.42**. Matching the toolchain,
-libraries and bundled inputs matters; successful compilation with different
-versions does not establish reproducibility. [BUILD.md](docs/BUILD.md) gives
-the dependency setup, exact package references and complete verification steps.
-
-After installing those dependencies, unpack the source tarball and build in a
-new output directory. The build itself is offline and unprivileged:
+The compressor takes **no arguments**. Put `comp9` and the original enwik9,
+under the name `enwik9`, in a new writable directory, and run it there:
 
 ```sh
-tar -xzf ex-girlfriend-1.0-source.tar.gz
-mkdir ex-girlfriend-build
-cd ex-girlfriend-build
-bash ../ex-girlfriend-1.0/build.sh
 printf '%s  %s\n' \
-  952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67 comp9 \
+  8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a comp9 \
   | sha256sum -c -
-./comp9 -e /absolute/path/to/enwik9 archive9
+chmod +x comp9
+ln -s /absolute/path/to/enwik9 enwik9     # or copy it
+./comp9
+printf '%s  %s\n' \
+  0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3 archive9 \
+  | sha256sum -c -
 ```
 
-The prebuilt `comp9` download can also be used with the same checksum and encode
-command after `chmod +x comp9`. Check the resulting `archive9` against the hash
-above, then decode it in a separate fresh directory and compare the restored file.
+It writes `archive9`. Decode that in a different fresh directory as above and
+compare the restored file. `comp9.args` in this repository is empty.
+
+### Build the compressor from source
+
+The source tree rebuilds to a **byte-identical `comp9`** with Ubuntu
+clang/LLVM/lld **18.1.3-1ubuntu1**, GCC **13.3.0** support files and GNU
+binutils **2.42**, on Ubuntu 24.04. Matching the toolchain matters; a
+successful compile with other versions does not reproduce the binary.
+[BUILD.md](docs/BUILD.md) gives the dependencies, a pitfall we hit (a stray
+GCC 14 installation) and the complete check. In short:
+
+```sh
+tar -xzf ex-girlfriend-2.0-source.tar.gz
+mkdir ex-girlfriend-build
+cd ex-girlfriend-build
+bash ../ex-girlfriend-2.0/build.sh
+printf '%s  %s\n' \
+  8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a comp9 \
+  | sha256sum -c -
+```
 
 ## Verified result and computational cost
 
 | Measurement | Compression | Fresh decompression |
 |---|---:|---:|
-| Wall time | 220,071.89 s / 61.13 h | 241,636.66 s / 67.12 h |
-| User CPU time | 206,994.02 s | 227,764.75 s |
-| System CPU time | 12,422.59 s | 13,807.27 s |
-| Peak RSS | 10,204.5 MiB / 9.965 GiB | 10,194.0 MiB / 9.955 GiB |
+| Wall time | 340,598 s / 94.61 h | 342,467.3 s / 95.13 h |
+| User CPU time | not recorded | 329,853.4 s |
+| System CPU time | not recorded | 12,486.2 s |
+| Peak RSS | 25,473,304 KiB / 24.29 GiB | 25,449,428 KiB / 24.27 GiB |
 | Exit status | 0 | 0 |
 
-Measured on an **AMD Ryzen Threadripper 3970X (Zen 2), Linux x86-64**, with one
-CPU core assigned to each codec run, while the server also ran other workloads.
-Competition for memory bandwidth, disk access and other shared resources can
-affect wall time. These observations are not controlled estimates of the overhead of each
-individual feature, nor a prediction of another machine's runtime. No GPU is
-used for compression or decompression.
+Measured on an **AMD Ryzen Threadripper 3970X (Zen 2), Linux x86-64, Ubuntu
+24.04.5 LTS**, on a shared server whose host reports about 252 GiB of RAM.
+Each codec run was pinned to one logical CPU, while the server also ran other
+workloads; competition for memory bandwidth and disk affects wall time. These
+are observations of one run each, not controlled estimates of the cost of each
+feature or a prediction for another machine. No GPU is used.
 
-The full fresh decode completed on October 14 around **07:01 UTC**. Its output
-was exactly 1,000,000,000 bytes and passed `cmp` against the original enwik9.
-A separate SHA-256 check of both complete files also agreed. The previous
-interrupted decode is not the verification used here. See the retained
-[encode log](verification/encode.log), [decode log](verification/decode.log)
-and [machine-readable receipt](verification/result.json).
+The encode ran from November 10 to November 14, 2026. The independent fresh
+decode started from a separate copy of the archive in an empty directory, with
+no arguments and an empty environment, and finished on **November 18 at
+08:33:55 UTC**. Its output was exactly 1,000,000,000 bytes, `cmp` against the
+original enwik9 exited 0, and both files have the SHA-256 below. See the
+[verification summary](verification/result.json), the
+[encode record](verification/encode.log) and the
+[decode receipt](verification/decode_receipt.json).
 
 | Artifact | Bytes | SHA-256 |
 |---|---:|---|
-| `archive9` | 91,778,237 | `a85629443ad1afabf36c88fb1f2dc1f3bcdaf8f19ce3f31d0948e93bb0128a6c` |
-| `comp9` | 3,995,122 | `952ce43a221b19ea204e0f2dcf8afd86dbf8e85f823eb5f0949dd61ad1b87e67` |
+| `archive9` | 88,983,124 | `0b65bc79917f84b78f4974a2dc94d4d4c3fc6c0c53234bdcb6c282db802635a3` |
+| `comp9` | 4,057,131 | `8d2a5fd03da10e671286726ab620183c0b6072ba68021c03076304e29f80406a` |
 | Original/restored `enwik9` | 1,000,000,000 | `159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc` |
 
-The release-tree rebuild produced the exact measured `comp9`. Runtime and
-constructor inputs in this repository are preserved from that checked tree;
-new release documentation does not change them. [Source and build evidence](verification/source_identity.json)
-records this distinction. A static x86-64-v3 portability review passed; no
-separate full Intel decode is claimed.
+The archive is the decoder stub (198,577 bytes), the transformer weight
+container (3,744,629 bytes, identical to cmix-neif 2.0's), the coded payload
+(85,039,910 bytes) and an 8-byte trailer. Against cmix-neif 2.0's archive,
+whose stub is 183,885 bytes, the payload is **377,960 bytes smaller** and the
+stub **14,692 bytes larger**: net 363,268 bytes. For comparison, cmix-neif 2.0
+reports 49.18 h compression and 9.77 GiB peak on a different, faster machine;
+our changes buy their bytes with memory and time.
 
 ## Provenance: what we inherited
 
-The immediate base is [Marcus Wölk's cmix-neif 1.0](https://github.com/marwoelk/cmix-neif-1.0),
-pinned at commit [`1c9ea5ed57ec9718bcb681d20b79e81a60b7a728`](https://github.com/marwoelk/cmix-neif-1.0/tree/1c9ea5ed57ec9718bcb681d20b79e81a60b7a728).
-This is a derivative compressor, not a new implementation of the whole system.
-We retain neif's transformer architecture, its trained transformer and BITLSTM
-weights, dictionary, article order, prompt machinery, PPMd, classical predictors,
-arithmetic coding and custom executable packer. The metadata changes below alter
-two reversible representations/forecasts; most preprocessing is inherited.
+The immediate base is **cmix-neif 2.0 by Marcus Wölk** (Hutter Prize
+submission of 30 October 2026, <https://marwoelk.de/cmix-neif-2.0/>). We
+imported its source package `cmix-neif-2.0.tar.gz` (SHA-256
+`62da32b97f9909ce5f2d4988a84e1b9cfbff4c9947538cbc6659a2915b024874`) unchanged
+as our first commit and verified the import against the tarball file by file.
+Upstream's own README is kept as [README.cmix-neif.md](README.cmix-neif.md)
+and its environment record as `environment.cmix-neif.txt`; their hashes and
+results are upstream's, not ours.
 
-Important parts of that ancestry are:
+This is a derivative compressor, not a new implementation. We retain
+cmix-neif 2.0's preprocessing, dictionary, article order, metadata and census
+transforms, its transformer architecture and its **trained transformer and
+BITLSTM weights unchanged**, PPMd, the classical context-mixing models, the
+semantic cache itself, the mixers, the arithmetic coder and the custom
+executable packer. No model was trained for this release.
+
+The main lines of descent, abbreviated from upstream's [NOTICE.md](NOTICE.md):
 
 | Component | Attribution and relationship |
 |---|---|
-| cmix, cmix-hp, fast-cmix, fx-cmix/fx2-cmix, cmix-lex | Byron Knoll, Saurabh Kumar, Kaido Orav and Ibrahim Marcouch; inherited context mixing, models, data structures and compressor base |
-| fxcm text model and PAQ/PPMd lineage | Kaido Orav and the contributors named in `NOTICE.md`, including Matt Mahoney, Alexander Rhatushnyak, Przemysław Skibiński, Dmitry Shkarin and Eugene Shelwien |
-| Transformer inference engine, layer pattern and training ancestry | Vladimir Ivanov's fx2-cmix-transformer, adapted by Marcus Wölk; the KDA design also builds on Kimi Linear and flash-linear-attention |
-| Shipped transformer and BITLSTM weights | Trained by Marcus Wölk for cmix-neif on enwik9; reused unchanged here, not trained by this release's authors |
-| BITLSTM correction model and byte-LSTM PPMd-prior mechanism | David Freelan's cmix-obias, as integrated and trained by neif |
-| Adaptive mixer depth, end-to-end mixer gradient, word-label model and indel recovery | James Byrne's zmix, already ported into neif; not new contributions of Ex-Girlfriend |
-| Article-order/preprocessing ancestry | STARLIT by Artemiy Margaritov, phda9 by Alexander Rhatushnyak, and subsequent fx2-cmix/cmix-lex/neif work |
-| Executable packer | Neif's custom context-mixing packer, drawing on PAQ and BCJ/Crinkler ideas; this release does not replace it with UPX |
+| cmix, cmix-hp, fast-cmix, fx-cmix, fx2-cmix, cmix-lex | Byron Knoll, Saurabh Kumar, Kaido Orav and Ibrahim Marcouch: the coder, context models, mixer, data structures and compressor base |
+| fxcm text model, PAQ and PPMd lineage | Kaido Orav, and the contributors named in `NOTICE.md`, including Matt Mahoney, Alexander Rhatushnyak, Przemysław Skibiński, Márcio Pais, Zoltán Gotthardt, Dmitry Shkarin and Eugene Shelwien |
+| cmix-neif 1.0 and 2.0 | Marcus Wölk: the previous base and the current one, including the semantic cache (SEMCACHE) that 2.0 tunes and multiplies, the census transform, the article and dictionary orders, the weight containers and the training of the shipped weights |
+| Transformer architecture and recipe | cmix-neif-beehive by Vladimir Malinovskii (attention residuals after Kimi Team's *Attention Residuals*, one shared key/value head, value embeddings, quantization-aware training), on Vladimir Ivanov's fx2-cmix-transformer inference engine and training tree; Kimi Delta Attention from Kimi Linear and flash-linear-attention |
+| Shipped transformer and BITLSTM weights | Trained by Marcus Wölk for cmix-neif 2.0, reused unchanged here |
+| BITLSTM correction model | David Freelan's cmix-obias, as integrated and trained by neif |
+| Adaptive mixer depth, end-to-end mixer gradient, word-label model, indel recovery | James Byrne's zmix 1.0, ported into neif |
+| Grammar-match model | Halvor Yttredal's fx-deepmix |
+| Article-order and preprocessing ancestry | STARLIT by Artemiy Margaritov, phda9 by Alexander Rhatushnyak, and the fx2-cmix / cmix-lex / neif work after them |
+| Retrieval methods behind SEMCACHE | Khandelwal et al. (kNN-LM, 2020) and Grave, Joulin and Usunier (continuous cache, 2017), as credited upstream; implemented by neif without adopted code |
+| Executable packer | neif's context-mixing packer, drawing on paq8px, paq8f, the LZMA SDK's BCJ idea and Crinkler / oneKpaq |
 
-This abbreviated table does not replace the full [inherited notices](NOTICE.md),
-[training attribution](training/ATTRIBUTION.md), [third-party licenses](third_party/README.md)
-or [upstream README](README.cmix-neif.md). Those documents distinguish copied
-code, rewritten implementations and ideas. The dictionary-ordering pipeline
-used external embedding models offline; their model weights do not ship.
-Fixed upstream assets and their hashes are included for reproducibility.
+This table does not replace the full [inherited notices](NOTICE.md),
+[training attribution](training/ATTRIBUTION.md),
+[third-party licenses](third_party/README.md) or
+[upstream README](README.cmix-neif.md), which distinguish copied code,
+rewritten implementations and ideas.
 
-The project changes were developed by **Ryan Landay with Claude (Anthropic)
-and Codex (OpenAI)**. The credits below identify conceptual sources separately
-from our implementation. We do not claim to have invented fast weights,
-online adaptation, RMS preconditioning, larger context tables or interpolation.
+**Ex-Girlfriend 1.0 inside the base.** cmix-neif 2.0 already contains three
+changes from Ex-Girlfriend 1.0, adapted by Marcus Wölk and credited in his
+`NOTICE.md`, `CHANGES.md` and README: the fast-weight head on transformer
+blocks 12–15, the revision-id forecast from the page id below revision id
+17,000,000, and the timestamp forecast from the slope of the last records.
+They are part of the base here, not new in 2.0. 1.0's larger text-model tables
+were not among the adopted changes. What 1.0 changed, and how it
+measured, is in [docs/EX-GIRLFRIEND-1.0.md](docs/EX-GIRLFRIEND-1.0.md) (the
+1.0 README, with links to the [v1.0 tag](https://github.com/rlanday/ex-girlfriend/tree/v1.0)).
 
-## Changes, measured savings and costs
+**kNN over transformer states, and SEMCACHE.** From 7 October 2026 we were
+developing a kNN-LM-style store of transformer hidden states inside the
+context-mixing coder. Its variants (NEXT, L1 and a RAM-bounded "kNN-lite")
+used confidence-gated lookup, store gating and continuation following. We
+did not release that work, so its dates rest on our own commit history, not
+on a public record. Marcus Wölk independently developed SEMCACHE, which does
+the same job, and released it first in cmix-neif 2.0. This release builds on
+SEMCACHE as published: it changes SEMCACHE's search constants and adds two
+more SEMCACHE instances with other keys, and it does not ship our earlier kNN
+code. Both designs build on earlier work: the continuous and unbounded caches
+of Grave et al. (2017), kNN-LM (Khandelwal et al., 2020) and RetoMaton's
+pointer following (Alon et al., 2022).
 
-Savings below are positive numbers of bytes avoided. Prefix experiments are
-separate from the full release result. In particular, the historical “160 MB”
-input is a prepared-input prefix corresponding to about 100 MB of coder
-stream; it is not a full enwik9 test. Payload savings exclude decoder fees.
-The variants interact, and there is no full-corpus factorial that separates
-every contribution. **Do not add the rows to predict full-corpus savings.**
+The 2.0 changes were developed by **Ryan Landay with Claude (Anthropic) and
+Codex (OpenAI)** between October 31 and November 10, 2026. We did not invent
+retrieval caches, locality-sensitive hashing, fast weights or LSTM state
+carrying; the contribution is finding these settings and extra caches,
+wiring them into this compressor and verifying the full result.
 
-| Change | Best retained measurement | Computational cost and limit |
+## What changed in 2.0
+
+2.0 changes four things in the model, freezes them as compile-time constants,
+and adjusts one check in the packer. Everything else codes as cmix-neif 2.0
+does.
+
+| Change | Measured on 50 MB of the 501 MB coder stream, against a cmix-neif 2.0 equivalent build | Cost |
 |---|---|---|
-| One-block online fast-weight auxiliary head plus direct final-mixer input (B: FW-DUAL/FWRH/FW1) | 9,047 payload bytes on the 160 MB screen, fresh decode passed. Full B encode: 46,079 complete-archive bytes below stock; B's full decode was interrupted. | 160 MB A1/B encode: 33,524.13 → 37,838.54 s wall (+12.87%); 9,864.5 → 9,865.6 MiB RSS. Shared-host measurement. No isolated neif FW1-only result. |
-| Four feature blocks rather than one (F4) | Another 5,434 payload bytes versus B on the 160 MB encode. A 12 MB fresh decode passed; no separate F4-only 160 MB decode is claimed. | Four matrices occupy 2.25 MiB versus 0.5625 MiB for one. No controlled isolated incremental F4 runtime is available. |
-| Larger classical text tables (W3) | 5,496 payload bytes versus B on the 160 MB encode; separate 12 MB round trip passed. | At 12 MB, peak RSS rises 6,026.1 → 9,735.1 MiB. At larger sizes, PPM paging masks much of the added allocation. No controlled W3 speedup is claimed. |
-| Page-id forecast for old revision ids (E1) | 20,782 payload bytes on a matched 12 MB screen. | In that screen, wall time fell by 88.66 s (4.62%); integer interpolation can simplify the coded residual stream. |
-| Post-migration timestamp slope (E3b), on top of E1 | Another 2,040 payload bytes on the same 12 MB screen. | +0.24 s wall and +0.5 MiB RSS in that pair; this is too small a timing difference to establish a meaningful slowdown. |
-| Complete FINAL bundle | **135,106 complete-archive bytes** on full enwik9, fresh decode and exact comparison passed. | Measured release costs are the encode/decode table above. |
+| Wider semantic-cache search: 63 entries per bucket (was 15), 15 neighbouring buckets probed per table (was 3), key ring of 2^25 entries (2^24) and history ring of 2^26 bytes (2^25), 512 candidates re-ranked (128) | −5,573 bytes | about +2.2 GiB; more lookup time |
+| A second cache keyed on transformer layer 12 | −5,323 bytes alone; −10,675 bytes together with the wider search | about +6 GiB with the wider geometry |
+| A third cache on the release key with its own random projection and hash seed | −508 bytes on top of the two above, −1,123 over the warm part of the screen: it costs while empty and gains as it fills | about +6 GiB |
+| Online fast-weight updates on blocks 4–15 instead of 12–15 | −2,355 bytes | about 3 h per direction at cmix-neif 2.0's speed (estimated) |
+| BITLSTM recurrent state carried across its 1,024-bit windows | −1,218 bytes | none measurable |
+| **All of the above, full enwik9** | **−377,960 bytes of payload; −363,268 bytes net of the larger stub** | 24.3 GiB peak; about 95 h per direction |
 
-The full release saves **132,106 payload bytes** (87,896,203 → 87,764,097) and
-**3,000 bytes of archive overhead**, for the 135,106-byte total. Relative to
-the earlier B archive, FINAL saves 89,027 bytes, but that comparison combines
-F4, W3, E1/E3b and package interactions. The overhead difference is not an
-isolated “smaller code” experiment. The compressor is 5,567 bytes smaller
-than stock; compressor size does not enter the LTCB self-extracting-archive
-ranking. Detailed controls and their qualification are in [ABLATIONS.md](docs/ABLATIONS.md).
+How to read the table. The component rows are encoder-only screens on the
+first 50 MB of the 501,062,281-byte coder stream (one run each; the
+run-to-run perturbation floor is about ±200 bytes). Much of the gain comes
+late: the caches pay more as they fill, so 50 MB screens under-read them, and
+the rows were never meant to add up to the full result. **Do not add the rows
+to predict full-corpus savings.** The bottom row is the only combined, full
+measurement. The memory figures are per-arm peaks from the screens; the
+attribution of the full 24.3 GiB to the three caches is an inference.
 
-## Online fast-weight prediction
+### 1. A wider semantic-cache search
 
-Ex-Girlfriend adds an online-learned predictor beside cmix-neif's frozen transformer. Both the compressor and decompressor reconstruct its state from the symbols already coded, so no additional trained weights are stored in the archive. The pretrained transformer and its original probability output remain intact; the mixers receive an additional prediction that can adapt to the file as coding proceeds.
+SEMCACHE, neif's retrieval model, looks up earlier stream positions where the
+transformer was in a similar internal state and reads which byte followed
+there. Its screens showed the cache was limited by search effort rather than by
+storage: more candidates per bucket, more probed buckets and a deeper exact
+re-rank each helped, and larger rings keep more history findable. 2.0 fixes
+six constants at the measured optimum; under `PORT_ENTRY 0` the tree keeps the
+release values.
 
-The following excerpts are copied exactly from the release source. Source links and line numbers refer to this release.
+Source: [`src/semantic_cache.h:59–63`](src/semantic_cache.h#L59-L63) (one of the six; the others follow the same form at lines 64–74, 93–97, 100–104 and 115–119).
 
-### Sparse features from the last four MLP blocks
-
-The build sets `PORT_FW_LAYERS` to four in [src/port_cfg.h:50](src/port_cfg.h#L50). The transformer has 16 blocks, so the added predictor reads the final four blocks' quantized ReLU² activations. It captures features only on rows whose output is used. Intermediate prompt rows that do not produce a read output must not overwrite the feature state needed for the next update.
-
-[src/tf1/opt/model_opt.cpp:594–600](src/tf1/opt/model_opt.cpp#L594):
-
-```cpp
-#if PORT_FW
-    // FW: the relu^2 code (raw u8 x static scale) of the last FWK MLPs, on
-    // read rows only.  mlp_block(NL-1) runs on read rows only (an unread row
-    // stops before the last layer); the earlier blocks also run on unread
-    // rows, whose code must not replace the read row's (fw_gel).
-    if (fw_gel && l >= NL - FWK)
-      fw_apply(l - (NL - FWK), mm.up.m.d_out, mm.down_s_act);
-```
-
-Each block has a zero-initialized correction matrix with 192 output coordinates and space for 768 features. Only nonzero features are visited; each quantized activation is multiplied by its fixed activation scale. The first block clears the accumulated correction, and all four blocks add into it:
-
-[src/tf1/opt/model_opt.cpp:615–630](src/tf1/opt/model_opt.cpp#L615):
-
-```cpp
-    for (int i = 0; i < w; i++) {
-      if (q768[i] == 0) continue;
-      const float hv = float(q768[i]) * s;
-      idx[nnz] = uint16_t(i);
-      h[nnz] = hv;
-      nnz++;
-    }
-    fw_nnz[b] = nnz;
-    if (b == 0)
-      for (int j = 0; j < D; j++) fw_dx[j] = 0.0f;
-    const float* const dWb = fw_dW.data() + size_t(b) * DMLP * D;
-    for (int k = 0; k < nnz; k++) {
-      const float* col = dWb + size_t(idx[k]) * D;
-      const float hv = h[k];
-      for (int j = 0; j < D; j++) fw_dx[j] += col[j] * hv;
-    }
-```
-
-In mathematical terms, the accumulated correction is `δx = Σ_b ΔW_b h_b`. The four matrices persist across article boundaries. They consume 2,359,296 bytes (2.25 MiB) in total, plus statistics and other scratch storage. The correction is applied at the final readout; it is not inserted into the intermediate transformer blocks.
-
-### A separate output head preserves the pretrained prediction
-
-The additional head reads `x + δx` through the existing RMS normalization, activation quantization, frozen unembedding, logit soft cap and softmax. It uses separate buffers for its normalized state, logits and probabilities:
-
-[src/tf1/opt/model_opt.cpp:635–648](src/tf1/opt/model_opt.cpp#L635):
-
-```cpp
-  void fw_head() {
-    for (int i = 0; i < D; i++) fw_x2[i] = x[i] + fw_dx[i];
-    rms_norm_quant192(fw_x2, fw_xn2, M.unembed.s_act, fw_q);
-    float sx = 0.0f, sn = 0.0f;
-    for (int i = 0; i < D; i++) {
-      sx += fw_x2[i] * fw_x2[i];
-      sn += fw_xn2[i] * fw_xn2[i];
-      fw_xn[i] = fw_xn2[i];
-    }
-    fw_denom = sx > 0.0f ? std::sqrt(sn / sx) : 0.0f;
-    qgemv_f32(M.unembed.m, fw_q, fw_logits);  // rows_padded 208
-    head_softcap_softmax(fw_logits, fw_probs208);  // fw_logits -> 15 tanh(l/15)
-    std::memcpy(fw_lc, fw_logits, sizeof(float) * V);
-    std::memcpy(fw_p, fw_probs208, sizeof(float) * V);
-```
-
-The original head's probabilities are copied to its output before the additional head runs. Its original residual state `x` is only read by the additional head:
-
-[src/tf1/opt/model_opt.cpp:865–869](src/tf1/opt/model_opt.cpp#L865):
-
-```cpp
-      head_softcap_softmax(logits, probs208);
-      std::memcpy(probs_out, probs208, sizeof(float) * V);
-#if PORT_FW
-      fw_head();  // DUAL: the fast-weight distribution; probs_out is untouched
+```c++
+#if PORT_ENTRY
+constexpr int kM{63};   // entry recipe A (release 15)
+#else
+constexpr int kM = 15;                 // newest entries kept per bucket
 #endif
 ```
 
-Keeping both predictions lets the context mixers learn how to use the adapted signal alongside the pretrained one. The shipped transformer parameters are not changed by this process.
+`kFlip` 15 is the plateau of a bracket (17 is the structural maximum and
+gained nothing more); `kPre` 512 is the largest value the code's static
+assertion allows, and needs `kDedupLog` 10 for its candidate set.
 
-### A normalized online update
+### 2. Two more caches with their own keys
 
-After the corresponding stream target is known, the auxiliary predictor forms its own cross-entropy error. It differentiates the soft cap, applies a float reconstruction of the frozen unembedding, and uses the RMS-normalization backward rule:
+The release cache keys on the last transformer layer's MLP input. 2.0 adds two
+independent instances, each with its own running key mean, random ±1
+projection, SimHash tables, sketch hyperplanes, key ring and learned end
+stage. One keys on the depth-mixed input of **layer 12**: a layer bracket of 4,
+8 and 12 read +751, −1,609 and −5,323 bytes, so the middle of the network finds
+different neighbours from the top. The other keys on the **same release key
+with a different seed**, so its hash tables partition the space differently
+and surface other neighbours. Each extra cache adds one input to the first
+mixer layer, one column to the final mixer and one end stage behind the
+release cache's.
 
-[src/tf1/opt/model_opt.cpp:658–675](src/tf1/opt/model_opt.cpp#L658):
+Source: [`src/cmx_meas.h:543–569`](src/cmx_meas.h#L543-L569), abbreviated.
 
-```cpp
-    for (int o = 0; o < V; o++) {
-      const float d = fw_p[o] - (o == int(y) ? 1.0f : 0.0f);
-      const float c = fw_lc[o] * (1.0f / 15.0f);
-      dl[o] = d * (1.0f - c * c);
-    }
-    float gxn[D];
-    for (int i = 0; i < D; i++) gxn[i] = 0.0f;
-    const float* U = M.unembed_f32.data();
-    for (int o = 0; o < V; o++) {
-      const float g = dl[o];
-      const float* row = U + size_t(o) * D;
-      for (int i = 0; i < D; i++) gxn[i] += row[i] * g;
-    }
-    float m = 0.0f;
-    for (int i = 0; i < D; i++) m += gxn[i] * fw_xn[i];
-    m *= (1.0f / float(D));
-    float gx[D];
-    for (int i = 0; i < D; i++) gx[i] = fw_denom * (gxn[i] - fw_xn[i] * m);
+```c++
+constexpr int kEntrySkN = 2;                       // CMX_SEMKEYS=R,12
+constexpr int kEntrySkLayer[kSkMax] = {kSkRel, 12, -1};
+constexpr int kEntrySk2Use = 3;                    // CMX_SEMKEY2_USE: 1 layer-0 input + end-mixer column, 2 end stages
+constexpr int kEntryFwFirst = 4;                   // CMX_FW_BLOCKS=4
+constexpr long long kEntryBitlSeq = 0;             // BITL_SEQ=0
+__attribute__((noinline)) inline void EntryApply() {
+  // the recipe
+  g_nsk = kEntrySkN;
+  ...
+  g_fw_first = kEntryFwFirst;
+  g_bitl_seq = kEntryBitlSeq;
+  // every other coding knob: the release default
+  ...
 ```
 
-The forward head contains activation quantization. This backward calculation therefore supplies a straight-through-style **surrogate gradient**, not an exact derivative through that quantization. It updates only the correction matrices; it does not backpropagate into the pretrained transformer or through the final context-mixer/SSE/BITLSTM probability.
+The caches are created in the predictor, after the release cache, with seed
+`0x5EC0CAC4E2 ^ k * 0x9E3779B97F4A7C15` for cache *k*
+([`src/predictor.cpp:254–277`](src/predictor.cpp#L254-L277)). The layer-12 key
+is copied from the transformer's forward pass for read rows only
+([`src/tf1/opt/model_opt.cpp:842–843`](src/tf1/opt/model_opt.cpp#L842-L843)).
+Both run in the encoder and the decoder from coded bytes only.
 
-The step size begins at 0.006 and approaches 0.0015. Its clock counts eligible auxiliary-predictor updates:
+### 3. Fast weights on twelve blocks
 
-[src/tf1/opt/model_opt.cpp:677–678](src/tf1/opt/model_opt.cpp#L677):
+cmix-neif 2.0 contains 1.0's fast-weight head: a second transformer
+distribution from small weight matrices learned online, while coding, on the
+outputs of MLP blocks 12–15. 2.0 extends the online updates to blocks 4–15.
+The bracket read −1,985 bytes for 8 blocks, −2,355 for 12 and −2,385 for 16;
+12 is kept because 16 is within noise and slower.
 
-```cpp
-    const double kap = 1500.0e-6 + (6000.0e-6 - 1500.0e-6) / (1.0 + double(fw_t) / 8000.0);
-    fw_t++;
-```
+Source: [`src/tf1/opt/model_opt.cpp:515–517`](src/tf1/opt/model_opt.cpp#L515-L517).
 
-Each block tracks an exponential moving average of each feature's squared activation, with decay 0.999. Its mean feature RMS normalizes the per-feature scaling. The small positive denominator terms keep zero or very small features well behaved:
-
-[src/tf1/opt/model_opt.cpp:683–690](src/tf1/opt/model_opt.cpp#L683):
-
-```cpp
-    const float fb = 999000.0e-6f;
-    float hsh = 0.0f;
-    for (int b = 0; b < FWK; b++) {
-      float* const v = fw_v[b];
-      const uint16_t* const idx = fw_idx[b];
-      const float* const h = fw_h[b];
-      float* const sh = fw_sh[b];
-      const int nnz = fw_nnz[b];
-```
-
-[src/tf1/opt/model_opt.cpp:691–700](src/tf1/opt/model_opt.cpp#L691):
-
-```cpp
-      for (int i = 0; i < DMLP; i++) v[i] *= fb;
-      for (int k = 0; k < nnz; k++) v[idx[k]] += (1.0f - fb) * h[k] * h[k];
-      float msd = 0.0f;
-      for (int i = 0; i < DMLP; i++) msd += std::sqrt(v[i]);
-      msd *= 1.0f / float(DMLP);
-      for (int k = 0; k < nnz; k++) {
-        const float sk = msd / (std::sqrt(v[idx[k]]) + 1e-3f * msd + 1e-12f);
-        sh[k] = sk * h[k];
-        hsh += h[k] * sh[k];
-      }
-```
-
-Here `sh` is the scaled feature vector. One normalized-LMS-style step is shared by all four blocks: its denominator is `1 + Σ_b h_b·sh_b`. Each eligible update writes the outer product of the output error direction and the scaled sparse features:
-
-[src/tf1/opt/model_opt.cpp:702–713](src/tf1/opt/model_opt.cpp#L702):
-
-```cpp
-    const float step = float(kap) / (1.0f + hsh);
-    for (int b = 0; b < FWK; b++) {
-      const uint16_t* const idx = fw_idx[b];
-      const float* const sh = fw_sh[b];
-      const int nnz = fw_nnz[b];
-      float* const dWb = fw_dW.data() + size_t(b) * DMLP * D;
-      for (int k = 0; k < nnz; k++) {
-        float* col = dWb + size_t(idx[k]) * D;
-        const float c = step * sh[k];
-        for (int j = 0; j < D; j++) col[j] -= c * gx[j];
-      }
-    }
-```
-
-This combines a persistent learned correction, per-feature RMS preconditioning and a decreasing step-size schedule. The matrices are initialized to zero, so they add no correction initially.
-
-### Updates use only targets already coded
-
-A read row records that its auxiliary prediction is waiting for a target:
-
-[src/tf1/tf1_engine.cpp:277–280](src/tf1/tf1_engine.cpp#L277):
-
-```cpp
-    opt->step((uint8_t)tok, prior, out, ch);
-#if PORT_FW
-    if (gelesen) fw_have = true;
+```c++
+#if PORT_CMX_MEAS
+    FWK = NL - cmx_meas::g_fw_first;   // research CMX_FW_BLOCKS: blocks g_fw_first .. NL-1
 #endif
 ```
 
-The target is the next stream symbol after any inserted prompt rows. A document's final read row can predict its closing symbol, even though that closing symbol is not itself fed into the transformer. At the beginning of the next stream step, the engine updates only when a pending read prediction exists **and** the slot actually used an auxiliary-head row:
+### 4. BITLSTM state across windows
 
-[src/tf1/tf1_engine.cpp:469–478](src/tf1/tf1_engine.cpp#L469):
+The BITLSTM correction model zeroes its recurrent state at the start of every
+window of 1,024 bits, as in its training. 2.0 keeps the state across those
+windows and resets it only when the head switches between its weight sets.
+The weights are not retrained.
 
-```cpp
-  int token = s.byte_to_index[byte];
-  if (token < 0) {
-    Fail("byte 0x%02x is not in the frozen byte set", byte);
-  }
-#if PORT_FW
-  // FW target: this stream token, if it was coded with an FW-head row.
-  if (s.fw_have && s.fw_live && s.opt) s.opt->fw_update((uint8_t)token);
-  s.fw_have = false;
-  s.fw_live = false;
-#endif
-```
+Source: [`src/bit_head.cpp:976–984`](src/bit_head.cpp#L976-L984).
 
-`fw_have` tracks the pending read prediction; `fw_live` distinguishes the auxiliary-head row from a PPMd fallback or a neutral/off slot. The two flags are cleared after this decision. Thus the algorithm updates on eligible predictions, not indiscriminately after every byte. Encoder and decoder know the same target when the update occurs.
-
-### The same probability representation as the static slot
-
-The auxiliary row passes through the same float16 round trip and `1e−6` probability floor as the static transformer row. If the engine is using a fallback row, that row is copied and auxiliary learning is disabled for the corresponding prediction:
-
-[src/tf1/tf1_engine.cpp:731–742](src/tf1/tf1_engine.cpp#L731):
-
-```cpp
-  if (s.probs_from_tf && s.opt) {
-    // the same float16 rounding and 1e-6 floor as the transformer row
-    FloatsToHalves(s.opt->fw_probs(), s.fw_half.data(), 208);
-    HalvesToFloats(s.fw_half.data(), s.fw_row.data(), 208);
-    for (int i = 0; i < 208; ++i) {
-      if (!(s.fw_row[i] >= 1e-6f)) s.fw_row[i] = 1e-6f;
-    }
-    s.fw_live = true;
-  } else {
-    memcpy(s.fw_row.data(), s.probs.data(), sizeof(float) * 208);
-    s.fw_live = false;
+```c++
+  bool cmx_switch = false;
+  if (s.trig != 0 && s.nbuf == 0) { s.NextSlot(); cmx_switch = true; }
+  const long long cmx_seq = cmx_meas::g_bitl_seq;
+  const bool cmx_reset = cmx_seq == 1024
+      ? (s.seq > 0 && (s.tbptt ? (s.nbuf == 0) : ((s.i % (unsigned long long)s.seq) == 0)))
+      : (cmx_switch || (cmx_seq > 0 && (s.i % (unsigned long long)cmx_seq) == 0));
+  if (cmx_reset) {
+    for (int r = 0; r < s.cells; ++r) { s.h[r] = 0.0f; s.c[r] = 0.0f; }
   }
 ```
 
-The predictor also neutralizes the auxiliary slot when the transformer is gated for metadata, alias feeding or timestamp skip paths; see [src/predictor.cpp:660–685](src/predictor.cpp#L660).
+### 5. The recipe as constants, and what else the source contains
 
-### The adapted signal reaches both context-mixer stages
+The four changes were found with a research build whose switches are read
+from environment variables (`CMX_*`, `BITL_SEQ`). The shipping build sets
+`PORT_ENTRY 1` in [`src/port_cfg.h`](src/port_cfg.h): `main()` calls
+`EntryApply()` once, before any model exists, in every mode that codes or
+decodes the main stream, and that function writes every knob the model reads
+(the recipe, and the release default of every other knob). The shipping image
+does not read the environment: it imports `getenv` zero times and contains no
+`CMX_` or `BITL_SEQ` strings.
 
-A separate byte-slot object conditions the auxiliary distribution on the bits already coded in the current byte. Its prediction is appended as input 588 of the first mixer stage, increasing that stage from 588 to 589 inputs:
+Source: [`src/runner.cpp:1485–1505`](src/runner.cpp#L1485-L1505).
 
-[src/predictor.cpp:427–433](src/predictor.cpp#L427):
-
-```cpp
-  const unsigned int fw_index = input_index++;
-#if PORT_FW
-  layers_[0].SetInput(fw_index, fw_slot_output);
-#else
-  layers_[0].SetZero(fw_index);
+```c++
+#if PORT_ENTRY
+#if !AUX_BUILD
+  {
+    const bool helper_block = argc > 1 && argv[1][0] == '-' && argv[1][1] == 'D';
+#if PORT_ENTRY_TEST
+    if (!helper_block && argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'e' || argv[1][1] == 'n') && argv[1][2] == '\0')
+      cmx_meas::Read();
 #endif
-#endif
-```
-
-The final mixer receives both the static transformer input and the auxiliary input directly. This is the additional final-stage connection called FW1 in the source; the final stage grows from 27 to 28 inputs:
-
-[src/predictor.cpp:466–476](src/predictor.cpp#L466):
-
-```cpp
-  layers_[1].SetStretchedInput(mixer_0_.size(), aux_aux_in);
-  layers_[1].SetStretchedInput(mixer_0_.size() + 1, layers_[0].Inputs()[byte_mixer_index]);
-  layers_[1].SetStretchedInput(mixer_0_.size() + 2, layers_[0].Inputs()[tf1_slot_index]);
-#if PORT_GEOM
-#if PORT_FW
-  // FW1: the FW row's stretched input also feeds the final mixer.
-  layers_[1].SetStretchedInput(mixer_0_.size() + 3, layers_[0].Inputs()[fw_index]);
-#else
-  layers_[1].SetZero(mixer_0_.size() + 3);
-#endif
-#endif
-```
-
-The inherited adaptive-depth feature gather does not read the appended input, and BITLSTM keeps its existing input shape. These connections provide the additional expert to the mixers without replacing the original transformer prediction.
-
-The general ideas have substantial prior art: [Schmidhuber's fast weights (1992)](https://people.idsia.ch/~juergen/fastweights/),
-[Ba et al. (2016)](https://arxiv.org/abs/1610.06258), and
-[Krause et al.'s dynamic evaluation (2018)](https://proceedings.mlr.press/v80/krause18a.html).
-Our initial experiment explicitly cited [TTT-NTP (Ouyang, Cai and Hu, 2026)](https://arxiv.org/abs/2606.21803)
-as motivation; this release uses a different auxiliary-head objective and is
-not an implementation of that paper. The dual-head preservation, particular
-preconditioner/schedule, causal wiring and four-block combination are project
-adaptations, first explored in our zmix branch and then ported to neif.
-No learned optimizer weights or code from those papers are shipped.
-
-## Larger text-model tables (W3)
-
-Context models associate past patterns with probabilities for the next bit. In a fixed-size hashed table, different patterns compete for space. Larger tables can retain more distinct state and reduce replacement or collision pressure, at the cost of memory. W3 changes capacities within the inherited text model; it does not introduce a new predictor family.
-
-`ContextMap3::Init` receives the same requested `m1`, but FINAL multiplies it by four instead of two. Thus each affected ContextMap3 table is twice its upstream size. The bucket format and surrounding prediction/update code remain inherited.
-
-Source: [`src/models/fxcmv1.cpp:1439–1447`](src/models/fxcmv1.cpp#L1439-L1447).
-
-```cpp
-    void __attribute__ ((noinline)) Init(U32 m1, int c1, int s2, int s3,const U8 *nn1,int cs4,int k, const int u,short *st
-    ) {
-        C=min(c1, MAXCXT);
-#if PORT_BIGTAB_CM3
-        int m=m1*4;   // W3: every ContextMap3 table x2 (neif m1*2)
-#else
-        int m=m1*2;
-#endif
-        tmask=((m>>7)-1);
-```
-
-The five direct-state-map capacities also each gain one address bit, doubling their number of entries. The inactive `#else` preserves the upstream widths for comparison; FINAL enables the first branch through `PORT_BIGTAB_DSM`.
-
-Source: [`src/models/fxcmv1.cpp:4066–4079`](src/models/fxcmv1.cpp#L4066-L4079).
-
-```cpp
-#if PORT_BIGTAB_DSM
-    // W3: every direct state map +1 bit (neif 28/29/24/27/26).
-    dcsm.Init(29,dccount-1, &STA7[0][0] );
-    dcsm0.Init(30,dccount, &STA7[0][0] );
-    dcsm1.Init(25,2, &STA7[0][0] );
-    dcsm2.Init(28,3, &STA7[0][0] );
-    dcsmN.Init(27,3, &STA7[0][0] );
-#else
-    dcsm.Init(28,dccount-1, &STA7[0][0] );
-    dcsm0.Init(29,dccount, &STA7[0][0] );
-    dcsm1.Init(24,2, &STA7[0][0] );
-    dcsm2.Init(27,3, &STA7[0][0] );
-    dcsmN.Init(26,3, &STA7[0][0] );
-#endif
-```
-
-Both switches inherit `PORT_BIGTAB=1` in `src/port_cfg.h:53–68`.
-
-The matched 160 MB payload comparison is 18,295,321 → 18,289,825 bytes, a **5,496-byte saving**. That screen was encode-only; the W3 12 MB round trip passed, and the combined FINAL release subsequently passed a full-corpus round trip. A standalone full-corpus W3 gain has not been measured. Also, total RSS does not simply double: neif's PPM page pool adjusts to process memory, so larger text tables can displace PPM frames and increase paging. These capacity tradeoffs build on the inherited models and the measurements described in neif's README §3.3 and §4.8.
-
-## Revision IDs as interpolation residuals (E1)
-
-In the early revision-ID group of this corpus, page IDs and revision IDs are strongly ordered together. Storing a small prediction error is cheaper than storing the whole revision ID. E1 applies this only below the fixed threshold; later IDs keep the original four-byte base-100 form. The threshold, initial forecast, and marker are explicit source constants and count as part of the implementation.
-
-Source: [`src/b1_interp.h:25–27`](src/b1_interp.h#L25-L27).
-
-```cpp
-static const long long kB1Max = 17000000LL;      // B1 = revid below this
-static const long long kLeer = 15898943LL;       // forecast of an empty set
-static const unsigned char kMark = 0x2b;         // '+': ends the page id delta of a B1 line
-```
-
-The map contains only records already processed in stream order. `lower_bound(p)` finds the first known page ID at or above the current page ID. If known neighbors exist on both sides, the code interpolates their revision IDs. With only one neighbor it extrapolates at unit slope; with no history it uses the fixed initial value. A record later in the stream is never consulted just because its page ID would be a closer neighbor. Integer floor division makes the forecast identical in the transform, inverse, and runtime metadata reader.
-
-Source: [`src/b1_interp.h:35–51`](src/b1_interp.h#L35-L51).
-
-```cpp
-  long long Prognose(long long p) const {
-    std::map<long long, long long>::const_iterator hi = m_.lower_bound(p);
-    const bool h2 = hi != m_.end();
-    const bool h1 = hi != m_.begin();
-    if (h1 && h2) {
-      std::map<long long, long long>::const_iterator lo = std::prev(hi);
-      const long long q1 = lo->first, r1 = lo->second;
-      const long long q2 = hi->first, r2 = hi->second;
-      return r1 + ts_algebra::Fdiv((p - q1) * (r2 - r1), q2 - q1);
-    }
-    if (h1) {
-      std::map<long long, long long>::const_iterator lo = std::prev(hi);
-      return lo->second + (p - lo->first);
-    }
-    if (h2) return hi->second - (hi->first - p);
-    return kLeer;
+    if (!helper_block) cmx_meas::EntryApply();
   }
-```
-
-The forward transform writes the existing page-ID delta, then `+` and the signed decimal revision-ID residual. The marker is distinct from the decimal digits, negative sign, separators and base-100 bytes used by this grammar. Only after computing the residual does it add the current pair to history. The alternative branch preserves the original representation for later revision IDs.
-
-Source: [`src/metablock_form.h:236–248`](src/metablock_form.h#L236-L248).
-
-```cpp
-      out.insert(out.end(), p, t);                 // page id delta, decimal
-#if NEIF_E1
-      pid += LiesDelta(p, t);
-      if (rv < b1_interp::kB1Max) {                // B1: '+' residual vs interpolation
-        out.push_back(b1_interp::kMark);
-        Dezimal(&out, rv - b1.Prognose(pid));
-        b1.Add(pid, rv);
-      } else {
-        Fest(&out, rv, 4);
-      }
-#else
-      Fest(&out, rv, 4);
+#endif
+#elif PORT_CMX_MEAS
+  if (argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'e' || argv[1][1] == 'n') && argv[1][2] == '\0') cmx_meas::Read();
 #endif
 ```
 
-The inverse parses the same marker and signed decimal residual, recreates the identical forecast from earlier records, adds the residual, and then updates history. The core reconstruction is below; the preceding parser at `src/metablock_form.h:326–337` produces `pid`, residual magnitude `res`, and sign `vz`. The complete inverse also restores the original decimal field and verifies the revision-ID ordering. This is a reversible representation change; no original ID is discarded.
+The two helper blocks (article order and dictionary hints) were coded at
+build time with release defaults, so `-D` helper decodes keep them.
 
-Source: [`src/metablock_form.h:338–340`](src/metablock_form.h#L338-L340).
+The source also contains the **research code** used to find the recipe:
+about 4,000 added lines (mostly in `src/cmx_meas.h`, `src/predictor.cpp`,
+`src/runner.cpp`, `src/models/fxcmv1.cpp` and `src/mixer/mixer.cpp`) for
+measurement switches and screened alternatives that are not part of the
+recipe. They are compiled in, because `PORT_ENTRY` implies `PORT_CMX_MEAS`, but
+`EntryApply()` sets each of them to its release default. They are kept so the
+source is exactly what was measured and shipped. The release claim rests only
+on the full measured run, not on an argument that this code is inert. The
+decoder stub is 14,692 bytes larger than upstream's (the recipe and the
+compiled-in research code, partly offset by building without PGO); that cost
+is included in the net result. The shipping binary still
+prints two `CMXTEL semkey2 init` lines to stderr at start-up; they do not
+affect the output.
 
-```cpp
-        v = b1.Prognose(pid) + vz * res;
-        if (v < 0) Fail("B1 revid negative");
-        b1.Add(pid, v);
-```
+### 6. The packer's cut check
 
-E1 also updates the identifier-exclusion model. That model can use the fact that absolute page IDs and revision IDs do not repeat. Residuals do repeat—zero is common—so treating a residual as another unused absolute revision ID would apply the wrong constraints. A valid early-group row still marks its page ID, but only later-group rows mark the original revision-ID exclusion table:
-
-Source: [`src/id_exclude.h:278–288`](src/id_exclude.h#L278-L288).
-
-```cpp
-    if (good) {
-      if (armed >= 64) {
-        Revive();
-        ++stat_mark;
-        MarkId(id);
-#if NEIF_E1
-        if (!b1row) revt.Mark(revpfx);
-#else
-        revt.Mark(revpfx);
-#endif
-      }
-```
-
-The residual field has its own parser state, field 4, and receives no absolute-ID candidate exclusion:
-
-Source: [`src/id_exclude.h:359–359`](src/id_exclude.h#L359-L359).
-
-```cpp
-  if (fld != 1) return;                    // (E1: no candidates in field 4)
-```
-
-At the end of the page-ID delta, the candidate alphabet now includes `+`. The existing free/total counts are scaled by the same marker share, preserving their ratio. Later revision IDs must be at least 17,000,000, so the first base-100 digit cannot be below 17; those impossible values receive zero free weight. These changes are part of the E1 arm, not separate measured improvements.
-
-Source: [`src/id_exclude.h:378–385`](src/id_exclude.h#L378-L385).
-
-```cpp
-      AddCand((unsigned char)kB1Mark, w * kB1Share, u * kB1Share);
-      {
-        const double wa = w * (1.0 - kB1Share) / 100.0;
-        const double ua = u * (1.0 - kB1Share) / 100.0;
-        for (int d = 0; d < 100; ++d)
-          AddCand((unsigned char)((unsigned)0x80 + (unsigned)d),
-                  d < kB2FirstMin ? 0.0 : wa, ua);
-      }
-```
-
-E1 saves **20,782 bytes** on the matched 12 MB fixture (1,653,282 → 1,632,500). With the same input, CPU 4 and trace instrumentation, wall time falls from 1,921.07 to 1,832.41 seconds in the measured pair; the transformed coder stream is 159,000 bytes shorter before arithmetic coding. The net speed result is not a claim that the map operations are free.
-
-The local idea and reference inverse are documented in `e1_spec.py`, based on `explore2.py`/`explore6.py` in the Oct7 metadata analysis. They report about 78% exact forecasts and 91.9% within ±1 for the early group. The inherited neif preprocessing and exclusion mechanisms remain the foundation. Credit the new residual/interpolation treatment to Ryan Landay, developed with Claude and Codex, without presenting it as a new general interpolation algorithm.
-
-## A revision-ID slope for timestamp forecasts (E3b)
-
-Neif already supplies the context models with a timestamp forecast. E3b improves that forecast for the later revision-ID group. The next record's revision ID is already known from the decoded metadata, while its timestamp is not. E3b estimates how much timestamp changes per revision-ID increment using earlier records, then projects from the most recent known timestamp to the current revision ID.
-
-It stores the last nine decoded later-group pairs, covering up to eight intervals. The arithmetic uses the oldest and newest available pair rather than an immediately adjacent pair, which can reduce the effect of short local irregularities. This is a causal forecast: only timestamps already decoded enter the ring. The exact computation and guards are:
-
-Source: [`src/ts_progress.h:60–78`](src/ts_progress.h#L60-L78).
-
-```cpp
-  enum { kN = 9 };
-  void Beobachte(long long rev, long long t) {
-    rev_[pos_] = rev; t_[pos_] = t;
-    pos_ = (pos_ + 1) % kN;
-    if (n_ < kN) ++n_;
-  }
-  bool Prognose(long long rev, long long* f) const {
-    if (n_ < 2) return false;
-    const int neu = (pos_ + kN - 1) % kN;              // record k-1
-    const int alt = (pos_ + kN - n_) % kN;             // record j
-    const long long dr = rev_[neu] - rev_[alt];
-    if (dr <= 0) return false;
-    const long long drev = rev - rev_[neu];
-    const long long dt = t_[neu] - t_[alt];
-    const long long kLim = 1LL << 31;                  // product < 2^62
-    if (drev >= kLim || drev <= -kLim || dt >= kLim || dt <= -kLim) return false;
-    *f = t_[neu] + Fdiv(drev * dt, dr);
-    return true;
-  }
-```
-
-If fewer than two records exist, revision IDs do not advance over the baseline, or the checked product could exceed its conservative bound, the function returns false. The caller first obtains neif's original median-of-32-slopes forecast and replaces it only when the new forecast is available. The earlier revision-ID group therefore keeps the original forecast, and the later group retains a defined fallback:
-
-Source: [`src/ts_progress.h:158–166`](src/ts_progress.h#L158-L166).
-
-```cpp
-  void Einspeisen(size_t kn) {
-    block_.clear();
-    letzte_prognose_ = sch_.Prognose(Rev(kn));
-#if NEIF_E3B
-    if (Oben(kn)) {
-      long long f = 0;
-      if (b2_.Prognose(Rev(kn), &f)) { letzte_prognose_ = f; ++st_.b2_basis; }
-    }
-#endif
-```
-
-The ring is updated only after a metadata record's timestamp has been decoded; the next forecast is prepared afterwards:
-
-Source: [`src/ts_progress.h:106–112`](src/ts_progress.h#L106-L112).
-
-```cpp
-      sch_.Beobachte(Rev(k), t_k);
-#if NEIF_E3B
-      if (Oben(k)) b2_.Beobachte(Rev(k), t_k);
-#endif
-      ++st_.b_zeilen;
-      const size_t kn = k + 1;
-      if (kn < metablock::mk.RangZahl()) Einspeisen(kn);
-```
-
-This changes the predicted timestamp bytes supplied to the existing models, not the stored timestamp grammar. The ring holds nine pairs of integers; it needs no external model or table asset. Integer floor division and the same update order keep the encoder and decoder synchronized.
-
-Adding E3b to E1 saves **another 2,040 bytes** on the 12 MB fixture, for a combined **22,822-byte saving** versus the original control (1,653,282 → 1,630,460). E13's decode and comparison passed. In that matched E1→E13 pair, wall time changes by +0.24 seconds and peak RSS by +0.5 MiB; this is effectively unresolved small overhead in a single pair, not a universal zero-cost claim. The 2,040 bytes are incremental on E1, not an E3b-alone result.
-
-The local design study `e3b_curve.py` compared baseline spans of 4, 8 and 16 using neif's observed coding cost versus forecast error. Those proxy estimates guided the choice of span; the numbers above are actual coded-payload measurements. Credit the new slope choice to Ryan Landay with Claude and Codex while retaining attribution for neif's timestamp predictor and integer algebra.
+neif's packer cuts encoder-only code out of the decoder stub and checks that
+nothing on the decode path reaches the cut section. 2.0 changes that check,
+[`tools_src/packer/cut_dpath.py`](tools_src/packer/cut_dpath.py), in two ways:
+it fixes a `NameError` on one error path, and it treats an immediate operand
+that points inside a function body where no symbol sits as a number rather
+than a code pointer (rule 4a). In this build six such immediates are memset
+lengths; none points into the cut section. The unmodified check also passes
+on the shipping build; rule 4a was needed for an intermediate research build.
 
 ## Build recipe used for the measured release
 
-The shipped recipe retains link-time optimization but does not consume the original profile-guided optimization data in its `prof_use` or `cmix_aux` targets. The target name `prof_use` is historical: its current flags are what determine the build. This distinction matters when explaining reproduction and binary-size differences.
+The release tree is the certified source with the two build switches applied
+that the measured build applied to its copy, so `build.sh` needs no edits:
 
-Source: [`makefile:78–82`](makefile#L78-L82).
+* [`src/port_cfg.h:74`](src/port_cfg.h#L74) sets `PORT_ENTRY 1`.
+* The `makefile` has every `-fprofile-use=$(ROOT_DIR)/pgo_data` removed from its
+  [`prof_use`](makefile#L80-L90) and [`cmix_aux`](makefile#L180-L184) targets, so the shipped binary is built with LTO and **without
+  profile-guided optimization**. The upstream profile no longer matches 44
+  changed functions, and a PGO build is a different coder that would need its
+  own verification. `pgo_data/` is still required: its presence skips the
+  constructor's profiling branch.
 
-```makefile
-prof_use: CPPFLAGS_PART-THAT-CAN-BE-SLOW    +=
-prof_use: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -flto
-prof_use: CPPFLAGS_PART-THAT-IS-COLD        +=
-prof_use: LFLAGS                            += -flto
-prof_use: clean cmix
-```
-
-Source: [`makefile:172–177`](makefile#L172-L177).
-
-```makefile
-cmix_aux: CPPFLAGS_PART-THAT-CAN-BE-SLOW    += -DAUX_BUILD=1
-cmix_aux: CPPFLAGS_PART-THAT-SHOULD-BE-FAST += -flto -DAUX_BUILD=1
-cmix_aux: CPPFLAGS_PART-THAT-IS-COLD        += -DAUX_BUILD=1
-cmix_aux: LFLAGS                            += -flto
-cmix_aux: clean cmix
-	mv cmix cmix_aux
-```
-
-This is the recipe for the verified original FINAL binary, not evidence that disabling PGO alone saves a particular number of bytes or improves speed. No isolated PGO-only comparison supports such a claim here. The full measured release changes modeling and compilation together.
+Everything else is upstream's build: `build.sh` runs
+`build_and_construct_comp.sh` in a copy under an empty environment. The
+measured build ran on November 9, 2026 with clang 18.1.3, lld 18 and GCC
+13.3.0 support files. [BUILD.md](docs/BUILD.md) has the details and
+[verification/source_identity.json](verification/source_identity.json) the
+rebuild record.
 
 ## Headroom and scope
 
-The **banked margin is 135,106 bytes** over the pinned neif artifact. The
-component measurements above explain why these changes were selected; they
-do not prove how much further improvement each mechanism has left.
-This release introduces **no offline GPU training** and reuses neif's shipped
-weights. The upstream training effort belongs to neif; it is not our own
-compute expenditure. We have no audited all-experiments CPU/GPU total for
-developing this release, so none is claimed.
+The margin is **363,268 bytes (0.407%)** over cmix-neif 2.0's published LTCB
+size, from one full encode and one independent fresh decode. The component
+screens explain why these settings were chosen; they are not a measurement of
+how much each contributes at full size. This release adds **no training** and
+reuses neif's shipped weights; that training effort is upstream's. We have no
+audited total of the CPU time spent on all experiments, so none is claimed.
 
-This sub-0.15% LTCB margin does not establish the Hutter Prize's required improvement
-or hardware eligibility.
+The 0.4% margin, 24.3 GiB of memory and 95 hours per direction are far from
+the Hutter Prize's 1% improvement requirement and its memory and time limits.
+This release claims no Hutter Prize result.
 
 ## License and modification notice
 
 The combined program and our modifications are distributed under
-**GNU GPL version 3 only (`GPL-3.0-only`)**, retaining neif's license choice.
-See [LICENSE](LICENSE). Copyright and license notices of inherited components
-remain in force; MIT, BSD, LLVM-exception, zlib and other notices are preserved
-in `third_party/` and the source. Wikipedia profile text retains its separate
-documented data license; it is not relicensed as our software.
+**GNU GPL version 3 only (`GPL-3.0-only`)**. See [LICENSE](LICENSE).
+Copyright and license notices of inherited components remain in force; MIT,
+BSD, LLVM-exception, zlib and other notices are preserved in `third_party/`
+and in the source files. Wikipedia-derived data keeps its separate documented
+license.
 
-Modification dates: **September 24–October 10, 2026** for the project techniques
-and neif port; **October 14, 2026** for this release documentation and evidence.
-See [EX-GIRLFRIEND.md](EX-GIRLFRIEND.md) for the changed-file inventory.
+Modification dates: **October 31–November 10, 2026** for the 2.0 changes,
+**November 18, 2026** for this release documentation and evidence. See
+[EX-GIRLFRIEND.md](EX-GIRLFRIEND.md) for the changed-file inventory.
 
 **Inherited provenance.** The native compressed-weight loader includes
-Ivanov's transcription of CUDA-libdevice sine/cosine routines, inherited
-unchanged from cmix-neif. Upstream's
-[ATTRIBUTION.md, section 7](training/ATTRIBUTION.md#7-open-points) documents an
-unresolved licensing question concerning that transcription, along with other
-inherited provenance gaps. This release preserves those disclosures and the
-original notices.
+Vladimir Ivanov's bit-exact transcription of the CUDA libdevice single-precision
+sine and cosine, inherited unchanged through cmix-neif. Upstream's
+[training/ATTRIBUTION.md](training/ATTRIBUTION.md) documents the open
+licensing question about that transcription and other inherited provenance
+gaps; this release preserves those disclosures and the original notices.

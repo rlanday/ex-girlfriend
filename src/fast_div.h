@@ -75,6 +75,6 @@ struct Div64 {
   }
 };
 
-}
+}  // namespace fastdiv
 
 #endif

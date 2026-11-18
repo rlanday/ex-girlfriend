@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "../transformer_gate_ctx.h"
+#include "../transformer_gate_ctx.h"   // the mixer-context state
 
 namespace tf_gate {
 
@@ -32,7 +32,7 @@ enum Zone {
 };
 
 static_assert(kZoneHdrblock == 3,
-              "bit_head::MetaOff() compares against 3");
+              "the slot switch in bit_head.cpp compares with 3");
 
 inline bool ZoneFeeds(int z) {
   return z == kZoneNone || z == kZoneTitelmask;
@@ -63,6 +63,7 @@ struct Stats {
   // how often a page reached the second line of the digit test (2,099 times
   // over the full stream)
   unsigned long long hdr_kandidat = 0;
+  unsigned long long ta_tokens = 0;
 };
 
 // ---- the automaton -------------------------------------------------------
@@ -132,6 +133,6 @@ class CoderGate {
 // Tool mode: run the same class over a stream file.
 int RunTool(int argc, char** argv);
 
-}
+}  // namespace tf_gate
 
 #endif

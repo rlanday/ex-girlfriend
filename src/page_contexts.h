@@ -2,8 +2,6 @@
 #ifndef PAGE_CONTEXTS_H_
 #define PAGE_CONTEXTS_H_
 
-// Width of the extra APM axis (bits), per switch.
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -153,6 +151,7 @@ inline LinkState* LinkAlloc() {
 }
 inline LinkState* link = LinkAlloc();
 
+// ---------------------------------------------------------- shared outputs --
 inline unsigned int ApmExtra() {
   unsigned int v = 0;
   v = (v << 3) | (surprise.cxt3 & 7u);
@@ -160,6 +159,6 @@ inline unsigned int ApmExtra() {
   return v;
 }
 
-}
+}  // namespace pagectx
 
 #endif

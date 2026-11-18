@@ -1,3 +1,4 @@
+#include "../meld.h"
 #include "mixer.h"
 
 #include "sigmoid.h"
@@ -8,6 +9,17 @@
 #include <sys/resource.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../port_cfg.h"
+#if PORT_CMX_MEAS
+#include <string.h>
+#include <unordered_map>
+#include "../cmx_meas.h"   // research CMX_MIXROW / CMX_MIXSKIP / CMX_Z3LR
+// the released rows of a re-keyed mixer (CMX_MIXROW 1/2): the same row memory is keyed again first-come
+static std::unordered_map<const Mixer*, std::vector<ContextData>>& CmxPool() {
+  static std::unordered_map<const Mixer*, std::vector<ContextData>> p;
+  return p;
+}
+#endif
 Mixer::Mixer(const std::valarray<float>& inputs,
     const std::valarray<float>& extra_inputs,
     const unsigned long long& context, float learning_rate,
@@ -19,12 +31,21 @@ Mixer::Mixer(const std::valarray<float>& inputs,
     context_(context), /*max_steps_(1),*/ steps_(0),
     context_base_(inputs.size(), extra_inputs_size_)
     {
-  if (inputs_size_ != PORT_N0 &&
-      inputs_size_ != PORT_N1) {
-    fprintf(stderr,
-        "\nbuild check: mixer with %u inputs, compiled N0=%d (layer 0), N1=%d (layer 1)\n",
-        (unsigned)inputs_size_, (int)PORT_N0,
-        (int)PORT_N1);
+#if PORT_CMX_MEAS
+  if (inputs_size_ == 26 && cmx_meas::g_semin == 2) {}   // research CMX_SEMIN=2: two more final-mixer columns
+  else
+  // research CMX_SEMKEYS / CMX_SEMKEY2 (mixers): the n extra caches' layer-0 inputs (563 + n) and final-mixer columns
+  // (24 + n, 26 + n with SEMIN=2)
+  if (cmx_meas::g_sk2_mix && (inputs_size_ == 563u + (unsigned)cmx_meas::g_nsk ||
+                              inputs_size_ == 24u + (unsigned)cmx_meas::g_nsk ||
+                              inputs_size_ == 26u + (unsigned)cmx_meas::g_nsk)) {}
+  else
+#endif
+  if (inputs_size_ != 563 &&
+      inputs_size_ != 24) {
+    msg_note(4)
+
+;
     fflush(stderr);
     abort();
   }
@@ -52,7 +73,11 @@ ContextData* Mixer::GetContextData() {
   if (simd_cache_valid_ && simd_cached_ctx_ == context_)
     return simd_cached_data_;
   ContextData* data;
+#if PORT_CMX_MEAS
+  const unsigned long long limit = cmx_meas::g_mix_limit;   // release 10000
+#else
   unsigned long long limit = 10000;
+#endif
   auto it = context_map_.find(context_);
   if (context_map_.size() >= limit && it == context_map_.end()) {
     data = &context_base_;
@@ -65,7 +90,13 @@ ContextData* Mixer::GetContextData() {
   } else {
     if (it != context_map_.end()) {
       data = &it->second;
-    } else {
+    } else
+#if PORT_CMX_MEAS
+    if (__builtin_expect(cmx_meas::g_mixrow != 0, 0)) {
+      data = CmxNewRow();
+    } else
+#endif
+    {
       //auto [it, success] = context_map_.emplace(std::piecewise_construct, std::make_tuple(context_), std::make_tuple(inputs_.size(), extra_inputs_.size()));
       auto [it, success] = context_map_.insert({context_, ContextData(inputs_size_, extra_inputs_size_)});
       data = &it->second;
@@ -77,6 +108,46 @@ ContextData* Mixer::GetContextData() {
   simd_cache_valid_ = true;
   return data;
 }
+
+#if PORT_CMX_MEAS
+// a new row under CMX_MIXROW: a released row of this mixer if there is one (zeroed in mode 1, a copy of the shared
+// fallback row in mode 2), else fresh memory (zero; a copy of the fallback row for a layer-0 mixer in mode 3)
+__attribute__((noinline)) ContextData* Mixer::CmxNewRow() {
+  auto pit = CmxPool().find(this);
+  const bool rekeyed = pit != CmxPool().end();
+  ContextData* d;
+  if (rekeyed && !pit->second.empty()) {
+    auto [it, success] = context_map_.insert({context_, pit->second.back()});
+    pit->second.pop_back();
+    d = &it->second;
+    d->cmx_n = 0;     // a re-keyed row is a new row (CMX_ROWDECAY clock)
+    d->cmx_ep = 0;
+    memset((void*)&d->weights[0], 0, sizeof(mixw_t) * inputs_size_);
+    if (extra_inputs_size_) memset((void*)&d->extra_weights[0], 0, sizeof(mixw_t) * extra_inputs_size_);
+  } else {
+    auto [it, success] = context_map_.insert({context_, ContextData(inputs_size_, extra_inputs_size_)});
+    d = &it->second;
+  }
+  const bool warm = (cmx_meas::g_mixrow == 2 && rekeyed) || (cmx_meas::g_mixrow == 3 && inputs_size_ >= 563);
+  if (warm) {
+    memcpy((void*)&d->weights[0], (const void*)&context_base_.weights[0], sizeof(mixw_t) * inputs_size_);
+    if (extra_inputs_size_)
+      memcpy((void*)&d->extra_weights[0], (const void*)&context_base_.extra_weights[0],
+             sizeof(mixw_t) * extra_inputs_size_);
+  }
+  return d;
+}
+// CMX_MIXROW 1/2 at page 1: every row goes to the pool, the map starts empty (no new memory)
+void Mixer::CmxRekey() {
+  std::vector<ContextData>& pool = CmxPool()[this];
+  for (auto& kv : context_map_) pool.push_back(kv.second);
+  context_map_.clear();
+  simd_cache_valid_ = false;
+  simd_cached_data_ = nullptr;
+  primed_data_ = nullptr;
+  bank_data_ = nullptr;
+}
+#endif
 
 void Mixer::Prime() {
   primed_data_ = GetContextData();
@@ -107,8 +178,8 @@ float Mixer::Mix() {
   const float* const inputs = &inputs_[0];
   const mixw_t* const weights = &data->weights[0];
   float p = 0;
-  if (inputs_size_ == PORT_N0) {
-    for (unsigned int i = 0; i < PORT_N0; ++i) {
+  if (inputs_size_ == 563) {
+    for (unsigned int i = 0; i < 563; ++i) {
       p += inputs[i] * weights[i];
     }
   } else {
@@ -132,40 +203,35 @@ float Mixer::Mix() {
   return p_;
 }
 
-#if PORT_PRL
-// PRL (port of Z's h3_prl_patch_20260926, mixer_lex.zig perceive): a row that
-// has seen few updates keeps a high step even after the mixer's global step
-// schedule has decayed: decay = max(global(steps_), row(n)), row(n) = 1.0 /
-// 0.7 / 0.3 / floor at n < 1k / 5k / 25k / else.  n counts the updates that
-// reached this row (after the early-out) and is never reset.
-static inline void PrlDecay(ContextData* data, float* decay) {
-  const uint32_t n = data->n;
-  data->n = n + 1u;
-  float rd = mixdecay::kFinal;
-  if (n < 25000u) {
-    rd = 0.3f;
-    if (n < 5000u) {
-      rd = 0.7f;
-      if (n < 1000u) rd = 1.0f;
-    }
-  }
-  if (rd > *decay) *decay = rd;
-}
-#endif
-
 void Mixer::Perceive(int bit) {
   ContextData* primed = primed_data_;
   primed_data_ = nullptr;
 
   float decay=mixdecay::kFinal;
-  if ( steps_ < 25000000) {
+  if ( steps_ < mixdecay::kStep3) {
       decay = 0.3f;
-      if ( steps_ < 5000000) {
+      if ( steps_ < mixdecay::kStep2) {
           decay = 0.7f;
-          if ( steps_ < 1000000)
+          if ( steps_ < mixdecay::kStep1)
               decay = 1.0f;
       }
   }
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_rowdecay != 0, 0) && inputs_size_ >= 563) {   // research CMX_ROWDECAY
+    ContextData* rr = primed ? primed : GetContextData();
+    if (rr != &context_base_) {   // the shared fallback row keeps the mixer's staircase
+      if (rr->cmx_ep != cmx_meas::g_rd_epoch + 1u) {
+        // 1: a row born in this restart epoch counts from its birth step, an older row from the restart (= release);
+        // 2: the update count, from 0 at the restart
+        rr->cmx_n = (cmx_meas::g_rowdecay == 1 && rr->cmx_ep == 0) ? steps_ : 0ull;
+        rr->cmx_ep = cmx_meas::g_rd_epoch + 1u;
+      }
+      const unsigned long long rs = cmx_meas::g_rowdecay == 1 ? steps_ - rr->cmx_n : rr->cmx_n++;
+      decay = mixdecay::kFinal;
+      if (rs < mixdecay::kStep3) { decay = 0.3f; if (rs < mixdecay::kStep2) { decay = 0.7f; if (rs < mixdecay::kStep1) decay = 1.0f; } }
+    }
+  }
+#endif
   ++steps_;
 
   float update = learning_rate_
@@ -174,22 +240,26 @@ void Mixer::Perceive(int bit) {
   if(fabsf(update)<0.000000000005f && extra_inputs_size_>0) {
       return;
   }
-   // ++data->steps;
-#if PORT_PRL
-  ContextData* data = primed ? primed : GetContextData();
-  PrlDecay(data, &decay);
-  update = decay * update;
-  update *= mxlr_g_;
-#else
-  update = decay * update;
-  update *= mxlr_g_;
-  ContextData* data = primed ? primed : GetContextData();
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_skip_on, 0) && cmx_meas::g_region >= cmx_meas::g_skip_from) {   // research CMX_MIXSKIP
+    const int ly = inputs_size_ >= 563 ? 0 : 1;
+    ++cmx_meas::g_upd[cmx_meas::g_region][ly];
+    const float own = fabsf(Sigmoid::Logistic(p_) - (float)bit);
+    if (own < (ly == 0 ? cmx_meas::g_skip0 : cmx_meas::g_skip1)) { ++cmx_meas::g_skp[cmx_meas::g_region][ly]; return; }
+  }
 #endif
+   // ++data->steps;
+  update = decay * update;
+  update *= mxlr_g_;
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_z3_on, 0)) update *= cmx_meas::g_z3_mul;   // research CMX_Z3LR
+#endif
+  ContextData* data = primed ? primed : GetContextData();
 
   mixw_t* const weights = &data->weights[0];
   const float* const inputs = &inputs_[0];
-  if (inputs_size_ == PORT_N0) {
-    for (unsigned int i = 0; i < PORT_N0; ++i) {
+  if (inputs_size_ == 563) {
+    for (unsigned int i = 0; i < 563; ++i) {
       weights[i] -= update * inputs[i];
     }
   } else {
@@ -239,7 +309,9 @@ void Mixer::E2ESeedHead(unsigned int head, float val) {
   simd_cache_valid_ = false;
   const unsigned int n = (head < inputs_size_) ? head : inputs_size_;
   const mixw_t h = val;
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
   for (unsigned int i = 0; i < n; ++i) d->weights[i] = h;
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
   for (unsigned int i = 0; i < n; ++i) context_base_.weights[i] = h;
 }
 
@@ -267,14 +339,30 @@ bool Mixer::BankPrepUpdate(int bit, float* update_out) {
   primed_data_ = nullptr;
 
   float decay = mixdecay::kFinal;
-  if ( steps_ < 25000000) {
+  if ( steps_ < mixdecay::kStep3) {   // the same thresholds
       decay = 0.3f;
-      if ( steps_ < 5000000) {
+      if ( steps_ < mixdecay::kStep2) {
           decay = 0.7f;
-          if ( steps_ < 1000000)
+          if ( steps_ < mixdecay::kStep1)
               decay = 1.0f;
       }
   }
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_rowdecay != 0, 0) && inputs_size_ >= 563) {   // research CMX_ROWDECAY
+    ContextData* rr = primed ? primed : GetContextData();
+    if (rr != &context_base_) {   // the shared fallback row keeps the mixer's staircase
+      if (rr->cmx_ep != cmx_meas::g_rd_epoch + 1u) {
+        // 1: a row born in this restart epoch counts from its birth step, an older row from the restart (= release);
+        // 2: the update count, from 0 at the restart
+        rr->cmx_n = (cmx_meas::g_rowdecay == 1 && rr->cmx_ep == 0) ? steps_ : 0ull;
+        rr->cmx_ep = cmx_meas::g_rd_epoch + 1u;
+      }
+      const unsigned long long rs = cmx_meas::g_rowdecay == 1 ? steps_ - rr->cmx_n : rr->cmx_n++;
+      decay = mixdecay::kFinal;
+      if (rs < mixdecay::kStep3) { decay = 0.3f; if (rs < mixdecay::kStep2) { decay = 0.7f; if (rs < mixdecay::kStep1) decay = 1.0f; } }
+    }
+  }
+#endif
   ++steps_;
 
   float update = learning_rate_
@@ -283,16 +371,20 @@ bool Mixer::BankPrepUpdate(int bit, float* update_out) {
   if(fabsf(update)<0.000000000005f && extra_inputs_size_>0) {
       return false;
   }
-#if PORT_PRL
-  bank_data_ = primed ? primed : GetContextData();
-  PrlDecay(bank_data_, &decay);
-  update = decay * update;
-  update *= mxlr_g_;
-#else
-  update = decay * update;
-  update *= mxlr_g_;
-  bank_data_ = primed ? primed : GetContextData();
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_skip_on, 0) && cmx_meas::g_region >= cmx_meas::g_skip_from) {   // research CMX_MIXSKIP
+    const int ly = inputs_size_ >= 563 ? 0 : 1;
+    ++cmx_meas::g_upd[cmx_meas::g_region][ly];
+    const float own = fabsf(Sigmoid::Logistic(p_) - (float)bit);
+    if (own < (ly == 0 ? cmx_meas::g_skip0 : cmx_meas::g_skip1)) { ++cmx_meas::g_skp[cmx_meas::g_region][ly]; return false; }
+  }
 #endif
+  update = decay * update;
+  update *= mxlr_g_;
+#if PORT_CMX_MEAS
+  if (__builtin_expect(cmx_meas::g_z3_on, 0)) update *= cmx_meas::g_z3_mul;   // research CMX_Z3LR
+#endif
+  bank_data_ = primed ? primed : GetContextData();
 
   *update_out = update;
   return true;
@@ -351,6 +443,37 @@ void PerceiveBank(Mixer* m, unsigned int count, int bit) {
     mixbank::TrainRows<mixbank::kBank>(x, rows + b, n, upd + b);
   for (; b < live; ++b)
     mixbank::TrainRows<1>(x, rows + b, n, upd + b);
+  for (unsigned int k = 0; k < live; ++k) m[idx[k]].BankTrainExtra(upd[k]);
+}
+
+// PerceiveBank verbatim, except that the main step
+// of every row reads the preconditioned input row xt instead of the forward
+// row (same rows, same update scalars, same extra-row step).
+void PerceiveBankX(Mixer* m, unsigned int count, int bit, const float* xt) {
+  if (count == 0) return;
+  if (count > 64) {   // fallback: the plain per-mixer path
+    for (unsigned int i = 0; i < count; ++i) m[i].Perceive(bit);
+    return;
+  }
+  float* rows[64];
+  float upd[64];
+  unsigned int idx[64];
+  unsigned int live = 0;
+  for (unsigned int i = 0; i < count; ++i) {
+    float u;
+    if (!m[i].BankPrepUpdate(bit, &u)) continue;
+    rows[live] = m[i].BankWRow();
+    upd[live] = u;
+    idx[live] = i;
+    ++live;
+  }
+  if (live == 0) return;
+  const unsigned int n = m[0].BankN();
+  unsigned int b = 0;
+  for (; b + mixbank::kBank <= live; b += mixbank::kBank)
+    mixbank::TrainRows<mixbank::kBank>(xt, rows + b, n, upd + b);
+  for (; b < live; ++b)
+    mixbank::TrainRows<1>(xt, rows + b, n, upd + b);
   for (unsigned int k = 0; k < live; ++k) m[idx[k]].BankTrainExtra(upd[k]);
 }
 

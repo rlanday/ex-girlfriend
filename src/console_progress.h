@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <string>
 #include <unistd.h>
 #include <sys/syscall.h>
 
@@ -33,15 +32,14 @@ __attribute__((noinline)) inline void Tick(unsigned long long pos,
   fprintf(stderr, "progress %.2f %%\n", 100.0 * pos / total);
 }
 
-// Console names of the steps (wording shared with the verbose build of the
-// earlier submission).  An embedded block names itself when it starts, by its
+// Console names of the steps.  An embedded block names itself when it starts, by its
 // output file ("decoding article order: ", stdout, flushed), and its end line
 // completes that line.  The long silent steps of the main run print
 // "<step> ... " on stderr when they start and "<t> s." when they end, before
 // anything else reaches the console, so no line is torn, neither in a
 // terminal nor in separate stdout/stderr files.  The end line of the main run
 // names the main stream.  All seconds are wall clock seconds from the start
-// of main().  The build helper keeps its old end line.
+// of main().  The build helper prints its own end line.
 inline bool Block() {
   return transformer::BlobForm();
 }
@@ -67,15 +65,10 @@ inline void Phase(const char* what) {
   phase_open = true;
   phase_t0 = Now();
 }
-// A section of the stream begins (or an event happens) at stream byte `at`.
-inline void Mark(const char* what, unsigned long long at,
-                 unsigned long long total) {
-  if (!Quiet()) fprintf(stderr, "%s at %.2f %%\n", what, 100.0 * at / total);
-}
 // Start of a run, after the arguments.  enc: the run encodes; out: its output
 // file.  An embedded block opens its line here.
-inline void Start(bool enc, const std::string& out) {
-  if (!Block() || out.size() < 2) return;
+inline void Start(bool enc, const char* out) {
+  if (!Block() || !out[0] || !out[1]) return;
   printf("%scoding %s: ", enc ? "en" : "de",
          out[1] == 'n' ? "article order"
          : out[1] == 'h' ? "dictionary hints" : "dictionary");
@@ -88,5 +81,5 @@ inline double End(bool enc) {
   return Now() - t_start;
 }
 
-}
+}  // namespace console_progress
 #endif

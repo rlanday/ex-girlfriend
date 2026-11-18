@@ -2,6 +2,7 @@
 #include "../attributes.h"
 
  RunMap::RunMap() {
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)  // one-time table: scalar code is smaller
   for (int i = 0; i < 512; ++i) {
     int state = i/2;
     if (i%2 == 0) {

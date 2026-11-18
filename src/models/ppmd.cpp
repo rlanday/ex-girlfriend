@@ -10,12 +10,17 @@
 // pool of 4 KiB frames backed by a sparse working file.  The program sets the
 // resident size itself; the model output does not depend on it.
 
+#include "../meld.h"
 #include "ppmd.h"
 #include "../mixer_selectors.h"
 #include "../ppmd_meta.h"
 #include "../ppmd_order_table.h"
 
 #include "../ppmd_prewarm.h"
+#include "../port_cfg.h"
+#if PORT_CMX_MEAS
+#include "../cmx_meas.h"   // research CMX_CM_TICKS=2 (the PPMd byte split)
+#endif
 
 #include <cstring>
 #include <malloc.h>
@@ -43,6 +48,10 @@ typedef unsigned int uint;
 typedef unsigned char byte;
 typedef unsigned long long qword;
 
+// The PPM heap is never anonymous RAM: a heap of 14,000 MiB would bring RssAnon
+// to about 21.9 GB and break the 10 GiB memory limit of the contest.  It
+// lives in the frame pool of own paging (above), backed by the sparse working
+// file ppm.page.  Output-neutral against the RAM heap.
 const int ORealMAX=256;
 
 static signed char EscCoef[12] = { 16, -10, 1, 51, 14, 89, 23, 35, 64, 26, -42, 43 };
@@ -160,10 +169,10 @@ int StartSubAllocator( qword SASize ) {
 
   {
     const unsigned long long puf =
-      (unsigned long long)(2048) * 1024ULL * 1024ULL;
+      (unsigned long long)(1024) * 1024ULL * 1024ULL;
     const int rc = ppmd_page::start(t, puf, "ppm.page");
     if( rc ) {
-      fprintf(stderr, "ppmd page: setup failed (rc=%d)\n", rc);
+      msg_note(36);
       exit(EXIT_FAILURE);
     }
     HeapStart = (byte*)ppmd_page::V.heap;
@@ -185,20 +194,28 @@ void InitSubAllocator() {
 void MetaSchnitt( qword modellbytes ) {
   if( MetaGetan || !ppmd_meta::block_fertig ) return;
   MetaGetan = true;
-  LtMeta = false;
   (void)modellbytes;
   StartModelRare();
-  {
-    size_t n = 0;
-    unsigned char* m = ppmd_prewarm::Material(&n);
-    for( size_t i=0; i<n; i++ ) { ppmd_UpdateByte( m[i] ); ppmd_PrepareByte(); }
-    free( m );
-  }
-  // The metablock's one-shot tables (metablock unit, warm-up
-  // material) are freed by now.  Most of them lie below the mmap threshold,
-  // so their pages would stay resident in the arena for the whole run
-  // (measured 9.1 MiB).  Coder and decoder both pass here once.
+  DictcodeFutter( 0 );
   malloc_trim(0);
+}
+
+void ZeileSchnitt() {
+  if( ZeileGetan || !ppmd_meta::zeile_fertig ) return;
+  ZeileGetan = true;
+  LtMeta = false;         // the text table (the census line still uses the table of the metadata block)
+  StartModelRare();
+  DictcodeFutter( 1 );
+  malloc_trim(0);
+}
+
+__attribute__((noinline, cold)) void DictcodeFutter( int wo ) {
+  size_t n = 0;
+  unsigned char* m;
+  m = wo == 2 ? ppmd_prewarm::Material(&n) : ppmd_prewarm::CodesMaterial(&n);
+  for( size_t i=0; i<n; i++ ) { ppmd_UpdateByte( m[i] ); ppmd_PrepareByte(); }
+  free( m );
+  (void)wo;
 }
 
 qword GetUsedMemory() {
@@ -297,19 +314,23 @@ void* AllocUnitsRare( uint indx ) {
   return RetVal;
 }
 
+__attribute__((noinline, cold, noreturn)) void* HeapVoll( int wo ) {
+  msg_note(557);
+  exit(1);
+}
+
 void* AllocUnits( uint NU ) {
   uint indx = Units2Indx[NU-1];
   if( BList[indx].avail() ) return remove(&BList[indx]);
   void* RetVal=LoUnit;
   LoUnit += U2B(Indx2Units[indx]);
   if( LoUnit<=HiUnit ) return RetVal;
-  LoUnit -= U2B(Indx2Units[indx]);
-  return AllocUnitsRare(indx);
+  HeapVoll( 2 );
 }
 
 void* AllocContext() {
   if( HiUnit!=LoUnit ) return HiUnit-=UNIT_SIZE;
-  return BList->avail() ? remove(BList) : AllocUnitsRare(0);
+  return BList->avail() ? remove(BList) : HeapVoll( 3 );
 }
 
 void FreeUnits( void* ptr, uint NU ) {
@@ -489,7 +510,7 @@ struct STATE {
 typedef ppmd_page::hzg<STATE,0>       pSTATE;  // always in the heap
 typedef ppmd_page::hzg<PPM_CONTEXT,0> pPPMC;   // always in the heap
 // hSTATE/hPPMC: the proxies of the hot functions (processSymbol2_T,
-// processSymbol2, UpdateModel).  Form H inlines
+// processSymbol2, UpdateModel).  This proxy form inlines
 // the fast path there and calls it out of line everywhere else.
 typedef ppmd_page::hzg<STATE,0,1>       hSTATE;   // inlined
 typedef ppmd_page::hzg<PPM_CONTEXT,0,1> hPPMC;
@@ -539,6 +560,7 @@ pPPMC  suff( pPPMC  This ) { return (pPPMC)Indx2Ptr(This->iSuffix); }
   int _MaxOrder, _CutOff, _MMAX;
   uint _filesize;
   bool MetaGetan;
+  bool ZeileGetan;
   int OrderFall;
 
   pSTATE  FoundState;
@@ -1508,6 +1530,7 @@ void processSymbol2_T( CTX_PARAM(q), int ) {
   uint Init( uint MaxOrder, uint MMAX, uint CutOff, uint filesize ) {
     _MaxOrder = MaxOrder;
     MetaGetan = false;
+    ZeileGetan = false;
     LtC1 = LtC2 = 0;
     LtMeta = true;
     LtLim = LtLimOf( 0, 0 ); LtJ = 0; LtE = 0;
@@ -1602,11 +1625,9 @@ void ppmd_UpdateByte( uint c ) {
   LtIssued = (!PTR_IS_NULL(p) && OrderFall>0) ? Ptr2Indx(pText) : 0;
 
   if( PTR_IS_NULL(p) ) {
-    if( _CutOff ) {
-      RestoreModelRare();
-    } else {
-      StartModelRare();
-    }
+    // The model update ran out of heap (the text area here:
+    // a full units area stops in AllocUnits/AllocContext before).
+    HeapVoll( 1 );
   }
 }
 
@@ -1616,14 +1637,16 @@ void ppmd_UpdateByte( uint c ) {
 
 unsigned long long counter_ = 0;
 
-PPMD::PPMD(int order, int memory, const unsigned int& bit_context,
+// cold: runs once; the PGO profile has no record of this form of the
+// constructor, which would otherwise be compiled as warm code.
+__attribute__((cold)) PPMD::PPMD(int order, int memory, const unsigned int& bit_context,
     const std::vector<bool>& vocab) : ByteModel(vocab), byte_(bit_context) {
   tree_zero_.fill(0);
   tree_total_.fill(0);
   vocab_full_ = true;
   for (int i = 0; i < 256; ++i) {
     if (!vocab_[i]) {
-      disabled_bytes_.push_back(static_cast<unsigned char>(i));
+      disabled_bytes_.b[disabled_bytes_.n++] = static_cast<unsigned char>(i);
       vocab_full_ = false;
     }
   }
@@ -1631,11 +1654,13 @@ PPMD::PPMD(int order, int memory, const unsigned int& bit_context,
   ppmd_model_->Init(order,memory,1,0);
 }
 
-PPMD::~PPMD() {
+__attribute__((cold)) PPMD::~PPMD() {
   ppmd_model_->ReleaseHeap();
   ppmd_page::schluss();
   ::remove("ppm.page");
 }
+
+__attribute__((noinline, cold)) void PPMD::Waermen() { ppmd_model_->DictcodeFutter( 2 ); }
 
 std::valarray<float>& PPMD::Predict() {
   const unsigned int total = tree_total_[tree_context_];
@@ -1653,10 +1678,14 @@ void PPMD::Perceive(int bit) {
 }
 
 void PPMD::ByteUpdate() {
+  CMXK_START(cmx_ck)
   ++counter_;
   ppmd_model_->MetaSchnitt(counter_);
+  ppmd_model_->ZeileSchnitt();
   ppmd_model_->ppmd_UpdateByte(byte_);
+  CMXK_LAP2(CK_PPMD_UPD, cmx_ck)
   ppmd_model_->ppmd_PrepareByte();
+  CMXK_LAP2(CK_PPMD_PREP, cmx_ck)
   for (int i = 0; i < 256; ++i) {
     tree_zero_[i] = ppmd_model_->trF[i];
     tree_total_[i] = ppmd_model_->trT[i];
@@ -1683,6 +1712,7 @@ void PPMD::ByteUpdate() {
   ByteModel::ByteUpdate();
   probs_ /= probs_.sum();
   tree_context_ = 1;
+  CMXK_LAP2(CK_PPMD_FILL, cmx_ck)
 }
 
 } // namespace PPMD

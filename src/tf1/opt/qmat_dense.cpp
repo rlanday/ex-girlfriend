@@ -1,6 +1,7 @@
 // Origin: fx2-cmix-transformer by Vladimir Ivanov, GPL-3.0, file cpp_infer/src/opt/qmat_dense.cpp.
 // Ported and modified for this entry in 2026; the changes are listed in
-// sections 3 and 4 of README.md.
+// sections 3 and 4 of README.md and of the README of cmix-neif-1.0.
+#include "../../meld.h"
 #include "qmat_dense.h"
 #include "../../cold_size.h"
 
@@ -9,6 +10,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "../tf1_config.h"
+
+#define TF2_DMLP_STR2(x) #x
+#define TF2_DMLP_STR1(x) TF2_DMLP_STR2(x)
+#define TF2_DMLP_STR TF2_DMLP_STR1(1024)
 
 namespace fx2 {
 namespace opt {
@@ -16,27 +22,30 @@ namespace opt {
 namespace {
 
 [[noreturn]] void die(const char* msg) {
-  std::fprintf(stderr, "qmat: %s\n", msg);
+  std::fprintf(stderr, "%s\n", msg);
   std::exit(1);
 }
 
-// positions of set bits per 8-bit mask; unset slots hold 0 (an in-range row
-// index) so the 16 B slack writes of the index list stay harmless.
-struct IdxLut {
-  alignas(64) uint8_t t[256][8];
-  IdxLut() {
-    for (int m = 0; m < 256; m++) {
-      int k = 0;
-      for (int b = 0; b < 8; b++)
-        if (m & (1 << b)) t[m][k++] = static_cast<uint8_t>(b);
-      for (; k < 8; k++) t[m][k] = 0;
-    }
-  }
-};
-const IdxLut g_idxlut;
+}  // namespace
 
-// default software-prefetch lines per 256 B chunk iteration (distance 2 KB,
-// MACHINE.md section 2: +2-6% at L3). 4 lines/chunk = ~full coverage.
+BitPosLut::BitPosLut() {
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)
+  for (int m = 0; m < 256; m++) {
+    int k = 0;
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)
+    for (int b = 0; b < 8; b++)
+      if (m & (1 << b)) t[m][k++] = static_cast<uint8_t>(b);
+#pragma clang loop vectorize(disable) interleave(disable) unroll(disable)
+    for (; k < 8; k++) t[m][k] = 0;
+  }
+}
+const BitPosLut g_bitpos;
+
+namespace {
+
+// default software-prefetch lines per 256 B chunk iteration, distance 6 KB
+// (value from cmix-neif-beehive; less engine time than 2 KB on Zen 2/3).
+// 4 lines/chunk = ~full coverage.
 constexpr int PFN_DEFAULT = 4;
 
 // ---------------------------------------------------------------------------
@@ -98,7 +107,7 @@ inline void run_g8(const QDense& m, const uint8_t* act, Epi& epi) {
     __m256i s6 = _mm256_maddubs_epi16(av, w[6]);
     __m256i s7 = _mm256_maddubs_epi16(av, w[7]);
     for (int k = 0; k < PFN; k++)
-      _mm_prefetch(reinterpret_cast<const char*>(gp) + 2048 + 64 * k,
+      _mm_prefetch(reinterpret_cast<const char*>(gp) + 6144 + 64 * k,
                    _MM_HINT_T0);
     // keep the chunk loop rolled: full unroll makes clang spill 3 of the 8
     // int16 accumulators (measured slower); the rolled body is load-balanced
@@ -110,7 +119,7 @@ inline void run_g8(const QDense& m, const uint8_t* act, Epi& epi) {
     for (int c = 1; c < NC; c++) {
       const __m256i* wc = w + c * 8;
       for (int k = 0; k < PFN; k++)
-        _mm_prefetch(reinterpret_cast<const char*>(gp) + c * 256 + 2048 +
+        _mm_prefetch(reinterpret_cast<const char*>(gp) + c * 256 + 6144 +
                          64 * k,
                      _MM_HINT_T0);
       av = _mm256_load_si256(
@@ -164,10 +173,10 @@ inline void run_g4_768(const QDense& m, const uint8_t* act, Epi& epi) {
       __m256i s3 = _mm256_maddubs_epi16(av, wb[3]);
       for (int c = 1; c < 8; c++) {
         if (PFN) {
-          _mm_prefetch(reinterpret_cast<const char*>(wb) + c * 128 + 2048,
+          _mm_prefetch(reinterpret_cast<const char*>(wb) + c * 128 + 6144,
                        _MM_HINT_T0);
           if (PFN > 1)
-            _mm_prefetch(reinterpret_cast<const char*>(wb) + c * 128 + 2112,
+            _mm_prefetch(reinterpret_cast<const char*>(wb) + c * 128 + 6208,
                          _MM_HINT_T0);
         }
         av = _mm256_load_si256(reinterpret_cast<const __m256i*>(ab + 32 * c));
@@ -200,16 +209,8 @@ inline void dispatch(const QDense& m, const uint8_t* act, Epi& epi) {
     case 192:
       run_g8<6, PFN>(m, act, epi);
       break;
-    case 205:
-    case 208:
-    case 224:
-      run_g8<7, PFN>(m, act, epi);
-      break;
-    case 768:
-      run_g4_768<(PFN > 0 ? 2 : 0)>(m, act, epi);
-      break;
     default:
-      die("unsupported d_in");
+      die("E195");
   }
 }
 
@@ -236,7 +237,7 @@ inline void run_packed(const QPacked& m, const int8_t* act, int32_t corr7,
       __m256i s0 = _mm256_setzero_si256(), s1 = s0, s2 = s0, s3 = s0;
       for (int p = 0; p < np; p++) {
         if (p == 0)
-          _mm_prefetch(reinterpret_cast<const char*>(gp) + b * 512 + 2048,
+          _mm_prefetch(reinterpret_cast<const char*>(gp) + b * 512 + 6144,
                        _MM_HINT_T0);
         const int pp = b * 4 + p;
         __m256i a0 = _mm256_load_si256(
@@ -267,6 +268,79 @@ inline void run_packed(const QPacked& m, const int8_t* act, int32_t corr7,
     epi.g4(g, sums, reinterpret_cast<const float*>(gp));
   }
 }
+
+template <int NC, int PFN, class Epi>
+inline void run_g8_n(const QDense& m, const uint8_t* act0, ptrdiff_t astr, int n,
+                     Epi& epi) {
+  const __m256i ones = _mm256_set1_epi16(1);
+  const uint8_t* gp = m.arena;
+  constexpr ptrdiff_t GB = 64 + NC * 256;
+  const int ng = m.ngroups;
+  for (int g = 0; g < ng; g++, gp += GB) {
+    const __m256i* w = reinterpret_cast<const __m256i*>(gp + 64);
+    for (int k = 0; k < PFN * NC; k++)
+      _mm_prefetch(reinterpret_cast<const char*>(gp) + 6144 + 64 * k, _MM_HINT_T0);
+    const __m256i corr = _mm256_load_si256(reinterpret_cast<const __m256i*>(gp));
+    const float* scl = reinterpret_cast<const float*>(gp + 32);
+    const uint8_t* act = act0;
+    for (int j = 0; j < n; j++, act += astr) {
+      __m256i av = _mm256_load_si256(reinterpret_cast<const __m256i*>(act));
+      __m256i s0 = _mm256_maddubs_epi16(av, w[0]);
+      __m256i s1 = _mm256_maddubs_epi16(av, w[1]);
+      __m256i s2 = _mm256_maddubs_epi16(av, w[2]);
+      __m256i s3 = _mm256_maddubs_epi16(av, w[3]);
+      __m256i s4 = _mm256_maddubs_epi16(av, w[4]);
+      __m256i s5 = _mm256_maddubs_epi16(av, w[5]);
+      __m256i s6 = _mm256_maddubs_epi16(av, w[6]);
+      __m256i s7 = _mm256_maddubs_epi16(av, w[7]);
+#if defined(__clang__)
+#pragma clang loop unroll(disable)
+#else
+#pragma GCC unroll 1
+#endif
+      for (int c = 1; c < NC; c++) {
+        const __m256i* wc = w + c * 8;
+        av = _mm256_load_si256(reinterpret_cast<const __m256i*>(act + 32 * c));
+        s0 = _mm256_add_epi16(s0, _mm256_maddubs_epi16(av, wc[0]));
+        s1 = _mm256_add_epi16(s1, _mm256_maddubs_epi16(av, wc[1]));
+        s2 = _mm256_add_epi16(s2, _mm256_maddubs_epi16(av, wc[2]));
+        s3 = _mm256_add_epi16(s3, _mm256_maddubs_epi16(av, wc[3]));
+        s4 = _mm256_add_epi16(s4, _mm256_maddubs_epi16(av, wc[4]));
+        s5 = _mm256_add_epi16(s5, _mm256_maddubs_epi16(av, wc[5]));
+        s6 = _mm256_add_epi16(s6, _mm256_maddubs_epi16(av, wc[6]));
+        s7 = _mm256_add_epi16(s7, _mm256_maddubs_epi16(av, wc[7]));
+      }
+      __m256i p01 = _mm256_hadd_epi32(_mm256_madd_epi16(s0, ones),
+                                      _mm256_madd_epi16(s1, ones));
+      __m256i p23 = _mm256_hadd_epi32(_mm256_madd_epi16(s2, ones),
+                                      _mm256_madd_epi16(s3, ones));
+      __m256i p45 = _mm256_hadd_epi32(_mm256_madd_epi16(s4, ones),
+                                      _mm256_madd_epi16(s5, ones));
+      __m256i p67 = _mm256_hadd_epi32(_mm256_madd_epi16(s6, ones),
+                                      _mm256_madd_epi16(s7, ones));
+      __m256i q0 = _mm256_hadd_epi32(p01, p23);
+      __m256i q1 = _mm256_hadd_epi32(p45, p67);
+      __m256i sums = _mm256_add_epi32(_mm256_permute2x128_si256(q0, q1, 0x20),
+                                      _mm256_permute2x128_si256(q0, q1, 0x31));
+      sums = _mm256_sub_epi32(sums, corr);
+      epi(g, j, sums, scl);
+    }
+  }
+}
+
+// epilogues (a) and (b) with the row index, one functor: the arithmetic of
+// EpiF32, and with `add` the one of EpiAdd
+struct EpiN {
+  float* out0;
+  ptrdiff_t ostr;
+  bool add;
+  inline void operator()(int g, int j, __m256i sums, const float* scl) {
+    float* out = reinterpret_cast<float*>(reinterpret_cast<char*>(out0) + j * ostr);
+    __m256 t = _mm256_mul_ps(_mm256_cvtepi32_ps(sums), _mm256_load_ps(scl));
+    if (add) t = _mm256_add_ps(_mm256_loadu_ps(out + 8 * g), t);
+    _mm256_storeu_ps(out + 8 * g, t);
+  }
+};
 
 template <class Epi>
 inline void dispatch_packed(const QPacked& m, const int8_t* act, int32_t corr7,
@@ -309,6 +383,77 @@ void qgemv_add(const QDense& m, const uint8_t* act, float* out) {
   dispatch<PFN_DEFAULT>(m, act, e);
 }
 
+__attribute__((noinline)) static int relu2q_phase2(const QDense& m, const float* y, float s_next,
+                         uint8_t* q_out, uint16_t* idx_out) {
+  const __m256 vs = _mm256_set1_ps(s_next);
+  const __m256 v127 = _mm256_set1_ps(127.0f);
+  const __m256 vz = _mm256_setzero_ps();
+  const int ng2 = m.ngroups & ~1;
+  for (int g = 0; g < ng2; g += 2) {
+    __m256 y0 = _mm256_max_ps(_mm256_load_ps(y + 8 * g), vz);  // relu
+    __m256 y1 = _mm256_max_ps(_mm256_load_ps(y + 8 * g + 8), vz);
+    __m256 t0 = _mm256_div_ps(_mm256_mul_ps(y0, y0), vs);  // IEEE div
+    __m256 t1 = _mm256_div_ps(_mm256_mul_ps(y1, y1), vs);
+    __m256i q0 = _mm256_cvtps_epi32(_mm256_min_ps(t0, v127));  // rte
+    __m256i q1 = _mm256_cvtps_epi32(_mm256_min_ps(t1, v127));
+    __m256i q16 = _mm256_packs_epi32(q0, q1);
+    q16 = _mm256_permute4x64_epi64(q16, _MM_SHUFFLE(3, 1, 2, 0));
+    __m128i q8v = _mm_packus_epi16(_mm256_castsi256_si128(q16),
+                                   _mm256_extracti128_si256(q16, 1));
+    _mm_storeu_si128(reinterpret_cast<__m128i*>(q_out + 8 * g), q8v);
+  }
+  if (m.ngroups & 1) {
+    const int g = m.ngroups - 1;
+    __m256 yv = _mm256_max_ps(_mm256_load_ps(y + 8 * g), vz);
+    __m256 t = _mm256_div_ps(_mm256_mul_ps(yv, yv), vs);
+    __m256i q = _mm256_cvtps_epi32(_mm256_min_ps(t, v127));
+    __m128i q16 = _mm_packs_epi32(_mm256_castsi256_si128(q),
+                                  _mm256_extracti128_si256(q, 1));
+    _mm_storel_epi64(reinterpret_cast<__m128i*>(q_out + 8 * g),
+                     _mm_packus_epi16(q16, q16));
+  }
+  int nnz = 0;
+  const int nblk = m.rows_padded / 32;
+  for (int b = 0; b < nblk; b++) {
+    __m256i v = _mm256_load_si256(
+        reinterpret_cast<const __m256i*>(q_out + 32 * b));
+    uint32_t mz = static_cast<uint32_t>(_mm256_movemask_epi8(
+        _mm256_cmpeq_epi8(v, _mm256_setzero_si256())));
+    uint32_t mk = ~mz;
+    for (int k = 0; k < 4; k++) {
+      const uint32_t m8 = (mk >> (8 * k)) & 0xFF;
+      __m128i lut = _mm_loadl_epi64(
+          reinterpret_cast<const __m128i*>(g_bitpos.t[m8]));
+      __m128i i16 = _mm_add_epi16(
+          _mm_cvtepu8_epi16(lut),
+          _mm_set1_epi16(static_cast<short>(32 * b + 8 * k)));
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(idx_out + nnz), i16);
+      nnz += __builtin_popcount(m8);
+    }
+  }
+  for (int r = m.rows_padded & ~31; r < m.rows_padded; r++)
+    if (q_out[r]) idx_out[nnz++] = static_cast<uint16_t>(r);
+  return nnz;
+}
+
+// Phase 2 of qgemv_quant_bias for one row (the same code).
+__attribute__((noinline)) static void quant_bias_phase2(const QDense& m, const float* y, float s_next,
+                                                        uint8_t* q_out) {
+  const __m256 vs = _mm256_set1_ps(s_next);
+  const __m256 vlo = _mm256_set1_ps(-128.0f);
+  const __m256 vhi = _mm256_set1_ps(127.0f);
+  const __m256i v128 = _mm256_set1_epi32(128);
+  for (int g = 0; g < m.ngroups; g++) {
+    __m256 t = _mm256_div_ps(_mm256_load_ps(y + 8 * g), vs);
+    t = _mm256_min_ps(_mm256_max_ps(t, vlo), vhi);
+    __m256i q = _mm256_add_epi32(_mm256_cvtps_epi32(t), v128);
+    __m128i q16 = _mm_packs_epi32(_mm256_castsi256_si128(q),
+                                  _mm256_extracti128_si256(q, 1));
+    _mm_storel_epi64(reinterpret_cast<__m128i*>(q_out + 8 * g),
+                     _mm_packus_epi16(q16, q16));
+  }
+}
+
 // (c)/(d) are two-phase: the streaming loop stores y = scale*float(dot) into
 // an L1-resident stack buffer (bitwise identical to epilogue (a)), then a
 // second 8-wide pass does the quantize work. Fusing the div/round/pack chain
@@ -318,9 +463,9 @@ void qgemv_add(const QDense& m, const uint8_t* act, float* out) {
 // Results are bit-identical either way (fp32 store/reload is lossless).
 int qgemv_relu2q(const QDense& m, const uint8_t* act, float s_next,
                  uint8_t* q_out, uint16_t* idx_out) {
-  if (m.d_in != 192) die("relu2q epilogue requires d_in==192");
-  if (m.rows_padded > 768) die("relu2q epilogue requires d_out<=768");
-  alignas(64) float y[768];
+  if (m.d_in != 192) die("E196");
+  if (m.rows_padded > 1024) die("E197");
+  alignas(64) float y[1024];
   EpiF32 e{y};
   run_g8<6, PFN_DEFAULT>(m, act, e);
   // phase 2a: relu^2 + quantize, two groups (16 outputs) per iteration
@@ -363,7 +508,7 @@ int qgemv_relu2q(const QDense& m, const uint8_t* act, float s_next,
     for (int k = 0; k < 4; k++) {
       const uint32_t m8 = (mk >> (8 * k)) & 0xFF;
       __m128i lut = _mm_loadl_epi64(
-          reinterpret_cast<const __m128i*>(g_idxlut.t[m8]));
+          reinterpret_cast<const __m128i*>(g_bitpos.t[m8]));
       __m128i i16 = _mm_add_epi16(
           _mm_cvtepu8_epi16(lut),
           _mm_set1_epi16(static_cast<short>(32 * b + 8 * k)));
@@ -378,9 +523,9 @@ int qgemv_relu2q(const QDense& m, const uint8_t* act, float s_next,
 
 void qgemv_quant_bias(const QDense& m, const uint8_t* act, float s_next,
                       uint8_t* q_out) {
-  if (m.d_in != 192) die("quant_bias epilogue requires d_in==192");
-  if (m.rows_padded > 768) die("quant_bias epilogue requires d_out<=768");
-  alignas(64) float y[768];
+  if (m.d_in != 192) die("E198");
+  if (m.rows_padded > 1024) die("E199");
+  alignas(64) float y[1024];
   EpiF32 e{y};
   run_g8<6, PFN_DEFAULT>(m, act, e);
   const __m256 vs = _mm256_set1_ps(s_next);
@@ -396,6 +541,56 @@ void qgemv_quant_bias(const QDense& m, const uint8_t* act, float s_next,
     _mm_storel_epi64(reinterpret_cast<__m128i*>(q_out + 8 * g),
                      _mm_packus_epi16(q16, q16));
   }
+}
+
+void qgemm(const QDense& m, const uint8_t* act0, ptrdiff_t astr, float* out0,
+           ptrdiff_t ostr, int n, bool add) {
+  EpiN e{out0, ostr, add};
+  if (m.d_in == 64)
+    run_g8_n<2, PFN_DEFAULT>(m, act0, astr, n, e);
+  else if (m.d_in == 192)
+    run_g8_n<6, PFN_DEFAULT>(m, act0, astr, n, e);
+  else
+    die("E195");
+}
+
+// (c) (idx_out0 set) and (d) for n rows, 16 rows per pass (the fp32 stage
+// stays on the stack: 16 x 4 KB at DMLP 1024); it only calls the kernels,
+// compiled for size
+constexpr int QGEMM_TILE = 16;
+__attribute__((noinline, minsize)) static void qgemm_2phase(const QDense& m, const uint8_t* act0,
+                                            ptrdiff_t astr, float s_next,
+                                            uint8_t* q_out0, uint16_t* idx_out0,
+                                            int* nnz0, ptrdiff_t ostr, int n) {
+  alignas(64) float y[QGEMM_TILE][1024];
+  for (int b = 0; b < n; b += QGEMM_TILE) {
+    const int k = n - b < QGEMM_TILE ? n - b : QGEMM_TILE;
+    qgemm(m, act0 + b * astr, astr, y[0], static_cast<ptrdiff_t>(sizeof(y[0])), k, false);
+    for (int j = 0; j < k; j++) {
+      const ptrdiff_t o = (b + j) * ostr;
+      if (idx_out0)
+        *reinterpret_cast<int*>(reinterpret_cast<char*>(nnz0) + o) = relu2q_phase2(
+            m, y[j], s_next, q_out0 + o,
+            reinterpret_cast<uint16_t*>(reinterpret_cast<char*>(idx_out0) + o));
+      else
+        quant_bias_phase2(m, y[j], s_next, q_out0 + o);
+    }
+  }
+}
+
+void qgemm_relu2q(const QDense& m, const uint8_t* act0, ptrdiff_t astr,
+                  float s_next, uint8_t* q_out0, uint16_t* idx_out0,
+                  int* nnz0, ptrdiff_t ostr, int n) {
+  if (m.d_in != 192) die("E196");
+  if (m.rows_padded > 1024) die("E197");
+  qgemm_2phase(m, act0, astr, s_next, q_out0, idx_out0, nnz0, ostr, n);
+}
+
+void qgemm_quant_bias(const QDense& m, const uint8_t* act0, ptrdiff_t astr,
+                      float s_next, uint8_t* q_out0, ptrdiff_t ostr, int n) {
+  if (m.d_in != 192) die("E198");
+  if (m.rows_padded > 1024) die("E199");
+  qgemm_2phase(m, act0, astr, s_next, q_out0, nullptr, nullptr, ostr, n);
 }
 
 void qgemv_i32(const QDense& m, const uint8_t* act, int32_t* out) {
@@ -428,7 +623,7 @@ COLD_SIZE_ATTR size_t qdense_bytes(int d_out, int d_in) {
 
 COLD_SIZE_ATTR QDense qdense_build(uint8_t* dst, const int8_t* qw, const float* fold,
                     int d_out, int d_in, bool biased_input) {
-  if (reinterpret_cast<uintptr_t>(dst) & 63) die("arena not 64B-aligned");
+  if (reinterpret_cast<uintptr_t>(dst) & 63) __builtin_unreachable();
   QDense m;
   m.arena = dst;
   m.d_out = d_out;
@@ -463,7 +658,7 @@ COLD_SIZE_ATTR QDense qdense_build(uint8_t* dst, const int8_t* qw, const float* 
           int8_t v = 0;
           if (row < d_out && col < d_in) {
             v = qw[static_cast<size_t>(row) * d_in + col];
-            if (v < -7 || v > 7) die("weight out of [-7,7]");
+            if (v < -7 || v > 7) __builtin_unreachable();
           }
           *w++ = v;
         }
@@ -477,11 +672,11 @@ size_t qsparse_bytes(int d_in) { return static_cast<size_t>(d_in) * 192; }
 QSparse qsparse_build(int8_t* dst_cols, float* dst_fold, const int8_t* qw,
                       const float* fold, int d_out, int d_in) {
   if (d_out != 192) die("sparse arena requires d_out==192");
-  if (reinterpret_cast<uintptr_t>(dst_cols) & 63) die("cols not 64B-aligned");
+  if (reinterpret_cast<uintptr_t>(dst_cols) & 63) __builtin_unreachable();
   for (int c = 0; c < d_in; c++)
     for (int r = 0; r < 192; r++) {
       int8_t v = qw[static_cast<size_t>(r) * d_in + c];
-      if (v < -7 || v > 7) die("weight out of [-7,7]");
+      if (v < -7 || v > 7) __builtin_unreachable();
       dst_cols[static_cast<size_t>(c) * 192 + r] = v;
     }
   std::memcpy(dst_fold, fold, sizeof(float) * 192);
@@ -497,14 +692,14 @@ size_t qsparse4_bytes(int d_in) { return static_cast<size_t>(d_in) * 128; }
 
 COLD_SIZE_ATTR QSparse4 qsparse4_build(uint8_t* dst_cols, float* dst_fold, const int8_t* qw,
                         const float* fold, int d_out, int d_in) {
-  if (d_out != 192) die("sparse4 arena requires d_out==192");
-  if (reinterpret_cast<uintptr_t>(dst_cols) & 63) die("cols not 64B-aligned");
+  if (d_out != 192) __builtin_unreachable();
+  if (reinterpret_cast<uintptr_t>(dst_cols) & 63) __builtin_unreachable();
   for (int c = 0; c < d_in; c++) {
     uint8_t* col = dst_cols + static_cast<size_t>(c) * 128;
     for (int b = 0; b < 96; b++) {
       int lo = qw[static_cast<size_t>(b) * d_in + c] + 7;
       int hi = qw[static_cast<size_t>(96 + b) * d_in + c] + 7;
-      if (lo < 0 || lo > 14 || hi < 0 || hi > 14) die("weight out of [-7,7]");
+      if (lo < 0 || lo > 14 || hi < 0 || hi > 14) __builtin_unreachable();
       col[b] = static_cast<uint8_t>((hi << 4) | lo);
     }
     std::memset(col + 96, 0, 32);
@@ -526,7 +721,7 @@ size_t qpacked_bytes(int d_out, int d_in) {
 
 QPacked qpacked_build(uint8_t* dst, const int8_t* qw, const float* fold,
                       int d_out, int d_in) {
-  if (reinterpret_cast<uintptr_t>(dst) & 63) die("arena not 64B-aligned");
+  if (reinterpret_cast<uintptr_t>(dst) & 63) __builtin_unreachable();
   QPacked m;
   m.arena = dst;
   m.d_out = d_out;

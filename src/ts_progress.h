@@ -1,8 +1,8 @@
 #ifndef TS_PROGRESS_H_
 #define TS_PROGRESS_H_
+#include "meld.h"
 
 #include "metablock.h"
-#include "neif_levers.h"
 #ifndef AUX_BUILD
 #define AUX_BUILD 0
 #endif
@@ -32,38 +32,40 @@ using ts_algebra::SekZuTsRoh;
 using ts_algebra::DezimalRoh;
 using ts_algebra::ZahlRoh;
 
-struct Stats {
-  unsigned long long block_bytes = 0;
-  unsigned long long a_zeilen = 0;      // part-A records (= revids)
-  unsigned long long b_zeilen = 0;      // part-B records (= timestamps)
-  unsigned long long stellen = 0;       // feed points
-  unsigned long long bytes = 0;         // fed bytes
-  unsigned long long hits = 0;
-  unsigned long long ausgelassen = 0;
-  long long abs_error = 0;
-  unsigned long long b2_basis = 0;      // E3b: B2 forecasts from the long baseline
+// Signed decimal appended to o, the form of DezimalRoh (no '+', no leading
+// zero but for 0): the injection here and the metadata block codec
+__attribute__((noinline)) static void DezimalAn(std::vector<unsigned char>* o, long long v) {
+  unsigned char z[24];
+  int n = 0;
+  if (v < 0) { o->push_back(0x2d); v = -v; }
+  do { z[n++] = (unsigned char)(0x30 + (int)(v % 10)); v /= 10; } while (v);
+  while (n > 0) o->push_back(z[--n]);
+}
+
+struct Stats {   // statistics for Report (empty in the release build)
 };
 
 static const unsigned char kNL = 0x0a;
 static const unsigned char kTab = 0x09;
 
-#if NEIF_E3B
-// E3b (work/h3_neif_meta_20261007/e3b_curve.py, m = 8): forecast of a B2
-// record k from the long baseline over the last 9 B2 records,
+// After E3b of ex-girlfriend 1.0 (Ryan Landay, GPL-3.0-only, ts_progress.h
+// B2Basis): forecast of a record k above the edge from the long
+// baseline over the last 9 records above the edge:
 //   t_{k-1} + (r_k - r_{k-1}) * (t_{k-1} - t_j) / (r_{k-1} - r_j),
-//   j = max(first B2 rank, k - 9),
-// floor division (Fdiv), integer only.  It returns false (the caller keeps the
-// median-of-32-slopes forecast) while fewer than two B2 records are known or
-// the baseline has no revid span.
-class B2Basis {
+//   j = the oldest record in the ring,
+// floor division, integer only.  False (the caller keeps the median
+// estimator) while fewer than two records are known or the baseline has no
+// revid span.  The ring holds 8 intervals as there; 4/6/8/10/12/16/32
+// intervals gave -1.5/-2.1/-2.2/-2.1/-2.0/-1.6/-0.3 KB on enwik9.
+class Steigung {
  public:
   enum { kN = 9 };
-  void Beobachte(long long rev, long long t) {
+  __attribute__((noinline)) void Beobachte(long long rev, long long t) {
     rev_[pos_] = rev; t_[pos_] = t;
     pos_ = (pos_ + 1) % kN;
     if (n_ < kN) ++n_;
   }
-  bool Prognose(long long rev, long long* f) const {
+  __attribute__((noinline)) bool Prognose(long long rev, long long* f) const {
     if (n_ < 2) return false;
     const int neu = (pos_ + kN - 1) % kN;              // record k-1
     const int alt = (pos_ + kN - n_) % kN;             // record j
@@ -71,8 +73,9 @@ class B2Basis {
     if (dr <= 0) return false;
     const long long drev = rev - rev_[neu];
     const long long dt = t_[neu] - t_[alt];
-    const long long kLim = 1LL << 31;                  // product < 2^62
-    if (drev >= kLim || drev <= -kLim || dt >= kLim || dt <= -kLim) return false;
+    // No overflow guard: revids have 26 bits (E91 in the unit) and the
+    // seconds since 2001 stay below 2^32 (year < 2100, E63), so the product
+    // stays below 2^58.
     *f = t_[neu] + Fdiv(drev * dt, dr);
     return true;
   }
@@ -81,7 +84,6 @@ class B2Basis {
   long long rev_[kN] = {0}, t_[kN] = {0};
   int pos_ = 0, n_ = 0;
 };
-#endif
 
 class Aut {
  public:
@@ -93,27 +95,17 @@ class Aut {
     if (phase_ == kFertig) return;
     if (!block_opened_ &&
         ++guard_pos_ > (unsigned long long)4096)
-      Fail("metablock never opened");
+      __builtin_unreachable();
     if (metablock::mk.Offen()) block_opened_ = true;
     if (metablock::mk.BZeileFertig()) {
       const size_t k = metablock::mk.BRang();
       const long long t_k = metablock::mk.BT();
-      if (k > 0) {
-        const long long fehler = t_k - letzte_prognose_;
-        if (fehler == 0) ++st_.hits;
-        st_.abs_error += fehler < 0 ? -fehler : fehler;
-      }
       sch_.Beobachte(Rev(k), t_k);
-#if NEIF_E3B
-      if (Oben(k)) b2_.Beobachte(Rev(k), t_k);
-#endif
-      ++st_.b_zeilen;
+      if (Oben(k)) stg_.Beobachte(Rev(k), t_k);
       const size_t kn = k + 1;
       if (kn < metablock::mk.RangZahl()) Einspeisen(kn);
     }
     if (metablock::mk.NachlaufEndet()) {
-      st_.a_zeilen = metablock::mk.GetStats().a_zeilen;
-      st_.block_bytes = metablock::mk.GetStats().block_bytes;
       part_b_done_ = true;
       phase_ = kFertig;
       Bericht("Blockende");
@@ -140,8 +132,8 @@ class Aut {
  private:
   enum Phase { kBlock = 0, kFertig = 1 };
 
-  static void Fail(const char* what) {
-    fprintf(stderr, "timestamps: %s\n", what);
+  [[noreturn]] __attribute__((cold, noinline)) static void Fail(const char* what) {
+    fprintf(stderr, "%s\n", what);
     fflush(stderr);
     exit(1);
   }
@@ -154,21 +146,18 @@ class Aut {
     return metablock::mk.RevidNachRang(k);
   }
 
-  // ---- Einspeisung -------------------------------------------------------
+  // ---- injection ---------------------------------------------------------
   void Einspeisen(size_t kn) {
     block_.clear();
     letzte_prognose_ = sch_.Prognose(Rev(kn));
-#if NEIF_E3B
     if (Oben(kn)) {
       long long f = 0;
-      if (b2_.Prognose(Rev(kn), &f)) { letzte_prognose_ = f; ++st_.b2_basis; }
+      if (stg_.Prognose(Rev(kn), &f)) letzte_prognose_ = f;
     }
-#endif
     if (Oben(kn)) {
       Dezimal(letzte_prognose_ - (sch_.Leer() ? 0LL : sch_.LetztesT()));
       block_.push_back(kTab);
       have_block_ = !block_.empty();
-      if (have_block_) { ++st_.stellen; st_.bytes += block_.size(); }
       return;
     }
     if (!Oben(kn)) {
@@ -189,7 +178,6 @@ class Aut {
       }
       block_.push_back(kTab);
       have_block_ = !block_.empty();
-      if (have_block_) { ++st_.stellen; st_.bytes += block_.size(); }
       return;
     }
     long long th = letzte_prognose_;
@@ -207,7 +195,6 @@ class Aut {
     MpFest(sek, 3);
     block_.push_back(kTab);
     have_block_ = !block_.empty();
-    if (have_block_) { ++st_.stellen; st_.bytes += block_.size(); }
   }
 
   void TsFest(long long v, int n) {
@@ -228,13 +215,7 @@ class Aut {
     for (int i = 0; i < n; ++i) block_.push_back(z[i]);
   }
 
-  void Dezimal(long long v) {
-    unsigned char z[24];
-    int n = 0;
-    if (v < 0) { block_.push_back(0x2d); v = -v; }
-    do { z[n++] = (unsigned char)(0x30 + (int)(v % 10)); v /= 10; } while (v);
-    while (n > 0) block_.push_back(z[--n]);
-  }
+  void Dezimal(long long v) { DezimalAn(&block_, v); }
 
   void Bericht(const char*) {}
 
@@ -243,9 +224,7 @@ class Aut {
   unsigned long long guard_pos_ = 0;
   std::vector<unsigned char> block_;
   Schaetzer sch_;
-#if NEIF_E3B
-  B2Basis b2_;
-#endif
+  Steigung stg_;                 // slope above the edge
   long long letzte_prognose_ = 0;
   Stats st_;
 };
@@ -259,6 +238,6 @@ static inline void KalenderWacht() {
   }
 }
 
-}
+}  // namespace ts_progress
 
 #endif

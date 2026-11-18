@@ -41,7 +41,7 @@ template <class T, int FREMD = 0, int HEISS = 0> struct hzg {
     return *(T*)xl_t<FREMD,HEISS,1>(a + i * (long)sizeof(T), sizeof(T));
   }
 
-  // arithmetic and comparison -> canonical, unchanged against the canon
+  // arithmetic and comparison work on the canonical address, as with a plain pointer
   hzg  operator+(long n) const { return hzg((unsigned char*)(a + n*(long)sizeof(T))); }
   hzg  operator-(long n) const { return hzg((unsigned char*)(a - n*(long)sizeof(T))); }
   long operator-(const hzg& o) const { return (long)((a - o.a) / (long)sizeof(T)); }
@@ -72,5 +72,5 @@ template <class T, int FREMD = 0, int HEISS = 0> struct hzg {
 // and destination can never be the same frame; the destination is marked dirty.
 void kopiere(unsigned char* ziel, const unsigned char* quelle, unsigned long long n);
 
-}
+} // namespace ppmd_page
 #endif

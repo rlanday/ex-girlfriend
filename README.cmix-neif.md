@@ -1,17 +1,16 @@
-> **Ex-Girlfriend 1.0 (2026-10-10).** This is a modified version of cmix-neif 1.0 (Marcus Wölk). The text below is
-> cmix-neif's own document, unchanged. The changes made after cmix-neif 1.0, their dates and their credits are in
-> `EX-GIRLFRIEND.md`; the measured result of this version is there too.
-
-# cmix-neif-1.0: a Hutter Prize entry
+# cmix-neif-2.0: a Hutter Prize entry
 
 **Submitted by Marcus Wölk, Ellefeld, Germany.**
 
-* Date of submission: 5 October 2026
-* Name: cmix-neif-1.0
+* Date of submission: 30 October 2026
+* Name: cmix-neif-2.0
 * Fork base: `cmix-lex`
+* Previous version: `cmix-neif-1.0`, submitted on 5 October 2026,
+  <https://github.com/marwoelk/cmix-neif-1.0>
 
-This version is a continuation of `cmix-neif-pre3f`, which was submitted on
-28 September 2026 from the same code base.
+This version continues `cmix-neif-1.0` on the same code base. Sections 3 and 4
+list and describe the changes against `cmix-neif-1.0`. The changes of
+`cmix-neif-1.0` against `cmix-lex` are in sections 3 and 4 of its README.
 
 ## The Hutter Prize
 
@@ -48,109 +47,87 @@ memory and using at most 100 GB of temporary disk.
 
 | quantity | value |
 |---|---:|
-| `archive9`, self-extracting | 91,913,343 B |
-| `comp9`, the compressor | 4,000,689 B |
-| `comp9.args`, the command-line options of the compression run (`-e enwik9 archive9`, one per line) | 19 B |
-| **S = `comp9` + `archive9` + `comp9.args`** | **95,914,051 B** |
-| margin `(L-S)/L` | 4.49 % against the last awarded record, `fx2-cmix-transformer` (Vladimir Ivanov, submitted 24 July 2026, awarded 30 September 2026, L = 100,424,672 B); 3.42 % against `zmix 1.0` (James Byrne, submitted 14 September 2026, S = 99,312,424 B, unvalidated) and 3.42 % against `cmix-lex-transformer` lexth11c (Neel Patel, S = 99,313,750 B, not yet accepted), both pending at the time of this submission; 2.38 % against `cmix-neif-pre2` (S = 98,249,835 B) and 1.39 % against `cmix-neif-pre3f` (S = 97,262,944 B), the earlier submissions of this entry, both unpublished and not accepted at the time of this submission |
-| wall clock | compression 48.72 h (measured in run 1 on the test machine, section 1.2), decompression 48.73 h |
-| peak resident set | compression 9.75 GiB, decompression 9.75 GiB, measured in run 1 over the whole process tree as the Judging Assistant counts it |
-| free disk | about 21 GB (section 1.1) |
+| `archive9`, self-extracting | 89,346,392 B |
+| `comp9`, the compressor | 4,042,564 B |
+| `comp9.args`, the command-line options of the compression run | 0 B (the compressor is started as `./comp9`, section 1.4) |
+| **S = `comp9` + `archive9` + `comp9.args`** | **93,388,956 B** |
+| margin `(L-S)/L` | 7.01 % against the last awarded record, `fx2-cmix-transformer` (Vladimir Ivanov, submitted 24 July 2026, awarded 30 September 2026, L = 100,424,672 B); 2.63 % against `cmix-neif-1.0` (submitted 5 October 2026, S = 95,914,051 B) and 1.39 % against `cmix-neif-beehive` (Vladimir Malinovskii, submitted 23 October 2026, S = 94,705,591 B as stated in its submission), both pending at the time of this submission |
+| wall clock (section 1.2) | compression 49.18 h, decompression 49.3 h |
+| peak resident set | compression 9.77 GiB over the whole process tree as the Judging Assistant counts it, decompression 9.75 GiB in samples of the whole process tree every 100 ms |
+| free disk | about 13 GB (section 1.1) |
 | test machine | Google Cloud `c2d-highcpu-8` with one thread per core and a local NVMe SSD (section 1.2) |
-| Geekbench 5 single core, `T` | 1,306 in run 1, limit 70,000/T = 53.60 h for each program; 1,289 in run 2, limit 54.31 h (section 1.2) |
-| sha256 `comp9` / `archive9` | 8b07d85f0a374b55688fd08d1a464222f766efbb5bfefc2bc94d6abb201133d7 / 30eaf239168bd4efb4c57af09002b968308d7614d0cca619540e971fc38f4f18; both files can be downloaded (section 7) |
+| Geekbench 5 single core, `T` | 1,284, limit 70,000/T = 54.52 h for each program (section 1.2) |
+| sha256 `comp9` / `archive9` | 976bf2d309707ab555e0c92720da5508ff0e5e6b846fc7082234262b06767f82 / 88dd7087404122d010261e6855afd88875d34dde1f0539377d3e832fc0f6b3fd; both files can be downloaded (section 7) |
 
-The transformer weights are a compressed container of 3,716,667 B. It is
+The transformer weights are a compressed container of 3,744,629 B. It is
 appended to both executables and therefore counts twice in `S`; each program
-writes it out of its own image at start-up (section 1.1). The weights of
-BITLSTM, 7,386 B, are compiled into the program and count twice as well.
+writes it out of its own image at start-up. The three weight sets of BITLSTM,
+24,579 weights in bfloat16 (49,158 B), are compiled into the program and count
+twice as well.
 
 ## Overview
 
-`cmix-neif` is a fork of `cmix-lex` and keeps its architecture, with XML-aware
-preprocessing, a word-replacing dictionary transform, a large bank of context
-models mixed by a two-stage neural mixer, an arithmetic coder, and a
-self-extracting archive.
+`cmix-neif` is a fork of `cmix-lex`. Its first version, `cmix-neif-1.0`, kept
+the architecture of the fork base, with XML-aware preprocessing, a
+word-replacing dictionary transform, a large bank of context models mixed by a
+two-stage neural mixer, an arithmetic coder and a self-extracting archive, and
+added a pre-trained transformer byte model, the correction model BITLSTM behind
+the mixer, a page form of the stream with a metadata block at its head, a PPMd
+model paged by the program itself and its own packer. Its README describes
+these parts. This version keeps them and changes the following.
 
-Three groups of components were adopted from other entries of the 2026 round
-and reworked for this entry.
+1. **SEMCACHE, a semantic cache over the states of the transformer** (sections
+   3.2 and 4.1). Where the transformer is unsure of the next byte, SEMCACHE looks
+   for earlier positions of the stream at which the transformer was in a
+   similar state and predicts from the bytes that followed there. It is filled
+   from coded bytes only, so the decompressor builds the same memory and the
+   archive carries nothing for it. In a pair of full runs with and without it,
+   both with BITLSTM learning online, `S` was about 730 KB (0.77 %) smaller
+   with it. It holds about 2.2 GB of memory and costs an estimated 4.5 to 5.5
+   hours of run time.
+2. **A census transform over whole page templates** (sections 3.3 and 4.2). The
+   machine-written articles on US places from the census of 2000 follow one
+   template per kind of place. Each such page is split into the parts of its
+   template, its values and the text that deviates from the template. Template
+   choices and values move into a census metadata block behind the metadata
+   block, where a number model of its own codes each value against an
+   estimate; the page keeps only the deviating text and the names. The census
+   pages take 21.7 MB of the coder stream instead of 79.1 MB, the census
+   metadata block 9.3 MB.
+3. **The transformer form of `cmix-neif-beehive`** (sections 3.1 and 4.3).
+   Vladimir Malinovskii's `cmix-neif-beehive`, a fork of `cmix-neif-1.0`
+   submitted on 23 October 2026, brought a new transformer architecture and
+   training recipe. This entry ports the new parts of its inference engine,
+   starts from its weights and trains them further on the coder stream of this
+   version, at the attention window of 2048 of `cmix-neif-1.0`
+   (`cmix-neif-beehive`: 1536).
+4. **A new start of the text and reversible text rules** (sections 3.4 and
+   4.4). Behind the two metadata blocks the text begins with three articles
+   that the stream did not hold as text before, namely the dictionary, the
+   names of the contributors and a pseudo-article of the census block. In the page text,
+   three reversible rules remove what the decompressor can restore (the choice
+   between `a` and `an`, repetitions of the page title, and link texts that
+   follow from the link target).
+5. **BITLSTM in three frozen parts** (sections 3.5 and 4.5). BITLSTM has three
+   weight sets, one with 16 cells for the two metadata blocks and two with 32
+   cells instead of 16 for consecutive parts of the text. Each set was trained
+   offline on a graphics card, and none of them learns while coding.
+6. **A new packer** for the self-extracting stub (section 4.9). On the same
+   program it is 18,665 B of `S` smaller than the packer of `cmix-neif-1.0`
+   and 232,381 B smaller than UPX, the packer of the fork base.
 
-1. **A pre-trained transformer byte model.** The idea and the inference engine
-   come from **Vladimir Ivanov's `fx2-cmix-transformer`** (submitted 24 July
-   2026). The online byte LSTM is replaced by a byte-level transformer that is
-   trained offline on `enwik9` and shipped frozen. His engine is ported into
-   `src/tf1/` file by file, 25 files in all; the coder-side driver was written
-   for this entry after his `src/predictor.cpp` and takes from it his float16
-   helpers, his error helper, float16 file writer and loss report, and his
-   per-byte step; 10 further files of that directory are this entry's own. New
-   in this entry are the vocabulary of 208 instead of 205 byte values, the layer
-   count and the attention window as build constants, a model trained from
-   scratch on this entry's own coder stream, the bfloat16 rounding of the
-   unquantized tensors, two further container formats and the removal of dead
-   neurons. His weights, his article-separator constant and his preprocessor are
-   not used.
-2. **BITLSTM, a small LSTM correction model** behind the mixer. The idea, its
-   form, its AVX2 kernels, several of its input features and the approach of
-   training it offline on a trace and shipping trained weights come from
-   **David Freelan's `cmix-obias`** (published there as `bitlstm32`, submitted
-   19 July 2026). It corrects the final probability additively in logit space.
-   In this entry it has 16 cells, reads a subset of the stage-one mixer row and
-   fixed sketches of the transformer and byte-LSTM states, is trained by a
-   replay of the first 20 % of this entry's own compression run, and from 20 %
-   of the stream on learns online at a tenth of the learning rate its offline
-   training starts with. Section 4.4 describes it.
-3. **Model and mixer mechanisms from `zmix 1.0` by James Byrne** (submitted
-   14 September 2026): adaptive depth, which skips the
-   mixer cascade on bits the model is sure about; indel recovery in the match
-   model of the text model; an end-to-end gradient for the two-stage mixer; and
-   a word-label model over the code words of the dictionary; together with four
-   further items of the context maps and the secondary estimation. Each was
-   ported from its Zig source or rewritten in C++ for this predictor, the indel
-   recovery line by line (sections 3.3 and 3.4).
+The small online byte LSTM beside the transformer and its PPMd prior are
+removed, and the run time they took goes to the transformer and to SEMCACHE.
+The coder stream shrinks from 552,750,198 B to 501,062,281 B.
 
-The transformer **takes the slot** of the byte LSTM of the fork base, which was
-the largest single model of `cmix-lex`. A **small online byte LSTM** of 80 cells
-with additional inputs stays beside it and feeds the mixer (section 4.10). It
-uses part of the run time the transformer leaves within the limit. Its output
-logits receive a PPMd prior, also taken from David Freelan's `cmix-obias`
-(section 3.1).
-
-The rest of the work is built around these components:
-
-* the **page form of the stream**, which drops the constant XML markup, puts the
-  title on the first line and the edit comment on the last, and collects the
-  per-page metadata in a block at the head whose second half is sorted by
-  revision id (section 4.9);
-* the **prompt injection**, which feeds the transformer context that costs no
-  archive bytes because the decoder can derive it (section 4.2);
-* the **gate**, which keeps the metadata block away from the transformer (in
-  training and in coding alike) and from BITLSTM, and the restart of the PPMd
-  model behind the block (sections 4.3, 4.4 and 4.8);
-* the **article order**, a modification of the article order of fx2-cmix
-  (built by Byron Knoll with an embedding pipeline; inherited through cmix-lex
-  in the revision of Kaido Orav's `fxcm_v26` archive), with the pages of its
-  five end classes sorted by descending page id, the `Wikipedia:` pages moved
-  from the end to between the image and the disambiguation pages, the redirect
-  pages in front and the calendar pages as one block, shipped as a rule plus a
-  small residual instead of a list (section 4.5);
-* the **dictionary hints**, a compact package from which the compressor derives
-  its dictionary, instead of shipping the full dictionary with the compressor
-  (section 4.7);
-* the exclusion model over page and revision identifiers, the comment index,
-  the census transform, and the **frozen 208-value byte alphabet** (sections
-  3.2, 4.6 and 4.9);
-* the **PPMd model** with an order limit per context, paged by the program
-  itself (section 4.8);
-* the mixer and context-model work, the speed work that pays for the run time
-  of the transformer, the memory work that keeps both programs under 10 GiB,
-  and the packaging (sections 3.3 to 3.6).
+![Layout of the coder stream of this version, to scale, with a thin bar of the stream of cmix-neif-1.0 for comparison. The metadata block and the census metadata block are followed by the three articles of the text start, the redirect block, the articles with the calendar block, the census pages, the image pages, the pages of the Wikipedia namespace and the disambiguation pages. The start and the end of the stream are enlarged. Bands below the bar mark the parts of BITLSTM and the zones in which the transformer and SEMCACHE run.](doc/stream_layout.svg)
 
 ## Contents
 
 * [1. Quick start on a clean machine](#1-quick-start-on-a-clean-machine)
 * [2. Lineage and attribution](#2-lineage-and-attribution)
-* [3. Changes against cmix-lex](#3-changes-against-cmix-lex)
-* [4. How the main components work](#4-how-the-main-components-work)
+* [3. Changes against cmix-neif-1.0](#3-changes-against-cmix-neif-10)
+* [4. How the new components work](#4-how-the-new-components-work)
 * [5. Training of the pre-trained parts](#5-training-of-the-pre-trained-parts)
 * [6. Further optimisation opportunities](#6-further-optimisation-opportunities)
 * [7. Files in this package](#7-files-in-this-package)
@@ -166,13 +143,13 @@ The rest of the work is built around these components:
 | item | requirement |
 |---|---|
 | platform | Linux, x86-64 |
-| reproducible build | Ubuntu 24.04 LTS. `install.sh` installs clang, lld and llvm 18 (18.1.3) and the other build packages in the versions of the Ubuntu archive snapshot it names; with that package state the build reproduces the published `comp9` byte for byte. `install.sh` also runs on Ubuntu 22.04 LTS, where clang 18 comes from apt.llvm.org in a later 18.1 release; a build there was not tested and is not expected to be byte-identical. On other systems, install the tools listed in `install.sh` by hand and run `build.sh` |
+| reproducible build | Ubuntu 24.04 LTS. `install.sh` installs clang, lld and llvm 18 (18.1.3), gcc 13 (13.3.0) and the other build packages in the versions of the Ubuntu archive snapshot it names; with that package state the build reproduces the published `comp9` byte for byte. On other systems, install the tools listed in `install.sh` by hand and run `build.sh` |
 | instruction set | **AVX2 and FMA required** (`x86-64-v3`). There is only this code path, and a build without AVX2 stops with an error |
-| C++ toolchain | clang, lld and llvm, major version 18. Another major version produces a different binary |
-| runtime | the shared libraries libc (GLIBC 2.34 or later), libstdc++ (GLIBCXX 3.4.29 or later), libm and libgcc_s; Ubuntu 24.04 provides them |
+| toolchain | clang, lld and llvm, major version 18, for the program; gcc 13 for the second stage of the packer stub. Another major version produces a different binary |
+| runtime | the shared libraries libc (GLIBC 2.34 or later), libstdc++ and libm; Ubuntu 24.04 provides them |
 | RAM to run | the peak resident set stays below the 10 GiB the rules allow; the test machine has 16 GiB and no swap |
-| RAM and disk to build | largest single process about 3.7 GiB, with the compile steps running in parallel (`make -j`); about 50 MB of disk, the unpacked package included; about 4 minutes on an AMD EPYC 7502P with 32 cores; the build does **not** need `enwik9`, the finished profile ships with the package |
-| free disk to run | about 21 GB in the working directory, the larger of the two peaks of compression and decompression, counted by apparent file size (measured by the Judging Assistant, which sums the files of the working directory). The largest file is the page file of the PPMd model, 14,000 MiB apparent, written sparsely and removed at the end (section 4.8). In addition, unnamed temporary files are created with `tmpfile()`, which places them in `/tmp` whatever `TMPDIR` says. In one of them both programs keep a copy of the coder stream for the link context of the transformer, about 0.55 GB at the end of the stream. During its preprocessing step the compressor writes the pages and the metadata block to two more, 0.88 GB and 0.025 GB |
+| RAM and disk to build | a peak resident set of about 4.3 GiB, nearly all of it in one helper process that runs after the parallel compile steps (`make -j`) and briefly creates the sparse page file of the PPMd model; about 41 MB of disk, counted as allocated space, the unpacked package included; about 4 minutes on an Intel Core i9-13900 with 32 threads; the build does **not** need `enwik9`, the finished profile ships with the package |
+| free disk to run | about 13 GB in the working directory at the peak of the compression, counted as allocated disk space; the decompression needs less (computed from the files it keeps). The largest file is the page file of the PPMd model, 14,000 MiB apparent, written sparsely and removed at the end (section 4.8); counted by apparent file size, the compression needs about 21 GB. In addition, unnamed temporary files are created with `tmpfile()`, which places them in `/tmp` whatever `TMPDIR` says. In one of them both programs keep a copy of the coder stream for the link context of the transformer, about 0.50 GB at the end of the stream. During its preprocessing step the compressor writes the pages and the metadata block to two more, 0.79 GB and 0.025 GB, and then the output of the dictionary transform to a third, 0.50 GB; all three are closed before the coding starts |
 | input | `enwik9`, exactly 1,000,000,000 B, sha256 159b85351e5f76e60cbe32e04c677847a9ecba3adc79addab6f4c6c7aa3744bc |
 | network | not needed after `install.sh`; the build is offline, and neither program opens a connection |
 
@@ -180,40 +157,38 @@ The rest of the work is built around these components:
 program reads a file it did not write itself, except for its own image and the
 two `/proc` entries named in section 1.5. Dictionary hints, article order and
 the transformer weight container are appended blocks inside the executables,
-and the weights of BITLSTM are part of the program. Each program
+and the three weight sets of BITLSTM are part of the program. Each program
 unpacks the blocks it needs from its own image at start-up into the current
 working directory and checks a stamped fingerprint over the container bytes
-before the model is used. `archive9` alone in an otherwise empty directory
-decodes.
+before the model is used. The dictionary reaches the decompressor as the first
+article of the coder stream (section 4.4), so `archive9` holds no separate
+dictionary block. `archive9` alone in an otherwise empty directory decodes.
 
 ### 1.2 Run times
 
-The compression was timed in three runs. Runs 1 and 2 used two instances of the
-same Google Cloud machine type, run 1 outside and run 2 inside the Judging
-Assistant; the third run was started directly on a rented dedicated server.
+Compression and decompression were run in the Judging Assistant on one
+Google Cloud machine. The times are wall clock as the Assistant reports them.
 
-| machine | processor, memory, working directory | Geekbench 5 single core, `T` | limit 70,000/T | compression, wall clock | conditions |
-|---|---|---:|---:|---:|---|
-| Google Cloud `c2d-highcpu-8` with one thread per core, run 1, the test machine of the result table | AMD EPYC 7B13 (Zen 3), 4 cores, 16 GiB; local NVMe SSD, 375 GB | [1,306](https://browser.geekbench.com/v5/cpu/24681142) | 53.60 h | 48.72 h | outside the Judging Assistant, started directly on the instance in a cgroup with 16 GiB of memory and no swap like its container, with a cold page cache, pinned to one core |
-| Google Cloud `c2d-highcpu-8` with one thread per core, run 2 | AMD EPYC 7B13 (Zen 3), 4 cores, 16 GiB; local NVMe SSD, 375 GB | [1,289](https://browser.geekbench.com/v5/cpu/24685263) | 54.31 h | 49.58 h | Judging Assistant (commit 2820606), serial, in its container with one CPU and 16 GiB |
-| rented dedicated server | AMD Ryzen 9 5950X (Zen 3), 16 cores, 128 GiB DDR4; NVMe SSD | [1,707](https://browser.geekbench.com/v5/cpu/24665504) | 41.01 h | 39.35 h | started directly on the host, without the Judging Assistant, container or memory limit, pinned to one core |
+| machine | processor, memory, working directory | Geekbench 5 single core, `T` | limit 70,000/T | compression, wall clock | decompression, wall clock | conditions |
+|---|---|---:|---:|---:|---:|---|
+| Google Cloud `c2d-highcpu-8` with one thread per core, the test machine of the result table | AMD EPYC 7B13 (Zen 3), 4 cores, 16 GiB; local NVMe SSD, 375 GB | [1,284](https://browser.geekbench.com/v5/cpu/24757986) | 54.52 h | 49.18 h | 49.3 h | Judging Assistant (commit 2820606), source-only, serial, in its container with one CPU and 16 GiB |
 
-In run 2 the Judging Assistant measured `T` itself with Geekbench 5.5.1 in its
+The Judging Assistant measured `T` itself with Geekbench 5.5.1 in its
 container before the compression; the same value sets the limit of the
-decompression. In run 1, `T` is the median of three runs of Geekbench 5.5.1
-directly on the instance before the compression (1,301, 1,307 and 1,306). `T` of
-the dedicated server was measured as in run 2, in a run of the Judging Assistant
-(commit 4c3deb2) on that server on 25 September 2026.
+decompression. This run used an earlier build of the same configuration,
+`comp9` sha256 70534f882ceff9bd5f83925c6cee5f63287b512e6cc466e8bb8fd21a132d3646
+(4,072,107 B); the times, the peak resident set and the free disk of the
+result table come from this run. The coded output of this run is identical byte for byte to that of the submitted `comp9`; the two archives differ only in the decompressor at their start and in the size fields at their end (16 B in this run, 8 B in the submitted `archive9`).
 
 The decompression runs the same models over the same coder stream as the
 compression and takes about as long.
 
-Run 2 can be repeated with the launcher of the Judging Assistant
-(<https://github.com/jabowery/HutterPrizeJudgingAssistant>, commit
-2820606). The entry directory holds the source package `cmix-neif-1.0.tar.gz` and
-its `entry.env`, without `archive9`. The launcher then runs the Judging Assistant
-in source-only mode, which builds `comp9` from the package, compresses `enwik9` and
-afterwards decompresses the generated `archive9`, one program at a time.
+The run can be repeated with the launcher of the Judging Assistant
+(<https://github.com/jabowery/HutterPrizeJudgingAssistant>, commit 2820606). The
+entry directory holds the source package `cmix-neif-2.0.tar.gz` and its
+`entry.env`, without `archive9`. The launcher then runs the Judging Assistant
+in source-only mode, which builds `comp9` from the package, compresses `enwik9`
+and afterwards decompresses the generated `archive9`, one program at a time.
 `PROJECT_ID` stands for the Google Cloud project.
 
 ```
@@ -222,63 +197,37 @@ cd HutterPrizeJudgingAssistant
 git checkout 2820606bc078b545bbeeb65f2b806670762af0af
 ./launch-cloud-judging.sh \
     --project PROJECT_ID \
-    --instance-name hpja-c2d8 \
+    --instance-name hpja-2p0-c2d8 \
     --repo-ref 2820606bc078b545bbeeb65f2b806670762af0af \
     --machine-type c2d-highcpu-8 \
     --threads-per-core 1 \
     --local-ssd-nvme \
     --boot-disk-size 90GB \
     --region us-east1 \
-    /path/to/entries/cmix-neif-1.0
+    /path/to/entries/cmix-neif-2.0
 ```
 
 With `--threads-per-core 1` the instance has 4 vCPUs on 4 physical cores and
-16 GiB of memory. `--local-ssd-nvme` attaches one local NVMe SSD of 375 GB, which a
-startup script formats and mounts as the working directory of the Judging
-Assistant. The launcher creates the instance with this command (zone
-`us-east1-b` in run 2; the path of the startup script is relative to
-the repository root):
-
-```
-gcloud compute instances create hpja-c2d8 \
-    --project=PROJECT_ID \
-    --zone=us-east1-b \
-    --machine-type=c2d-highcpu-8 \
-    --boot-disk-size=90GB \
-    --boot-disk-type=pd-ssd \
-    --image-family=ubuntu-2404-lts-amd64 \
-    --image-project=ubuntu-os-cloud \
-    --provisioning-model=STANDARD \
-    --maintenance-policy=MIGRATE \
-    --no-service-account \
-    --no-scopes \
-    --metadata=block-project-ssh-keys=TRUE,serial-port-enable=FALSE \
-    --shielded-secure-boot \
-    --shielded-vtpm \
-    --shielded-integrity-monitoring \
-    --quiet \
-    --threads-per-core=1 \
-    --local-ssd=interface=NVME \
-    --metadata-from-file=startup-script=cloud/mount-local-ssd-work.sh \
-    --labels=purpose=hutter-prize-judging
-```
-
-The launcher then installs Docker and the other host tools, downloads `enwik9`
-from <https://www.mattmahoney.net/dc/enwik9.zip>, checks its SHA-256 and starts the
-Judging Assistant in a `tmux` session. At the end it prints the commands to attach
-to that session, to copy the results and to delete the instance.
+16 GiB of memory. `--local-ssd-nvme` attaches one local NVMe SSD of 375 GB,
+which a startup script formats and mounts as the working directory of the
+Judging Assistant. The launcher created the instance in zone `us-east1-b` with
+the `gcloud` command shown in section 1.2 of the README of `cmix-neif-1.0`,
+under the instance name of this run. At this commit the Judging Assistant runs
+a source-only entry in serial mode and under the `process-tree` execution
+policy, and it evicts the input file of each program (`enwik9`, then
+`archive9`) from memory before the program starts, all without further
+options. In the measured run the entry directory held, in place of the source
+package, a package with the earlier `comp9` named above, whose `build.sh`
+copied that file instead of compiling it.
 
 ### 1.3 Build
 
 ```
-tar xf cmix-neif-1.0.tar.gz
-cd cmix-neif-1.0
+git clone https://github.com/marwoelk/cmix-neif-2.0.git
+cd cmix-neif-2.0
 bash install.sh
 bash build.sh
 ```
-
-The tarball can be downloaded (section 7) and contains exactly one top-level
-directory, `cmix-neif-1.0`.
 
 `install.sh` is the **only** step with root rights and network access. It
 installs system packages and compiles nothing; it is non-interactive, and a
@@ -288,25 +237,23 @@ second run changes nothing.
 does the profile-guided compilation with link-time optimization, strips and
 packs the binary with the self-extractor contained in this package, and appends
 the build inputs. It writes `comp9` into the current working directory. Both
-scripts exit non-zero on any failure and can be re-run. The build takes a few
-minutes; the profile ships with the package, so no profile run is needed.
+scripts exit non-zero on any failure and can be re-run.
 
 ### 1.4 Compress
 
 In a directory that contains `enwik9`:
 
 ```
-./comp9 -e enwik9 archive9
+./comp9
 ```
 
-The run takes 48.72 hours on the test machine of the result table (measured in
-run 1 of section 1.2) and produces `archive9`.
+Without arguments `comp9` reads `enwik9` and writes `archive9` into the
+working directory; `./comp9 -e enwik9 archive9` does the same. The run takes
+49.18 h on the test machine of the result table.
 
-Besides messages for its steps, such as the derivation of the dictionary or
-the preprocessing of `enwik9`, the program prints a progress line in percent
-about every 500,000 bytes of the coder stream. The run time is **not linear**
-in that progress. On the test machine, in run 1 of section 1.2, one percent of
-progress takes between 0.23 and 0.86 hours.
+The program prints its steps and, while it codes, a progress line in percent.
+The run time is **not linear** in that progress. A message about a failure
+prints a code `E<n>`; `ERRORS.md` lists the codes with their texts.
 
 ### 1.5 Decompress
 
@@ -318,15 +265,14 @@ mkdir out && cp archive9 out/ && cd out
 ```
 
 `archive9` takes no arguments. It writes `enwik9_uncompressed`, whose content is
-identical to `enwik9` (`data9` in the Hutter Prize rules). The run takes 48.73
-hours on the test machine of the result table. The console output resembles
-that of the compressor.
+identical to `enwik9` (`data9` in the Hutter Prize rules). The run takes
+49.3 h on the test machine of the result table.
 
 Both programs read two files under `/proc`. `/proc/self/exe` is required,
 because the packed image finds its own bytes through it; without it the program
 stops at once with a non-zero status. `/proc/self/statm` sizes the page pool of
 the PPMd model (section 4.8); if it cannot be read, the program prints one line
-on stderr and the pool keeps its current size (2 GiB if `statm` is unreadable
+on stderr and the pool keeps its current size (1 GiB if `statm` is unreadable
 from the start). The output is the same byte for byte in every case, but the
 run can be slower.
 
@@ -336,964 +282,917 @@ run can be slower.
 cmp /path/to/enwik9 ./enwik9_uncompressed    # must print nothing
 ```
 
-`S` is the size of `comp9` plus the size of `archive9` plus the 19 B of
-`comp9.args`; the sha256 sums of `comp9` and `archive9` are in the result
-table. While either program runs, `grep Threads /proc/<pid>/status` shows 1.
+`S` is the size of `comp9` plus the size of `archive9`; `comp9.args` is empty.
+The sha256 sums of `comp9` and `archive9` are in the result table. While either
+program runs, `grep Threads /proc/<pid>/status` shows 1.
 
 ### 1.7 Determinism and the pinned build
 
 The archive decodes only if the decompressor computes bit for bit the same
-floating-point values as the compressor. This is secured as follows.
-
-1. **One target instruction set.** Every unit is compiled with
-   `-march=x86-64-v3`. There is no CPUID dispatch, because a second code path
-   with a different vector width would change the order of floating-point
-   accumulation and with it the archive. A compile-time check stops any build
-   without AVX2 and FMA.
-2. **Own transcendental functions** (`exp`, `log`, `exp2`, `tanh`, `pow`; for
-   small arguments the eight-wide `tanh` of the byte LSTM uses the `tanhf`
-   polynomial of the Cephes library). The results of the system maths library
-   can change between glibc versions; a glibc update in 2025 changed `tanhf`
-   and with it the archive of the same binary. The only transcendental
-   function the unpacked image imports from the system maths library is
-   `sincosf`; the transformer calls it only for positions beyond its rotary
-   table of 131,072 entries, which the pieces fed to it do not reach.
-3. **Fixed floating-point semantics.** Most units are compiled with
-   `-ffp-model=fast -mrecip=none`; the numerically sensitive units, among them
-   the transformer, BITLSTM and the adaptive-depth stage, with
-   `-ffp-model=precise -ffp-contract=off`. `-Ofast` and `-ffast-math` are not
-   passed, and no `crtfastmath` object is linked, so flush-to-zero and
-   denormals-are-zero stay off as the ABI sets them at process start.
-4. **No reciprocal estimates.** Approximate reciprocal instructions differ
-   between CPU generations and are excluded by `-mrecip=none` and by the precise
-   units. The unpacked image was checked for `rcpps`, `rsqrtps`, `vrcp*` and
-   `vrsqrt*` before release.
-5. **Single thread, fixed seeds.** Both programs run on one thread. Every model
-   that draws random numbers uses a fixed seed compiled into the binary.
+floating-point values as the compressor. As in `cmix-neif-1.0` (section 1.7
+of its README), every unit is compiled for one target instruction set
+(`-march=x86-64-v3`) without CPUID dispatch, the program uses its own
+transcendental functions, with the exceptions named below, and fixed
+floating-point semantics per unit
+(`-ffp-model=fast -mrecip=none`, and `-ffp-model=precise -ffp-contract=off`
+for the transformer, BITLSTM, the adaptive-depth stage and the other
+numerically sensitive units), no reciprocal estimates, one thread and fixed
+seeds. New in this version are
+SEMCACHE and its end stage, which compute in integers and in double precision,
+and an own `log1p` for the second end stage (section 4.1). It follows fdlibm
+with the fused multiply-adds of the x86-64 FMA variant of glibc 2.39 and gives the same bits
+as that variant for every single-precision input between -1 and 1 (checked
+exhaustively); glibc versions without that variant, such as 2.35 of Ubuntu
+22.04, compute `log1p` differently on processors with FMA. Four functions come
+from the system maths library. The transformer calls `sincosf` only for
+positions beyond its rotary table of 131,072 entries, which the pieces fed to
+it do not reach. The number coder of the census metadata block calls `cos`,
+`log2` and `log10` in double precision, in the compressor and in the
+decompressor with the same arguments. `cos` enters the distances between
+places (the nearest places and the order of the county candidates), `log2`
+the scale class of an estimate and `log10` the number of decimals of the grid
+of a value. In the compressor, all calls
+of these functions and of `strtod`, `snprintf` with a floating-point
+conversion and `rand` fall before the end of the census metadata block. They
+were recorded in a compression of `enwik9` with glibc 2.39 and recomputed on a
+processor with FMA with glibc 2.34 (AlmaLinux 9), 2.35 (Ubuntu 22.04), 2.36
+(Debian 12), 2.39 (AlmaLinux 10), 2.41 (Debian 13), 2.42 (Ubuntu 25.10), 2.43
+(Ubuntu 26.04, Fedora) and 2.44 (Arch Linux). All results agreed bit for bit,
+except 128 of the 1,368,921 `log2` results of glibc 2.35, which has no FMA
+variant of `log2`; they differ in the last bit, and none of them changes the
+scale class the number coder derives from it. Every `qsort` call recorded in
+that compression ordered its array exactly as a heap sort and a stable merge
+sort did. The other sort sites, one at the end of the text start and three
+that only the decompressor runs, compare by the whole element or by unique
+keys, so no order depends on the sort algorithm of the C library.
+A compression of `enwik9` with glibc 2.35 wrote the same coder stream and the
+same first 3 MiB of `archive9`, which reach past the census metadata block, as
+a compression with glibc 2.39.
 
 The profile of the profile-guided build ships in `pgo_data/`, so a build from
 this package with the pinned toolchain produces the `comp9` whose sha256 is in
 the result table, also on other machines (section 9). A different compiler can
 produce a `comp9` of slightly different size and a slightly different
-`archive9`. The submitted `archive9` is self-contained and decodes however it
-was built.
+`archive9`. The submitted `archive9` carries its own decompressor, so it
+decodes whatever compiler built the `comp9` that wrote it. Like `comp9`, it
+uses the C library and the maths library of the system (section 1.1 and above).
 
 ### 1.8 Self-extraction
 
 Both executables are packed with the self-extractor in `tools_src/packer/`,
-which `build.sh` builds offline. At start the stub unpacks the program into an
-anonymous memory file and starts it (`memfd_create`, `execveat`). Without
-`memfd_create` it writes the program to `./.b5c_run` or `/tmp/.b5cstub`, starts
-it from there and leaves that file in place.
+which `build.sh` builds offline (section 4.9). At start the stub unpacks the
+program into an anonymous memory file and starts it (`memfd_create`,
+`execveat`). Without `memfd_create` the stub stops with a non-zero status; it
+writes no file.
 
-Each program starts its own image again through the C library's `system()`,
-which runs a shell, to decode embedded blocks (mode `-D`) and, in the
-compressor, to code the derived dictionary (mode `-C`); the build uses the
-modes `-h` and, without a shipped profile, `-c`. Apart from that shell, neither
-program starts a program other than its own image. Because of these child
-processes, the entry needs the `process-tree` execution policy of the Judging
-Assistant.
+Unpacking takes about 52 s for `comp9` and 45 s for `archive9` on one core of
+an AMD EPYC 7502P (Zen 2), with a peak resident set of about 1.5 GiB, which
+stays below the peak of the program itself. The compressor starts its own
+image twice more through the C library's `system()`, which runs a shell, to
+decode its two embedded blocks (mode `-D`); each start unpacks the program
+again. The decompressor starts no further process. Apart from that shell,
+neither program starts a program other than its own image. Because of these
+child processes, the entry needs the `process-tree` execution policy of the
+Judging Assistant.
 
 ---
 
 ## 2. Lineage and attribution
 
-```
-cmix                                  Byron Knoll
-  -> STARLIT                          Artemiy Margaritov  (Hutter Prize 2021)
-     -> cmix-hp                       Byron Knoll
-        -> fast-cmix                  Saurabh Kumar       (Hutter Prize 2023)
-           -> fx-cmix                 Kaido Orav          (Hutter Prize 2024)
-              -> fx2-cmix             Kaido Orav, Byron Knoll  (Hutter Prize 2024)
-                 -> cmix-lex          Ibrahim Marcouch    (Hutter Prize 2026, awarded to
-                                                           Ibrahim Marcouch and Kaido Orav;
-                                                           immediate fork base)
-                    -> cmix-neif      (this entry, 2026)
+This version is a modified version of `cmix-neif-1.0`
+(<https://github.com/marwoelk/cmix-neif-1.0>, commit `1c9ea5ed`), whose fork
+base is `cmix-lex`. Section 2 of the README of `cmix-neif-1.0` gives the line
+of descent from `cmix` to `cmix-lex` and the origin of every part that this
+version keeps from it; that attribution is unchanged and is not repeated here.
+`NOTICE.md` lists all borrowed parts of this version with author, origin and
+licence, and `training/ATTRIBUTION.md` those of the training. The comment
+column of the tables in section 3 names the origin of each borrowed change, and
+section 9 gives the licences.
 
-text model from fx-cmix on, in place of paq8hp: fxcm (Kaido Orav);
-in cmix-lex its version fxcm_v26
-```
+New in this version are parts of two published forks of `cmix-neif-1.0`.
 
-Four published entries of the 2026 round feed into this one directly;
-`fx2-cmix-transformer` and `cmix-obias` were awarded on 30 September 2026.
+* **`cmix-neif-beehive` (Vladimir Malinovskii)**,
+  `github.com/galqiwi/cmix-neif-beehive`, commit `92c07c0b`, GPL-3, a fork of
+  `cmix-neif-1.0` submitted on 23 October 2026. From it come the architecture
+  and the training recipe of the transformer (attention residuals, one key and value
+  head shared by all heads, value embeddings, an MLP width of 1024, a head that
+  adds the logits of the prior to the output, weight rows of 2, 3 or 4 bits,
+  quantization-aware training with a size term as a cool-down phase), the
+  parts of its inference engine that
+  implement them, the prefetch depth of the dense kernels, the confidence of
+  the transformer as context of a layer-0 mixer, the training scripts on which
+  the trainer of this entry is built, and the weights from which the training
+  of the shipped weights started (sections 3.1, 4.3 and 5). The
+  shared key and value head, the value embeddings, the MLP width and the
+  prior-logit head are options of the training code of Vladimir
+  Ivanov's `fx2-cmix-transformer` that the configuration of `cmix-neif-beehive`
+  switches on.
+* **`ex-girlfriend 1.0` (Ryan Landay)**, `github.com/rlanday/ex-girlfriend`,
+  commit `e923faec`, GPL-3.0-only, a modification of `cmix-neif-1.0`. From it
+  come the forecast of the revision id from the page id below revision id 17,000,000 in
+  part A of the metadata block, the timestamp forecast from the slope of the
+  last records above the fixed rank of part B, and the fast-weight head, a
+  second transformer distribution from weights learned online in the MLP
+  blocks 12 to 15 (sections 3.1 and 3.4).
 
-* **`fx2-cmix-transformer` (Vladimir Ivanov)**,
-  `github.com/astOwOlfo/fx2-cmix-transformer-v1` (linked from the Large Text
-  Compression Benchmark entry of that name), GPL-3: the transformer inference
-  engine (25 files in `src/tf1/` and parts of the coder-side driver), its layer
-  pattern and container formats v1 and v2, and the training code, which ships
-  unchanged in `training/tf/tree_upstream/` and from which the training form in
-  `training/tf/tree_overlay/` and the export tools are derived.
-* **`cmix-obias` (David Freelan)**, `huggingface.co/dfreelan/cmix-obias`,
-  revision `51488a0c`, GPL-3: BITLSTM, the PPMd prior on the output logits of
-  the byte LSTM (in the form of its constant-weight build) and the zero-state
-  masking in the branch-free evaluation of the context-map states.
-* **`zmix 1.0` (James Byrne)**, `zmix.frostbyrne.io/v1.0/zmix-src.tar.gz`,
-  GPL-3.0-or-later: the four mechanisms and four further items listed in
-  sections 3.3 and 3.4, ported from its Zig source or rewritten in C++ here.
-* **`fx-deepmix` (Halvor Yttredal)**,
-  `mattmahoney.net/dc/fx-deepmix-source.zip`, GPL-3: one ported model, the form
-  in which the feed of the byte-model prediction into the text model (Kaido
-  Orav's wiring from `fx2-cmix`) is restored, and the value 0.1 of the final
-  step of the mixer learning-rate schedule.
+From outside the program family, new in this version:
 
-Further published work:
+* the attention residuals of the transformer, after *Attention Residuals* of
+  the **Kimi Team** (arXiv 2603.15031), through `cmix-neif-beehive`, with their
+  depth mixture evaluated as the online softmax of **M. Milakov and N.
+  Gimelshein** (2018), also through `cmix-neif-beehive`; one key and
+  value head for all query heads, the multi-query attention of **Noam
+  Shazeer** (2019), through `cmix-neif-beehive`;
+* the value embeddings of the transformer (a learned embedding of the token
+  mixed into the values of an attention layer), introduced by **Braden
+  Koszarsky** in the NanoGPT speedrun of Modded-NanoGPT (record of 4 December
+  2024), through `fx2-cmix-transformer` and `cmix-neif-beehive`; the README of
+  Modded-NanoGPT names the value residual learning of **Zhanchao Zhou et al.**
+  (2024) as their inspiration;
+* for the container of the transformer weights, the factorial number system of
+  a permutation of **C.-A. Laisant** (1888), known as the Lehmer code, and the
+  bits-back argument of **G. E. Hinton and D. van Camp** (1993), methods only;
+* for SEMCACHE, the nearest-neighbour language model of **Khandelwal et al.**
+  (2020), the continuous cache of **Grave, Joulin and Usunier** (2017) and its
+  unbounded form with approximate nearest-neighbour search of **Grave, Cissé
+  and Joulin** (2017), which predict from stored states and the tokens that
+  followed them, random-hyperplane hashing
+  (SimHash) of **M. Charikar** (2002), multi-probe hashing of **Q. Lv et al.**
+  (2007) and, in its end stage, the AdaGrad step of **J. Duchi, E. Hazan and
+  Y. Singer** (2011), all methods from the literature, implemented here
+  without adopted code;
+* the fixed share of the Bayesian term in the final mixer, like in **M.
+  Herbster and M. K. Warmuth**, *Tracking the best expert* (1995);
+* the ridge regression in the number coder of the census transform, after
+  **A. E. Hoerl and R. W. Kennard**, *Ridge Regression: Biased Estimation for
+  Nonorthogonal Problems* (1970);
+* the function `log1p`, from fdlibm `s_log1p.c` 5.1 (**Sun Microsystems**,
+  1993) with the polynomial evaluation for pipelined processors of **Naohiko
+  Shimizu** (Tokai University, 1997), implementation adapted from glibc 2.39
+  and its FMA variant (LGPL-2.1-or-later); the notice of Sun Microsystems is
+  kept in the source;
+* in the packer, the run map and byte history per context of `ContextMap2` in
+  **paq8px** v217 (the run map as a state map by **Zoltán Gotthardt**), written
+  anew with the index of the byte-history input in the form of paq8px, and
+  indirect contexts over the instruction like the indirect context model of
+  **Matt Mahoney's** paq8f (2006), written anew; for its first stage, context
+  models over byte masks of the last bytes in the form of Crinkler (**Aske
+  Simon Christensen, Rune L. H. Stubbe**), like in oneKpaq (**Teemu
+  Suutari**), written anew;
+* in the coder of the dictionary hints and the article-order residual, the
+  squash function with interpolation, the stretch function as its inverse, the
+  arithmetic coder and the counter rate of **Matt Mahoney's** `lpaq1`
+  (GPL-2.0-or-later), adapted; the same squash table and stretch function in
+  the sign rule of the census region;
+* the generator xorshift64* of **Sebastiano Vigna** (2016, public domain),
+  which multiplies the output of **George Marsaglia**'s xorshift (2003) by a
+  constant from the tables of **Pierre L'Ecuyer** (1999), for the fixed random
+  projections and hyperplanes of SEMCACHE, and its multiplier in the context
+  hash of the first stage of the packer;
+* the constant 0x9E3779B97F4A7C15, 2^64 divided by the golden ratio, as a hash
+  constant in SEMCACHE, the census transform, the numbering of repeated edit
+  comments and the first stage of the packer, as in the multiplicative hashing
+  with the golden ratio described by **D. E. Knuth** (*The Art of Computer
+  Programming*, volume 3, section 6.4);
+* the multiplier of the MurmurHash3 finalizer (**Austin Appleby**) and the
+  FNV primes (**Glenn Fowler, Landon Curt Noll, Kiem-Phong Vo**), both public
+  domain, as multipliers in the context hash of the coder of the hint
+  package, the FNV primes also in the first stage of the packer.
 
-* **Layth Lakhani's** experiments on `fx3-cmix`
-  (`github.com/IntrepidEnki/fx3-cmix-submission`; `fx3-cmix` itself is Kaido
-  Orav's project): two memory ideas (narrower index types, a larger shared
-  map).
-* **Seth Lupo's** public `fx3-cmix` experiments
-  (`github.com/Seth-Lupo/fx3-cmix`): the question of the widths of the direct
-  state maps, which those experiments made smaller.
-* **Rohit Dwivedula** (`github.com/rohitdwivedula/fx2-cmix`, commit
-  `468e92b9`): an SSE2 search for check values in the context maps (its
-  compare in the form of that commit, extended to 16 slots) and the reuse of
-  the last context lookup in the mixer (in the structure of that commit), both
-  rewritten and measured here, and the header inlining of `Sigmoid::Logit` and
-  `MixerInput::Set*`; the four `Set*` functions are taken over in the form of
-  that commit.
+Because the small byte LSTM is removed, four borrowed parts of
+`cmix-neif-1.0` are no longer used, the PPMd prior on its output logits (David
+Freelan, `cmix-obias`), its block-diagonal recurrence (Xeloraa), its
+eight-wide `tanh` with the Cephes polynomial and the xxHash32 steps in its pair
+and triple hashes. The feed of its prediction into the text model (Kaido
+Orav's wiring, in the form of Halvor Yttredal's `fx-deepmix`) is still in the
+code and now carries a constant.
 
-Older ancestry inside the tree:
-
-* **Kaido Orav**: `fx-cmix`, `fx2-cmix`, the text model `fxcm` in its version
-  `fxcm_v26` in `src/models/fxcmv1.cpp`, which **Ibrahim Marcouch** integrated
-  into the cmix predictor for `cmix-lex`, and the fine clusters of the
-  dictionary.
-* **Byron Knoll** and **Kaido Orav**: the article order of `fx2-cmix`, which
-  this entry's order modifies. Byron Knoll built its embedding pipeline and its
-  manual sort step, whose page classes and detection strings the order rule of
-  this entry uses; the revision inherited through `cmix-lex` comes from Kaido
-  Orav's `fxcm_v26` archive, in which the `Wikipedia:` pages form one block at
-  the end.
-* **STARLIT** (Artemiy Margaritov): the idea of reordering articles and the
-  inherited code in `src/readalike_prepr/` that reorders the articles, sorts
-  them back by page id, splits the input and embeds dictionary and order in
-  the executable.
-* **phda9** (Alexander Rhatushnyak): Wikipedia preprocessing and the metadata
-  block.
-* the **paq8** line (Matt Mahoney, Alexander Rhatushnyak, Przemysław Skibiński
-  and others): word replacement and state tables.
-* **paq8px** (begun by Jan Ondrus): in the text model the English stemmer
-  after Martin Porter's Porter2 algorithm (**Márcio Pais**) and the second
-  match model, based on paq8px v208 (**Márcio Pais**, **Zoltán Gotthardt**).
-* `paq7` (**Matt Mahoney**, GPL): the squash function, the inverse stretch
-  table, the binary arithmetic coder and the APM form of the self-extractor's
-  decoder.
-* **PPMd** (Dmitry Shkarin) with `mod_ppmd` and the SSE stage (Eugene
-  Shelwien).
-* **Byron Knoll**'s `cmix-hp` and **Saurabh Kumar**'s `fast-cmix` (2023),
-  between STARLIT and `fx-cmix`, which brought the hash maps and the containers
-  of `src/ds/` into the line.
-
-From outside the program family:
-
-* the stretch curve ln(p^k / (1 - p^z)) with z = -log2(1 - 2^-k), posted by
-  the contributor **mpais** on encode.su (thread 4534, "Research ideas", post
-  88828, 26 August 2026) as a confidence-dependent stretch; used here with a
-  fixed k of 0.75, mirrored at p = 0.5, in the stretch table that turns the
-  state probabilities of the context maps into mixer inputs;
-* the word-label model's two sources as cited by `zmix`: the log-bilinear
-  language model of **Mnih and Hinton** (2007) and the hierarchical softmax of
-  **Morin and Bengio** (2005);
-* the block-diagonal recurrence of the small byte LSTM, in the form published
-  by **Xeloraa** (`github.com/Xeloraa/Hutter-compression-research`),
-  implemented and measured here;
-* the type of the linear-attention layers of the transformer, Kimi Delta
-  Attention from Kimi Linear (the **Kimi Team**, arXiv 2510.26692), as cited in
-  Ivanov's writeup; his C++ form of these layers reproduces the semantics of
-  the kernels of `flash-linear-attention` (**Songlin Yang, Yu Zhang, Zhiyuan
-  Li**, MIT);
-* for the training of the transformer, through Ivanov's trainer, the Muon
-  optimizer (**Keller Jordan** and co-authors) and the further published
-  techniques listed in section 4.2 of `training/ATTRIBUTION.md`;
-* for ordering bands 3 and 4 of the dictionary offline, the pre-trained
-  embedding models `intfloat/e5-large-v2` and `BAAI/bge-reranker-base` (MIT);
-  nothing of them ships;
-* in Ivanov's container code, his bit-exact port of the single-precision sine
-  and cosine of NVIDIA's CUDA libdevice, with which the rotary tables are
-  recomputed, and a range coder in the form of the LZMA SDK (**Igor Pavlov**,
-  public domain), with 11-bit probabilities and adaptation shift 5;
-* for the self-extracting stub, the idea of the x86 BCJ filter of the LZMA SDK
-  (**Igor Pavlov**), which its address transform extends, and the principle of
-  Crinkler (**Rune L. H. Stubbe**, **Aske Simon Christensen**), a
-  context-mixing decoder in a small executable stub (section 3.6);
-* polynomials of the Cephes library (**Stephen L. Moshier**) in the vector
-  `exp` and `log` of the transformer engine, in `Exp8` of BITLSTM and in the
-  eight-wide `tanh` of the byte LSTM; `Exp8` and the vector `exp` and `log` of
-  the engine are altered versions of `exp256_ps` and `log256_ps` of
-  `avx_mathfun.h` (**Giovanni Garberoglio**), which is based on `sse_mathfun.h`
-  (**Julien Pommier**), zlib licence;
-* the civil-date conversion of the timestamps, **Howard Hinnant**'s
-  public-domain `days_from_civil` and `civil_from_days`;
-* division by run-time constants through a magic multiplier, the method of
-  **T. Granlund and P. L. Montgomery** (1994) in the form of `magicu` from
-  *Hacker's Delight* by **Henry S. Warren, Jr.**;
-* one xor-shift and multiply step with the multiplier `0x85ebca6b` of the
-  MurmurHash3 finalizer (**Austin Appleby**, public domain) in the check-value
-  hash of the compact context maps, and the primes and the first avalanche
-  steps of xxHash32 (**Yann Collet**, BSD-2-Clause) in the context hash of the
-  packer and in the pair and triple hashes of the small byte LSTM, and parts of
-  xxHash32 in two helpers that the program does not call;
-* the hash scheme FNV-1a (**Glenn Fowler, Landon Curt Noll, Kiem-Phong Vo**,
-  public domain) for titles, aliases, dictionary words, the order rule and the
-  check of the weight container;
-* the generator splitmix64 (**Sebastiano Vigna**, public-domain reference code,
-  after Steele, Lea and Flood) for the fixed random projections and the initial
-  weights of BITLSTM and its trainer, and two of its constants in the hash of
-  the word-label model;
-* in the deterministic `exp` and `log` of `src/detmath.cpp`, the split of ln 2
-  into a high and a low part and two further constants, written as in
-  **fdlibm** (Sun Microsystems); the functions themselves are series of this
-  entry.
-
-Embedded third-party components, all GPL-3 compatible: inherited with the fork
-base, the `emhash` map and set (Huang Yuanbing, MIT) and LLVM `SmallVector` and
-`AlignOf` (Apache-2.0 with LLVM exception, and NCSA; both in PyTorch's `c10`
-form, whose changes are BSD-3-Clause), all three of which reached the line
-through `fast-cmix`; and, from the list above, the altered `avx_mathfun.h`
-routines (zlib) and the parts of xxHash32 (BSD-2-Clause). The unchanged upstream
-tree in `training/tf/tree_upstream/` carries the same three libraries and the
-same `avx_mathfun.h` routines. The license texts of these components ship in
-`third_party/`, whose `README.md` says what each one covers. `NOTICE.md` names
-the authors of the borrowed parts individually, and it names the terms of
-`prof_input/`. That directory
-holds two Wikipedia excerpts under the GNU Free Documentation License
-and the Creative Commons Attribution-ShareAlike licence; the build reads one of
-them only when `pgo_data/` holds no profile, and not one of their bytes reaches
-the compressed archive. `tools_src/sstrip.c` is an independent implementation
-written for this entry (GPL-3.0-only); its header says so. The name follows
-Brian Raiter's `sstrip` from the ELF kickers package, but no code of that
-program is used. The build chain prefers `llvm-objcopy --strip-sections` and
-falls back to this helper only where that is unavailable.
-
-`training/ATTRIBUTION.md` is the detailed register, file by file, with commits
-and URLs, and with the distinction between borrowed code and borrowed ideas. It
-covers the compressor as well as the training tools. No copyright claim is made
-over inherited code.
-
-If I have listed anything wrongly or overlooked a contribution in this section,
-in `NOTICE.md` or in `training/ATTRIBUTION.md`, please feel free to open an
-issue in the GitHub repository of this entry
-(<https://github.com/marwoelk/cmix-neif-1.0/issues>).
+If I have listed anything wrongly or overlooked a contribution in this section
+or in `NOTICE.md`, please feel free to open an issue in the GitHub repository
+of this entry (<https://github.com/marwoelk/cmix-neif-2.0/issues>).
 
 ---
 
-## 3. Changes against `cmix-lex`
+## 3. Changes against cmix-neif-1.0
 
 Negative numbers mean smaller or faster. All figures are approximate. They come
-from stream prefixes of 20 to 100 MB, from partial windows and from full runs,
-from different stages of development, and no item was measured against every
+from stream prefixes and windows, from full runs and from computations, from
+different stages of development, and no item was measured against every
 combination of the others. Combinations were repeatedly sub-additive, so **the
-sum of these tables is not the difference between `cmix-lex` and this entry**;
-that difference is the result table. Where a row says "estimate", the figure
-was extrapolated from a shorter stream or computed instead of measured; "at
-N %" means a full run read at that share of the stream.
+sum of these tables is not the difference between `cmix-neif-1.0` and this
+entry**; that difference is the result table. Where a row says "estimate", the
+figure was extrapolated or computed instead of measured; "at N %" means a full
+run read at that share of the stream.
 
-Code and data that both programs need are in the compressor **and** in the
-embedded decompressor and therefore count twice in `S`; this includes the
-transformer weight container and the weights of BITLSTM. Build
-inputs that only the compressor needs, such as the dictionary hints and the
-article-order residual, count once. Each size cell says whether it refers to
-`archive9` (the coded payload), to the binaries, or to `S`.
+A change of the stream form changes the data the transformer is trained on, so
+it has no figure of its own with the transformer. Rows of the stream form
+therefore give the effect on the context models with the transformer switched
+off ("without the transformer"); the result table holds the effect of all of
+them together with the transformer trained on this stream.
 
-Time figures were measured during development on several machines (AMD Zen 2
-and Zen 3, Intel Core i9), partly as wall clock and partly as instruction counts
-with `perf`. They show the order of magnitude and depend on the CPU.
+Code and data that both programs need count twice in `S`, build inputs that
+only the compressor needs count once. Each size cell says whether it refers to
+`archive9`, to the binaries or to `S`. Time figures were measured during
+development on several machines (AMD Zen 2 and Zen 3, Intel Core i9), partly as
+wall clock and partly as instruction or cycle counts, or computed from them;
+they show the order of magnitude and depend on the CPU.
 
 The comment column names the origin wherever an idea or a piece of code came
-from somewhere else, wholly or in part. Everything without such a note was
-designed and implemented for this entry, apart from the methods from the
-literature named in section 2. Numerous small changes (renamings,
+from somewhere else, wholly or in part. Numerous small changes (renamings,
 simplifications, error handling, console messages, removal of unused code,
-small run-time and memory improvements) are not listed one by one.
+small run-time and memory improvements) are not listed one by one; section 3.9
+gives the size of the program with all of them.
 
-### 3.1 The byte model
-
-| item | what it does | size effect | time / RAM | comment |
-|---|---|---|---|---|
-| pre-trained transformer | frozen byte-level transformer in the byte-model slot, in place of the online byte LSTM; 16 layers (12 linear-attention layers and 4 attention layers over a window), d_model 192, about 7.8 M parameters, weights quantized to 4 bits, activations to 8 bits, AVX2 integer kernels | several MB on `archive9` (about -6 MB measured with a first, smaller proof-of-concept model against the online LSTM it replaces); its weight container of 3,716,667 B counts twice against that | the largest time item (about 44 % of the run time with an earlier, smaller model of 12 layers and about 6 M parameters; not measured for this model) | idea and inference engine **taken from Vladimir Ivanov, `fx2-cmix-transformer`**, including the layer pattern; the linear-attention layers are of the Kimi Delta Attention type of Kimi Linear (**Kimi Team**); section 4.1 |
-| attention window 2048 | the window of the attention layers is a build constant and part of the training form | five windows from 1024 to 3072 compared in full runs (section 4.1); against 1024, the window 2048 was about -49 KB and 2560 about -61 KB at 39 % of the stream; 3072 was about 10 KB behind 2560 at 34 % | 2560 instead of 2048 about +5.5 % instructions, 3072 about +10.4 % (counted with the smaller model, which has three attention layers instead of four) | 2560 gave the smallest archive; 2048 was chosen for run time |
-| prompt injection | page number, page id, contributor and date in front of the title, redirect synonyms, incoming link context, earlier link texts for the same target, section heading with the article title, the contributor in front of the comment line and digit-run length classes, fed to the transformer and never coded, because the decoder can derive them | measured only together with a better trained model; no separate figure | injected rows take places in the attention window and cost inference time | section 4.2 |
-| gate | the metadata block is kept away from the transformer in training and in coding; 0.93 % of the coder stream | not measured on a full run | small | section 4.3 |
-| gate bit as mixer context | the mixer can weight the transformer differently inside and outside the gated block | contained in the model figures | negligible | |
-| redirect runs as one document | a run of redirect pages and the page that follows it form one transformer document, so the context is not reset between them, and between their pages only the page rows (with the redirect row) and any alias rows are inserted, no synonyms, link context or heading reminders; in training and in coding | contained in the model figures | negligible | a change requires retraining |
-| side channels and input packing | the two preceding fed tokens, the match model's predicted byte and a coarse match-length class, packed in the training data into one 64-bit word per row; extra embedding rows for the sentinel alphabet and a no-predecessor mark | contained in the model figures | negligible | designed for this entry, on his engine |
-| bfloat16 rounding and counting container | the tensors his design leaves unquantized are rounded to bfloat16 before packing (a lossy change, accepted after a rate measurement on the smaller model); the three stationary bit trees of the container's range coder count instead of decaying | together -115,514 B per container, counted twice; no measurable rate cost of the rounding on a 20 MB prefix | none | the container format, its range coder (in the form of the LZMA range coder of **Igor Pavlov**) and the recomputation of the rotary tables (his bit-exact port of the sine and cosine of NVIDIA's CUDA libdevice) are Ivanov's; section 4.1 |
-| dead neurons removed | MLP neurons whose quantized output is zero for every possible input are removed from the container (70 of 12,288) | -10,961 B per container (-21,922 B of `S` before about 0.2 KB of code); the archive does not change | none | the decision is a closed bound computed from the container (no sampling) |
-| container format v4 | zero byte planes and all-zero rows cost almost nothing, tensor names and shapes follow a template; 86 rows of collapsed attention channels are set to zero before | -10,301 B per container, -19,320 B of `S` net of code | none | with the rows zeroed, the archive was byte-identical on two test beds |
-| stamped binding | a fingerprint of the container is stamped into the source and checked at load time | several tens of KB of `S`, because the packed binary shrinks | none | |
-| integer attention kernel | the product of attention weights and values in the windowed layers runs in integers | in the noise on 20 MB prefixes | about -5.9 % instructions (measured with the smaller model) | |
-| BITLSTM | small LSTM behind the mixer that corrects the final probability additively in logit space, immediately before the arithmetic coder; 16 cells, inputs listed in section 4.4; weights trained offline on the first 20 % of the stream and compiled into the program; learns online from there | at 20 % of a full run, where the run is still the same as with frozen weights, about -65 KB on `archive9` against no BITLSTM and about -20 KB against an online BITLSTM of 32 cells without trained weights; over the whole stream about -44 KB on `archive9` and about -32 KB of `S`, where the weights count twice, against that online BITLSTM (full runs; the comparison run also differs in five further settings, which made the run of this entry about 1 KB larger at 58 %), and about -0.3 MB on `archive9` against no BITLSTM (estimate from a full run read at 32 %) | about +3 to +4 % of the run time against no BITLSTM (estimate from two compression runs compared up to 33 % of the stream on Zen 3 cloud instances, with an online BITLSTM of 16 cells and without the small byte LSTM); learning online from 20 % on costs at most about 1 % of the run time against weights kept frozen, within the spread of these runs | idea, form, AVX2 kernels, several input features and the offline training on a trace **taken from David Freelan, `cmix-obias`** (published there as `bitlstm32`); section 4.4 |
-| small byte LSTM | beside the transformer, an online byte LSTM of 80 cells takes the place of the large one (170 cells in cmix-lex) and feeds the layer-0 mixer, the final mixer and BITLSTM; its recurrence is block-diagonal in blocks of 16 cells | removing it costs about 12 KB at 30 % of a full run without BITLSTM (a figure that also contains a change of the transformer's place in the mixer) | about +8 % for 64 cells, roughly one more hour for each further 16 cells; the block-diagonal recurrence about -0.4 % instructions | the block-diagonal recurrence follows the form published by **Xeloraa**; section 4.10 |
-| inputs of the small byte LSTM | besides the PPMd distribution of the next byte: a hash of the last two bytes (4,096 buckets) and of the last three bytes (16,384 buckets) and the byte predicted by the longest match, as sparse one-hot inputs with their own weights; the coding cost of each bit of the previous byte minus its running average, as eight dense inputs | about -50 KB for the hashed pairs and triples, about -5 KB for the match byte and about -6 KB for the cost inputs, on 80 MB windows of an earlier configuration with a larger byte LSTM and no transformer; not isolated in this build | about +1.6 % instructions for the pairs and triples (same measurement) | |
-| PPMd prior on the byte LSTM | at every byte boundary the output logits of the byte LSTM receive the PPMd log-probabilities of the next byte, scaled by a fixed factor of 0.55 (`src/ppm_logit_prior.h`); the LSTM therefore learns a correction to the PPMd prediction | about -19 KB on an 80 MB prefix, measured with a larger byte LSTM; not isolated in this build | none | **taken from David Freelan, `cmix-obias`**, in the form of its constant-weight build (there the weight is learned or a constant); the bias g ln(max(p, 1e-6)) and the hook that adds it to the output logits before the softmax follow his code, and the factor 0.55 was chosen here |
-
-**Final configuration.** A transformer of 16 layers at d_model 192, about 7.8 M
-parameters, attention window 2048, trained on this entry's own coder stream
-for 1,000 epochs in bfloat16, 32 epochs quantization-aware and 6 at full
-precision; beside it a small online byte LSTM of 80 cells, feeding the layer-0
-mixer, the final mixer and BITLSTM; and BITLSTM with 16 cells, starting from
-weights trained offline, frozen for the first 20 % of the stream and learning
-online from there at a learning rate of 0.0003.
-
-### 3.2 Stream and preprocessing
-
-Preprocessing turns the 1,000,000,000 B of `enwik9` into a coder stream of
-552,750,198 B over exactly 208 distinct byte values. The decompressor reverses
-every item from the stream alone unless the row says otherwise.
+### 3.1 The transformer
 
 | item | what it does | size effect | time / RAM | comment |
 |---|---|---|---|---|
-| page classes sorted by page id | inside each of the five page classes that the base order places at the end (census, image, disambiguation, geographic and personal-name disambiguation pages), the pages are sorted by descending page id | about -12 KB on the payload (full run of an early configuration with an explicit order list; that order also moved the `Wikipedia:` pages from the end into the normal part, see the next row) | none | the classes and their detection strings are Byron Knoll's; the order inside the classes costs no residual symbols (section 4.5) |
-| `Wikipedia:` block | the block of `Wikipedia:` pages, which the inherited order places last, stands behind the census and image pages and in front of the disambiguation pages | about -10 KB of `S` against the order of the previous row, which had these pages in the normal part (full run of an early configuration); against their place at the end not isolated | none | the block at the end is **Kaido Orav's** (his `fxcm_v26` revision of the order; the README of his `fx3-cmix` notes a move of these pages, "Moved all articles with title 'Wikipedia:' after images"); its place in front of the disambiguation pages is this entry's |
-| redirect pages in front | the block of redirect pages moves to the front of the article order instead of the end | costs about 90 KB of `S` on its own (full run with an earlier model), 0 B of side information | none | it is kept because the redirect and synonym prompts and the alias rows depend on it (section 4.5); their gain was not separated from the model change |
-| calendar block | pages whose title is a year, decade, century, millennium, day, month, month of a year or a list of deaths of a year (3,417 pages) leave the rank-coded part of the order and form one block, sorted by a key computed from the title | together with the retuned rule below -2,055 B of `S` (smaller residual, package form); the effect on the payload was not isolated | none | membership and inner order cost no side information |
-| order as a rule plus residual | the article order is shipped as a small residual file (115,870 B, 43,780 B compressed), not as a list of article numbers; the rule takes links and content words from the first 600 characters of each article | about -100 KB of `S` against a list (an earlier measurement) | none | carried in the compressor only; the decompressor needs no order information. The encoded order is a modification of the **fx2-cmix** article order (built by **Byron Knoll**; inherited through cmix-lex in the revision of **Kaido Orav's** `fxcm_v26` archive); the page classes the rule places at the end and the strings that detect them are taken from Byron Knoll's manual sort step of that pipeline (`src/article_order/manual-sort.ipynb` in fx2-cmix); the idea of reordering articles and the inherited reordering code are STARLIT's (**Artemiy Margaritov**) |
-| dictionary hints | the word dictionary is derived at run time from `enwik9` and a compact hint package (205,067 B, about 57 KB compressed) instead of being shipped | about -50 KB of `S` | about a minute | integer arithmetic, bit-identical across machines. The decompressor has no `enwik9` and gets the compressed dictionary inside the archive |
-| dictionary | larger dictionary (54,857 entries, 520,804 B), an extra code band, reordered bands 3 and 4 | measured before the transformer, in two steps: 44,880 entries in a new word order about -106 KB of `S` against the dictionary of cmix-lex (33 pieces that together cover the stream, each coded on its own); from there to this dictionary about -19 KB on the payload, about +29 KB for the compressed dictionary in the archive and about +25 KB for the hint package of that time, about 19 KB larger than the present one (full run); not isolated with the transformer | the second step shortens the stream by about 2.0 MB | built on the word set of the paq8hp series, inherited through the cmix line; its macro bands come from paq8hp and its 510 fine clusters are **Kaido Orav's**. The extension and the reordering of bands 3 and 4 (offline, with k-means and pre-trained embedding models; `training/data/README.md` section 1) were done for this entry |
-| census transform | derivable numbers of the machine-generated place articles (population, areas, densities, housing, coordinates, the last share of a sum of 100 %) are recomputed by the decompressor instead of being coded | base rules not isolated on a full run; two later sets of refined rules: about -64 KB on the payload in the census region of a full-run pair that also differed in other items, and about -29 KB (full run); both before the transformer | shortens the stream by about 1 MB (base rules); the transform itself about a second | |
-| comment index | an edit comment that starts with a section reference loses it; a mark line after the page text carries the index of the page heading of that name, or the name itself | roughly -50 KB (estimate) | small | |
-| language links folded in | the language links at the end of an article stay in the article; the inherited phda9 preprocessing of cmix-lex moves them into a separate block at the end of the stream | about -40 KB on an 80 MB window, more on the full stream (estimate) | none | |
-| page form without XML | a page becomes title line, body, edit comment line, a last line with `minor` as a word where the revision was marked minor, one separator; the constant XML markup is not coded and the decompressor writes it back | within the noise of an 80 MB measurement | shortens the coder stream by about 17.5 MB, about -1.1 h (computed from the stream length) | the gain is time and model context, not rate; section 4.9 |
-| metadata block at the head, split and sorted | page id, revision id, timestamp and contributor go into one block at the head of the stream; part A (page id as a delta, revision id, restrictions where present) in stream order, part B (timestamp, contributor) sorted by revision id, paired by rank | about -62 KB on the block for the split and the sort | shortens the stream by about 4.9 MB, about -0.3 h (computed) | the block itself is **Alexander Rhatushnyak's (phda9)**, inherited through the cmix line; its place at the head, the split, the sort and the field forms below are new in cmix-neif; section 4.9 |
-| field forms of the block | revision ids as four bytes of digit pairs; timestamps as six such bytes below a fixed rank and as a difference to the predecessor above it; the 35,618 addresses of anonymous edits packed to two bytes per octet behind a hint byte | about -20 KB on a 20 MB prefix (measured with an earlier model set); the address packing alone about -3.6 KB on the block | shortens the stream by about 3.0 MB | |
-| timestamp forecast | in front of every record of part B, a forecast of its timestamp, computed from the revision ids, is fed to all models as known bytes | about -45 KB on the metadata block coded alone | small | no archive bytes |
-| user id at the first mention | the user id of a contributor is coded only where the name first appears | about -0.8 KB on the block; the stream gets 1.1 MB shorter | about -12 % instructions on the block | |
-| contributor fed at the page | in front of the comment line of each page, its contributor and a tab are fed to all models as known bytes, and the transformer receives them as a prompt row; a marker byte opens the comment line | about -8.8 KB on a 20 MB window | about +0.2 % instructions | the marker adds 190,325 B to the stream and no symbol to the alphabet |
-| redirect mark as code | in the front block of redirect pages, the mark `#REDIRECT` is dropped (60,683 pages) and the spellings `#redirect`, `#Redirect` and `{{softredirect` each become one code character (10,424 pages); the decompressor restores the mark from the first byte of the page text | about -0.8 KB on the redirect block of a 40 MB prefix, measured without the transformer | shortens the stream by 263,648 B | |
-| exclusion model over the identifiers | page ids and revision ids never repeat and often come in ascending runs; a model excludes digits that are no longer possible, passes the result to the mixer and, where the remaining values fix the bit, sets the final probability to its bound | about -9 KB on the metadata block (measured on the earlier decimal form of the block) | about half a minute per run (computed from instruction counts), about 15 MB RAM, no extra mixer column | |
-| HTML entity as control byte | the HTML entity `&sup2;` of the page text (332,016 occurrences) is mapped to a free control byte | about -41 KB (full run) | shortens the stream by about 1.0 MB | extends the entity mapping of the inherited phda9 transforms (**Alexander Rhatushnyak**), which **Kaido Orav** extended in `fx2-cmix` by further entities |
-| frozen 208-value byte set | the alphabet of the coder stream is frozen and stamped as a bitmap, and the models allocate for 208 instead of 256 symbols | about -4 KB on an 80 MB prefix, about -2 KB of binary | about -4 % instructions | section 4.6 |
+| architecture of `cmix-neif-beehive` | 16 layers at d_model 192, of which 12 are linear-attention layers of the KDA type (Kimi Delta Attention) and 4 attend over a window, as in `cmix-neif-1.0`; new are attention residuals (each sublayer reads a learned softmax mixture of all earlier sublayer outputs in place of the running residual sum), one key and value head shared by all query heads, value embeddings in the four window layers, an MLP width of 1024 instead of 768, and a head that adds the logits of the PPMd prior to the output; 9,285,596 parameters (`cmix-neif-1.0` about 7.8 M) | the effect of the new transformer on its own was not measured (section 4.3) | about +9 % instructions per transformer row against the model of `cmix-neif-1.0` at the same window, about +1.3 h (computed) | architecture, recipe and start weights **adopted from Vladimir Malinovskii, `cmix-neif-beehive`**; attention residuals after the **Kimi Team** (arXiv 2603.15031), value embeddings after **Braden Koszarsky** (Modded-NanoGPT, 2024); the engine parts adapted from `cmix-neif-beehive` |
+| training on this stream | the weights of `cmix-neif-beehive`, trained on the stream of `cmix-neif-1.0` and exported there at an attention window of 1536, were trained further on the coder stream of this version at the window of 2048 of `cmix-neif-1.0`, for 600 epochs in bfloat16, 96 epochs quantization-aware and 16 at full precision (section 4.3) | contained in the result | none | the recipe follows `cmix-neif-beehive`; the length of the quantization tail is this entry's |
+| fast-weight head | a second distribution of the transformer from fast weights on the codes of the MLP blocks 12 to 15, learned online while coding, enters the mixer as a further expert | about -71 KB of `S` in a pair of full runs with the transformer of `cmix-neif-1.0`; about +4.9 KB of `S` for the code | about +1.0 to +2.2 h (computed) | **taken from Ryan Landay, `ex-girlfriend 1.0`** (its code adapted, four blocks as there) |
+| container formats | the container of `cmix-neif-1.0` is extended by entropy coding of the weights, and the order of interchangeable groups of neurons is coded into the choice among their permutations (bits-back, Lehmer code), now also for the groups of the fast-weight MLP blocks and the key and value dimensions of the KDA layers; the step that removes dead MLP neurons runs as before and found none in this model | together about -43 KB of `S` (entropy coding -9.9 KB, permutations -20.2 KB, their extension -13.3 KB), each with a byte-identical archive | none | the archive does not change; only redundancy is removed |
+| fed rows without digit-run classes | the rows that `cmix-neif-1.0` fed after each digit run (section 4.2 of its README) are no longer fed, and the special paths of the transformer for ISBN check digits are removed; the transformer reads the preprocessed stream as it is | part of the training form, no figure of its own | fewer fed rows | a change requires retraining |
+| speed of the engine | rows whose output nobody reads are computed as a block of up to 16 rows; under the shared key and value head only head 0 prepares them; the depth mixture of the attention residuals runs as an online softmax; the dense kernels prefetch 6 KB ahead instead of 2 KB | all bit-identical; the block about +2.2 KB of `S`, the depth mixture about -0.3 KB of `S` | the block about -0.49 h, the depth mixture about -0.26 h (both computed from instruction counts); the prefetch depth reduced the cycles on Zen 3, its size was not separated | online-softmax depth mixture and prefetch depth adapted from `cmix-neif-beehive`; the block form is this entry's |
 
-### 3.3 Mixer and context models
+### 3.2 SEMCACHE
 
 | item | what it does | size effect | time / RAM | comment |
 |---|---|---|---|---|
-| second match channel | a match channel anchored in the parser state instead of raw history | about -26 KB on the payload (full run) | time-neutral | **line-by-line port from Halvor Yttredal, `fx-deepmix`** |
-| indel recovery in the match model | when a match of the text model's match model fails, it re-anchors at offsets of one and two bytes and keeps its backup for up to three byte boundaries | about -4.3 KB on an 80 MB window | about +0.5 % cycles | **ported line by line from `zmix 1.0`** (its Zig source) |
-| end-to-end mixer gradient | the layer-0 mixers learn from their exact share in the error of the final mixer instead of their own local error; the final mixer starts as a plain average | about -10.1 KB on an 80 MB window | about +0.1 h (estimate) | **mechanism taken from `zmix 1.0`**; its backward recursion is rewritten in C++ from the Zig source |
-| word-label model | an online log-bilinear model over the 16 preceding words predicts the bits of the next dictionary code word through a hierarchical softmax over the code-word tree; one layer-0 mixer input | about -4.3 KB on an 80 MB window (estimate for the whole stream -6 to -14 KB); about -2.7 KB at 13.6 % of a full run, where the comparison run was stopped | about +0.05 h (estimate), about +69 MiB (computed from the table sizes) | **ported from `zmix 1.0`** (its Zig source, the tied-decay form, transferred function by function to C++) together with its hyper-parameters; `zmix` cites Mnih and Hinton (2007) and Morin and Bengio (2005); extended here to the fourth code-word band of this dictionary |
-| direct-state-map widths | the bit widths of four of the five direct state maps of the text model | about -39 KB on the payload (full run) | +367 MiB RAM | the same maps were made smaller in Seth Lupo's public `fx3-cmix` experiments (`github.com/Seth-Lupo/fx3-cmix`, linked on encode.su); the larger widths here were measured for this entry |
-| mixer learning rates | layer-0 mixers at 1.3 times and the final mixer at 0.75 times the inherited rate; the last step of the schedule at 0.1 | the level 0.75 for all mixers about -33 KB and the last step about -46 KB (full runs with an earlier model); raising the layer-0 mixers to 1.3 about -6.4 KB at 41 % of a full run (with a different final-mixer rate) | none | the value 0.1 of the last step is **Halvor Yttredal's, `fx-deepmix`** |
-| schedule restart after the metadata block | the learning-rate schedule of the mixers starts again at the first page, so the text is not coded on the last step of a schedule that the metadata block has run through | about -2.1 KB on a 20 MB window | none | |
-| context-map capacities | 16 context-map capacities of tiers 0 and 1 doubled; a seventeenth map of that group carries no context in this stream form and was made smaller instead | about -5 KB (full run, measured with all 17 maps doubled) | +148 MiB RAM | the sign depends on the rest of the set |
-| compact context-map buckets | one family of context maps of the text model stores 16 instead of 14 slots per 128-byte bucket (11 slots of 5 bytes for the contexts at the byte boundary, 5 of 7 bytes for those at bit positions 2 and 5), with a hashed 11-bit check value and a 6-bit use counter that decides which slot is replaced; several maps of the family are made smaller; the four most recently used slots of a bucket are protected from replacement (two before), and a replacement no longer empties that queue | about +10 to 13 KB on the payload against full-size maps (estimate from a full run read at 69 %); the recency protection alone about -52 KB in an earlier full run | about -2 GiB RAM | the first mixing stage of the check-value hash follows an option of **`zmix 1.0`**, its second stage is one xor-shift and multiply step with the multiplier of the MurmurHash3 finalizer (**Austin Appleby**, public domain); the memory goes to the PPMd page pool (section 4.8) |
-| context-map time constant | the time constant of an average in one context-map family is raised | about -0.5 KB on an 80 MB window | none | **parameter taken from `zmix 1.0`** |
-| narrower flag fields in the secondary estimation | the flag history of one SSE stage uses 4 instead of 7 bits, the flag field of another 4 instead of 5 | about -6.5 KB at 38 % of a full run for the first; the second within the noise of an 80 MB window | -294 MiB and -43 MiB | **both options taken from `zmix 1.0`**; the value 4 of the second is chosen here |
-| two models removed, two maps halved | two double-indirect models and their hash tables are not allocated; two stationary maps of the text model use 15 instead of 16 context bits | together with the second SSE field above and the shared map below (there 500k instead of 1M rows) about +4.4 KB at 58 % of a full run (estimate; for the whole stream about +12 KB) | -196 MiB and -32 MiB; the four items together about -393 MiB in that measurement | |
-| byte-model prediction into the text model | the bit probability of the small byte LSTM as an input to the internal mixers of the text model | about -27 KB (full run with the large byte LSTM); not isolated in this build | one input slot | the wiring is **Kaido Orav's** from `fx2-cmix`; `cmix-lex` no longer fed this input; restored in the form of **Halvor Yttredal's** `fx-deepmix` (two lines) |
-| PPMd order limit per context | the maximum order of the PPMd model depends on the classes of the last two bytes (between 8 and 25); the metadata block uses order 14 | about -20 KB on the payload against a flat order 14 in a full run without the transformer; against the flat order 25 of `cmix-lex` not isolated with a matching transformer | the model holds less data (about -13 % at the end of the stream against order 14, without the transformer) | the transformer was trained on PPMd priors of this model; section 4.8 |
-| PPMd restart and warm start | after the metadata block the PPMd model starts empty and is fed the stems of the dictionary words | the warm start about -7.1 KB on an 80 MB window without the transformer | the model's working area starts empty after the block | section 4.8 |
-| about eight context-map and state-table constants | stretch and scale vectors, the cut in the flat region of the state space | together about -1.1 KB on an 80 MB prefix and about -1.6 KB on 160 MB | none | one of them, the stretch curve of the context maps, follows a curve posted by the encode.su contributor mpais (thread 4534, post 88828), reimplemented and measured here |
-| index retyping | narrower index types for several hash tables | 0 B, bit-identical | -304 MB RSS measured with all five tables; two of them are no longer allocated | **idea and parameters taken from Layth Lakhani's `fx3-cmix` experiments**; the implementation here is independent |
-| larger shared map | one shared hash map enlarged from 400k to 500k rows | small, not isolated | about +24 MiB (computed) | same source; the size here was chosen for memory |
-| text-model output in its last input column | the last input column of the text-model block, which in cmix-lex always holds a constant filler, carries the text model's final prediction; the context of one layer-0 mixer (the average of text model and byte model) and the matching input of the final mixer read it from there | about -15 to -20 KB (full run with an earlier model set) | none | |
-| one layer-0 mixer added | a 24th layer-0 mixer (cmix-lex has 23) selects its weight row by whether the byte that the small byte LSTM rates most probable is still possible after the bits of the current byte coded so far, and by that byte's probability in four steps; inside the zone the transformer gate holds back, the zone selects the row | about -7.6 KB (full run with an earlier model set) | about +0.6 % time (80 MB window, earlier model set) | |
-| ISBN check digit | after the dictionary code word for "isbn" and nine digits, the check digit of an ISBN-10 is computed (sum of position times digit, modulo 11, 10 written as X); from the fifth bit of that byte on, while the bits coded so far agree with it, the final probability is moved to 127/128 towards its next bit | about -10 to -13 KB (estimate from short test streams, earlier model set) | about +0.15 % time | a modulo-11 sum cannot be learned from byte contexts |
-| number and date contexts | expectations for ordinal suffixes and ISBN check characters as a state map; context-map contexts for digit runs (field word, previous number, same decimal place) and for dates (month name, year of the article, rank among the recent numbers of the article, previous number of the line); the label word in front of a number in two existing word contexts | about -3.4 KB on four 8 MB windows (estimate for the whole stream about -60 KB) | about +34 MB RAM | |
-| extra contexts of the first APM stage of the text model | the stage also sees the coding cost of the last bytes, whether the current link target already occurred in the article, how recently the current word prefix was seen, and one bit that marks the tail sections of an article (from a heading See also, References, Bibliography or External links on); the recency bucket also selects the weights of one final mixer of the text model | not isolated in this build (measured earlier in forms with an own mixer row, about -17 KB, -6 KB and -5 KB; the tail bit about -0.7 KB on 5 MB blocks) | small | |
-| UTF-8 contexts | inside escaped UTF-8 sequences, seven context slots of the text model that were switched off there get contexts over the last real bytes and the code-point hash | small (window measurements) | none | |
-| XML-tag contexts off | the contexts of the text model for the XML-tag state (four context-map contexts and one mixer) are switched off, because the page form leaves almost no XML | about -2.7 KB on a 20 MB window | about -0.2 % instructions | |
+| SEMCACHE | a memory of about 16.8 M transformer states at unsure positions of the stream, each with the byte that followed it; at a new unsure position the 32 most similar earlier states and the bytes that followed them give a distribution of the next byte, which feeds the mixers, four inputs of BITLSTM and an end stage in front of the coder (section 4.1) | about -730 KB of `S` (0.77 %) in a pair of full runs of this model with and without it, both with BITLSTM learning online in place of the three weight sets (coded output -743.6 KB); its code about +6.8 KB in each program, about +13.6 KB of `S` | about 2.2 GB of RAM, taken from the page pool of the PPMd model; about +4.5 to +5.5 h (estimate, computed from the cycles per lookup on AMD Zen 2 and the number of lookups on an earlier form of the stream) | methods after the literature named in section 2; design and code of this entry |
 
-### 3.4 Speed
+### 3.3 Census transform
 
-The time limit decides how much model fits, so time saved here was spent on
-model capacity. Where a figure is given, the item was measured on its own;
-the figures do not add up.
+| item | what it does | size effect | time / RAM | comment |
+|---|---|---|---|---|
+| census template form | the census pages are split into template parts, values and deviating text; template choices and values go into a census metadata block behind the metadata block, the page keeps the deviating text and the names (section 4.2) | census pages 79.1 MB of the stream in `cmix-neif-1.0`, now 21.7 MB (stubs and the pages that stay text) and 9.3 MB of block. Without the transformer, on four windows that cover 97.4 % of the census pages, about -129 KB of `archive9` for the first complete form; the code and tables of the census form of this version at least about +42 KB of `S` (zeroed in the final program, which was then packed again); in a form of `cmix-neif-1.0` with a byte LSTM of 256 cells in place of the transformer and BITLSTM with 32 cells learning online, full runs over all of `enwik9` give this form about -273 KB of `S` against no census transform and about -111 KB against the census form of `cmix-neif-1.0`, with its code in that program included | the coder stream about 47 MB shorter (this form against the census form of `cmix-neif-1.0`, both on the stream of `cmix-neif-1.0`), about -4.4 h (computed from the stream length) | replaces, for the pages of the template form, the number transform of `cmix-neif-1.0` |
+| number coder | each value is coded as its distance to an estimate on the grid of the value; the estimate comes from an online ridge regression per kind of place over features of the record and from the mean of the eight nearest places of that kind coded before; in front of each value the field and a coarse scale class of the estimate are fed to the models as known bytes; members of county lists and neighbouring counties are value slots with short tokens, the category link to the own county repeats the county without a token, a repeated coordinate is a short token | without the transformer, on windows or on the block, about -32 KB for the scale class and about -26 KB, -37 KB, -18 KB, -10 KB and -4 KB for five further refinements of the census form (not additive) | small | the ridge regression after **Hoerl and Kennard** |
+| census pseudo-article | the texts of all template variants, each once, and the words of the states and kinds of place, as a third article of the text start (section 4.4) | part of the forms above | none | |
+| fed rows of a census page | in front of the title a context row with the words of the type and the state of the record; population and area in the page row; the population, households, families, housing units, areas, density, location and incomes of the record in sentences of the template wording, and the coordinates behind `located at`, as fed blocks | part of the training form, no figure of its own | fed rows take places in the attention window | |
+| sign rule of the census region | a rule at the final probability in the census region | about -3.1 to -5.3 KB of `S` (estimate, measured on the census form of `cmix-neif-1.0`) | small | the squash table and the stretch function of **Matt Mahoney's** `lpaq1` |
+
+### 3.4 Stream form: the text start and reversible text rules
+
+Behind the metadata block and the census metadata block the text begins with
+three articles, and three reversible rules shorten the page text. Section 4.4
+describes both.
+
+| item | what it does | size effect | time / RAM | comment |
+|---|---|---|---|---|
+| dictionary article | the words of the dictionary stand as the first article of the text, in code form, where a later word uses the codes of earlier ones; the decompressor takes its dictionary from this article; the PPMd model is warmed up with the codes in front of the article and with the word stems at its end | an empty line in front of each word out of alphabetical order about -3.1 KB on the article, without the transformer; the warm-up has no figure of its own (it can only be judged with a trained transformer) | none | |
+| contributor article | the names of the contributors move from part B of the metadata block, which keeps a mark (new or repeated name) in their place, into the second article of the text, while anonymous addresses and a few names stay in part B; in front of each line of it the day of its revision and the kind of its mark are fed to all models as known bytes; the word-label model starts afresh behind it | without the transformer about -6.3 KB on 9 MB and about -5.9 KB on 50 MB of page text, against about +4.9 KB of code | none | |
+| census pseudo-article | the third article, section 3.3 | | | |
+| a/an | an indefinite article is written as the code of `a` where a rule on the following word (its first letters, with a list of 44 exceptions) gives the right form, and as the code of `an` where it does not; the decompressor applies the same rule | title and link shorten the stream by 4,880,702 B, a/an keeps its length; without the transformer at 11 % of a full run the three rules together with a stage for check digits about -8.1 KB against a run of the same stream length (a/an about -5.1 KB, title and link about -1.3 KB each, check digits about -0.4 KB); about +10.6 KB of code in `S` for the three rules | the stream about 4.9 MB shorter | |
+| title | in the page text, the first bold `'''...'''` and the titles of interlanguage links that repeat the page title become a short copy mark | in the row above | | |
+| link | a link whose shown text follows from its target (for example the target with the case of the first letter changed, or without a part in brackets) keeps the target and a short mark in place of the text | in the row above | | |
+| ISBN-10 check digit | a correct check digit of an ISBN-10 leaves the stream and the decompressor computes it; a wrong one stays (in `cmix-neif-1.0` a rule moved the final probability towards the computed digit) | stream -34,737 B; code about +0.8 to +1.3 KB of `S` | none | |
+| repeated edit comments | behind the redirect block, an edit comment that repeats an earlier comment of the same contributor becomes the number of that comment in the list of the contributor's comments; the comments of the redirect block stay text and enter no list | stream about -1.6 MB; without the transformer about neutral (estimate between -5.3 and +6.5 KB of `S`, code included) | the stream shorter | |
+| computed values | values that follow from text already decoded (unit conversions, pairs of infobox fields, years) are fed to the transformer as a block with a copy mark and an end mark (section 4.4); the text itself stays unchanged | about -2.8 to -5.3 KB of `S` after training (estimate); about +8.8 KB of code | fed rows take places in the attention window | |
+| link context | fixed rules choose the pieces of the link context (neighbouring rows, end token, redirects, page head, duplicates); in front of each piece the title of its source page; a block mark `#<word>` in front of the title by the position of the page in the order; a smaller index of the pieces | no figure without training | the index about -60 MB of RAM and about -1.6 % instructions | |
+| word transform | partial-word codes of the dictionary transform only as prefixes and only from 7 letters on; no suffix codes | without the transformer at 11 % of a full run about -4.3 KB | none | |
+| revision ids and timestamps | below revision id 17,000,000, part A of the metadata block codes the revision id as the remainder against an interpolation over the page id; above the fixed rank of part B, the timestamp forecast follows the slope of the last records | about -23 KB of `S` net of code (on the block); the stream about 0.16 MB shorter | none | **taken from Ryan Landay, `ex-girlfriend 1.0`** |
+
+### 3.5 BITLSTM
+
+| item | what it does | size effect | time / RAM | comment |
+|---|---|---|---|---|
+| three frozen weight sets | one weight set with 16 cells for the metadata block and the census metadata block, where BITLSTM was off in `cmix-neif-1.0`; one with 32 cells instead of 16 for the text up to the calendar block and one with 32 cells for the rest; the model switches at a boundary of 1,024 bits with its state set to zero, and it never learns while coding (`cmix-neif-1.0` learned online from 20 % of the stream on); the program has no backward pass | against no BITLSTM, about -12 KB of `S` in the metadata blocks, about -302 KB in the first part of the text and about -193 KB in the second, the weights counted twice (estimate from a replay of the trace, section 4.5); in two full runs of this model, about -109 KB of `S` against BITLSTM with 32 cells learning online | without a backward pass, against BITLSTM with 32 cells learning online, about -1.3 % of the instructions of this program and an estimated -0.4 to -1.6 h (from instruction and cycle counts on AMD Zen 2 over 2 MB of page text) | form, kernels and offline training on a trace **after David Freelan, `cmix-obias`** (published there as `bitlstm32`, with 32 cells) |
+| new inputs | four inputs from SEMCACHE (its log-odds, its mass, the highest similarity, and whether its most probable byte is that of the transformer) and 12 inputs from the transformer (the fast-weight logit, the path state of its most probable byte in six classes, its confidence in four classes, and one more value of that state); the one-hot of the bit position now takes the true position of the bit in the byte; the sketch of the byte LSTM is gone | the SEMCACHE inputs about -12 KB at 11 % of a full run with an online BITLSTM; the transformer inputs not isolated | small | |
+| training on a graphics card | a trainer in PyTorch replays the trace of a compression run of this configuration with 256 windows per Adam step and a cosine schedule of the learning rate (0.01 to 0.0001 for the metadata set, 0.003 to 0.00003 for the two text sets), followed by a fine-tuning on the rounded weights | about -1.9 KB against the C++ replay trainer of `cmix-neif-1.0` in a comparison on a short trace | none at run time | section 5 |
+
+### 3.6 Mixer and context models
+
+| item | what it does | size effect | time / RAM | comment |
+|---|---|---|---|---|
+| small byte LSTM removed | the online byte LSTM of 80 cells beside the transformer, its additional inputs and its PPMd prior are removed | about +6.4 KB of `S` (estimate from a full run read at 73 %); about -18.6 KB of `S` for the code | about -7 % of the instructions and an estimated -2.2 to -4.8 h (from instruction and cycle counts before and after the removal, on AMD Zen 2 over 8 MB of page text of an earlier form of the stream); its memory goes to other tables | the run time goes to the transformer and to SEMCACHE |
+| Bayesian term and SSE mixing in the final mixer | a Bayesian mixture of four experts (transformer, fast-weight head, PPMd, text model) with a fixed share of 0.01 is an additional term of the final mixer; the final probability mixes the stretched SSE output and the mixer output at 0.4 to 0.6 | about -5.6 KB at 11.5 % of a full run | small | the fixed share like in **Herbster and Warmuth** |
+| extra rows of the final mixer | 24 additional rows chosen by the path state of the most probable byte of the transformer (6) and its confidence (4), added to the selected row | about -3.3 KB at 11 % and about -6.4 KB at 30 % of a full run | small | |
+| confidence of the transformer as mixer context | one layer-0 mixer selects its row by the probability of the most probable byte of the transformer in eight steps | not isolated | about +0.06 h (computed) | adapted from `cmix-neif-beehive` |
+| mixer learning rates and normalisation | layer-0 mixers at 2.2 instead of 1.3 times the inherited rate, the final mixer at 5.0 instead of 0.75; the thresholds of the learning-rate schedule 16 times as long; the inputs of the layer-0 mixers normalised per column | each about -2.4 to -6.9 KB at 11 % of a full run with an online BITLSTM (not additive) | none | |
+| floor and input clamp | the floor of the transformer probability lowered from 1e-6 to 3e-8, the clamp of the mixer inputs from 1e-4 to 1e-6 | the clamp at 1e-5 about -2.3 KB up to 18.7 % of a full run; the step to 1e-6 together with the floor about -0.4 KB at 11.5 % | none | |
+| floor stage | a stage with a 32-bit probability behind BITLSTM, in front of the end stages of section 4.1 | about -5.5 KB of `S` in a pair of full runs | small | |
+| adaptive depth | the threshold that skips the mixer cascade lowered from an absolute logit of 8 to 7 | about -4.1 KB at 30 % of a full run | about -0.75 % instructions | the mechanism is from **James Byrne's** `zmix 1.0`, as in `cmix-neif-1.0` |
+| grammar automaton extended | seven more kinds of bits that the structure fixes are marked and not coded, about 89 M more bits | without the transformer about -2.2 KB at 11 % of a full run; about +1.3 KB of code | small | the automaton of `cmix-neif-1.0` (section 3.4 of its README) |
+
+### 3.7 PPMd and memory
+
+| item | what it does | size effect | time / RAM | comment |
+|---|---|---|---|---|
+| restarts around the census metadata block | the PPMd model starts empty at the end of the metadata block and again at the end of the census metadata block, at order 14 in both blocks; the paging layer is reset with it | about -0.4 KB on a prefix without the transformer; about +0.3 KB of code for the reset of the paging layer | the reset up to about -1 min | |
+| start of the page pool | the page pool of the PPMd model starts at 1 GiB instead of 2 GiB, because SEMCACHE takes about 2.2 GB from the first byte of the stream on | none, the archive is the same for every pool size | lower at the start | |
+| tables made resident at the start | the tables of SEMCACHE are written once at the first byte of the stream, behind room made in the page pool, and the end of the census metadata block steps the size control of the pool | about +0.1 KB of code | the tables make no jump in the resident set later in the run; without this, the first writes into the zero-filled tables made about 0.9 GB resident within 100 ms on a current kernel | |
+
+### 3.8 Speed
+
+The time limit decides how much model fits. The figures are computed from
+instruction or cycle counts or from the stream length and do not add up; the
+run time of the whole program is in section 1.2.
+
+| item | time | comment |
+|---|---|---|
+| census template form, coder stream about 47 MB shorter | about -4.4 h | section 3.3 |
+| small byte LSTM removed | about -2.2 to -4.8 h | section 3.6 |
+| SEMCACHE with vector kernels, an exact reciprocal division and prefetching | about -2.3 h against its first form, within its own +4.5 to +5.5 h | section 3.2 |
+| transformer rows in blocks, online-softmax depth mixture | about -0.49 h and about -0.26 h | section 3.1 |
+| new transformer at the window 2048 | about +1.3 h | section 3.1 |
+| fast-weight head | about +1.0 to +2.2 h | section 3.1 |
+| BITLSTM without a backward pass | about -0.4 to -1.6 h | section 3.5 |
+
+### 3.9 Packaging
 
 | item | what it does | size effect | time | comment |
 |---|---|---|---|---|
-| adaptive depth | a logistic model with 33 weights in front of the mixer cascade predicts each bit; where the absolute value of its logit exceeds 8, its own probability is coded and the layer-0 mixers, the final mixer, the SSE stages and BITLSTM are skipped for that bit (39 % of the bits). It learns on every coded bit, and all models still update | about +2.7 KB on an 80 MB window (estimate for the whole stream about +18 KB) | about -5.1 % instructions | **mechanism taken from `zmix 1.0`**, rewritten in C++ from its Zig source; the features were chosen for this predictor's layer-0 row |
-| mixer bank | all layer-0 dot products (input width about 590) in one pass, several rows per load of the input vector | +7.6 KB of `S` | about -6 % (from instruction counts on Zen 2) | |
-| smaller logit table | the logit table shrinks from about 400 KB to about 12 KB by indexing from the float exponent | about +0.2 KB of `S` | about -4.5 % wall clock on Zen 2 (20 MB window) | the large table was displacing other hot data; the effect depends on the CPU |
-| branch-free evaluation of the context-map states | the context-map states are evaluated without branches, value-identical to the branching form | about -0.4 KB of `S` | about -2 % wall clock, far fewer branch misses | **taken from David Freelan's speed work on `cmix-obias`** (`ContextMap3/4::mix3` there): the masking of the zero state follows that code line for line, the run-length masking follows its form; the presence mask of the duplicate check is new here |
-| prefetch | context-map, indirect-model and mixer prefetch, with one prefetch site in the mixer weights at a measured depth | about +0.4 KB of `S` | about -2.4 % wall clock | prefetches at different places compete for the same memory parallelism and do not add up |
-| grammar automaton | an automaton over the coded stream marks bit positions whose value is fixed by the structure, about 9 % of all bit decisions; these bits are not coded, the models still process them | a few KB less payload, against a few KB of code | small | near break-even; the automaton is exact on this stream |
-| bump allocator and huge pages | one bump allocator that asks the kernel for 2 MiB transparent huge pages, and a lower alignment threshold for small rows; the program itself asks the kernel to collapse dense regions into huge pages, every MiB of input at the start and every 16 MiB later | about +2.4 KB of `S` for the allocator, about +1 KB for the collapse | about -1.7 % wall clock where the kernel grants huge pages; the early collapse removes about 43 % of the page-table walks on a 9 MB window | without transparent huge pages the program runs as before |
-| build constants | table sizes, loop bounds, buffer sizes and the vocabulary size become build constants instead of corpus-invariant runtime values | about -24 KB of `S` | about -3 % instructions | each step verified to leave the archive byte-identical |
-| code for inputs `enwik9` does not contain | support for input shapes that `enwik9` does not contain is removed from the model layer and from the XML preprocessing | about -2 KB of `S` | negligible | the rules allow an entry to be specific to this file; each cut was checked with a full-stream run whose payload is byte-identical |
-| output part skipped for unread positions | a position of the transformer (one fed byte) whose distribution nobody reads computes only K and V of the last layer and skips the rest of it and the output head. These are all positions of an inserted block (page, synonym, heading and alias rows, a link context, a contributor) except the last one, the last position of a synonym or heading block that a link context follows, every sentinel row, and a coded position that synonym or heading rows or a link context follow. The last position of an alias or contributor block is computed in full, because BITLSTM can read the hidden state of the transformer at a coded bit after the block (it refreshes its sketch of that state every eight bits it sees, section 4.4), and after a contributor block the mixer also reads the distribution of that position | about +0.7 KB of `S` | about -0.3 % (estimate for the whole stream from 20 and 40 MB windows, measured without the skip in alias and contributor blocks) | the model state after the position is the same, and no skipped output is read, so the coded output does not change |
-| profile of the profile-guided build | the inherited profile-guided build with LTO is kept; the profile is collected with the submitted configuration on the first 50 MB of this entry's preprocessed stream instead of the short excerpt of the fork base, and the finished profile ships with the package | not isolated | about -2.7 % for the profile-guided build as a whole | profile-guided build and LTO inherited from `fx2-cmix` through `cmix-lex` |
-| about eight kernel and layout items | PPMd tree built from below, byte-model update from the stamped bitmap, fixed mixer row length and layer-0 width, padded hot rows, four accumulators in the text-model dot product | together about +1.5 KB of `S` | together roughly -6 % instructions | |
-| mixer dead zone of the text model | after a well predicted byte, the error threshold below which the internal mixers of the text model skip their update rises to 1024 (inherited 319) | small | fewer mixer updates | |
-| byte-LSTM kernels | the forward pass reads the gate weights from a bfloat16 copy refreshed after each update; exp, logistic and tanh are computed eight wide by own functions; the learning step runs vectorised over several rows at once; the output layer keeps one live matrix instead of a copy per byte and recomputes the earlier states exactly for the backward pass | bfloat16 copy and eight-wide functions about -33 KB on the coder stream (estimate from eight sampled sections); vectorised learning step about +11 KB of `S` (full run); output layer byte-identical | about -8 % CPU time for the first two, about -8 % instructions for the learning step, about -13 % time for the output layer, each measured with the larger byte LSTM of an earlier configuration | |
-
-### 3.5 Memory
-
-| item | what it does | size effect | RAM | comment |
-|---|---|---|---|---|
-| own paging of the PPMd model | the model keeps its address range, but its data live in a pool of 4 KiB frames that the program reads and writes itself, with a dirty bit per frame, so that frames that were not written to are dropped without a write; the pool grows and shrinks in steps of 64 MiB with the room the resident set leaves under the limit | about +7 KB of `S` for the code (measured on an earlier state of the program); the payload does not change | a pool of up to 4 GiB, with a margin of 256 MiB below 10 GiB | section 4.8 |
-| compact context-map buckets, two models removed, narrower tables | see section 3.3 | see section 3.3 | about -2 GiB and about -0.7 GiB | the memory goes to the PPMd page pool |
-| memory cuts without effect on the output | lazy `Direct` table and lazy mixer and map rows, unused tails of the transformer pools given back, `malloc_trim` after the model is built and after the metadata block, a fixed mmap threshold, the input lines of the article reorder in one flat buffer instead of one string per line, the tables of the exclusion model released after the metadata block | about +1.4 KB of `S` | about -150 MiB, and about -60 MiB at the compressor's peak for the flat line buffer | each checked byte-identical |
-| one table for the metadata block | the block is parsed once into a table of 12 bytes per page and one text area of contributor names, about 3.3 MB; the helper tables of the parse are released at the end of the block | none | small | the contributor feed, the timestamp forecast and the gate and page rows of the transformer read this table |
-| one table for redirects and aliases | the redirect sources and earlier link texts of all titles live in one compact table of two arrays of 256 sub-blocks (link texts and redirect sources), selected by the top 8 bits of a hash of the target title | none | peak of the component in a test harness 70 MB before, 27 MB after | the stream is byte-identical to the earlier form |
-| release before helper processes | before the program starts a helper process of the self-extraction, it releases what it no longer needs; the decompressor copies the blocks out of its own image piece by piece instead of reading the image into memory | none | about -100 MiB at the peak of the self-extraction | |
-| release before the inverse transform | before the decompressor undoes the preprocessing, it releases the PPMd pool, its page file and the remaining tables of the text model | none | about -3.2 GiB at that point (measured on short inputs) | |
-| index compaction on the frozen alphabet | narrower indices in one hot table | about +0.1 KB of `S` | -7 MiB | bit-identical because the byte set is frozen |
-| match positions in 3 bytes | the second match model of the text model stores positions in 3 instead of 4 bytes | +18 B on an 80 MB window | -16 MiB | |
-
-### 3.6 Packaging
-
-| item | what it does | size effect | time | comment |
-|---|---|---|---|---|
-| one-time code compiled for size | constructors, destructors and one-time setup in units with a strict float model or without floating point are compiled for size | about -10.4 KB of `S` | none | the archive is byte-identical by construction |
-| encoder section | encoder-only code is placed in its own section and carried once, in the compressor, instead of twice | about -22 KB of `S` | none | |
-| dead code left out | two code regions that the submitted configuration can never reach are not part of this source | about -8.4 KB of `S` (computed from two measurements) | none | the archives are byte-identical |
-| own self-extracting stub | a two-stage freestanding stub in place of an external packer, in which an order-1 bit coder unpacks a context-mixing decoder for x86-64 code, which takes its contexts from an instruction-length decoder run over the bytes already decoded (role of the next byte, opcode, ModRM, prefixes, previous instructions) and separates code from data with the program headers of the image; before coding, RIP-relative displacements and the targets of calls and jumps are made absolute, and the same instruction walk undoes this; the stub finds its own image through `/proc/self/exe` | about -101 KB of `S` against the earlier stub of this entry (a context-mixing decoder with an x86 BCJ filter), which was itself smaller than UPX output (package form) | about 10 s and about 180 MB to unpack at each start of a program | the squash function, the inverse stretch table, the arithmetic coder and the APM form follow Matt Mahoney's `paq7` (GPL); the x86 model and the address transform were written for this entry; the address transform extends the idea of the x86 BCJ filter of the LZMA SDK (**Igor Pavlov**), which the earlier stub used, and a context-mixing decoder in a small executable stub is the principle of Crinkler (**Rune L. H. Stubbe**, **Aske Simon Christensen**) |
-| appended build inputs | hint package, article-order residual and weight container are appended to the executables as compressed blocks; the compressor also appends the compressed dictionary to the archive | accounted for in 3.1 and 3.2 | the compressor decodes hint package and order residual at start-up, about 43 s in the test run | the weight container is most of each executable |
-| correction-model weights in the program | the 7,386 B of weights are compiled into the program as data; no file is read for them | about -4.2 KB of `S` against appending the raw weights to both executables | none | |
-| compiler and linker settings for size | the main units are compiled without loop unrolling and without position-independent code and with merged constants, the preprocessing for size (`-Oz`); the linker folds identical functions | about -36 KB of `S` (measured on an earlier state of the program) | none measured | the archive is byte-identical |
-| out-of-line helpers and size-compiled glue in the text model | the context-map, state-map and mixer helpers of the text model are kept out of line, and its large glue functions (prediction, update, parsing) are compiled for size; the arithmetic kernels stay at full optimisation | about -22 KB of `S` (earlier state of the program) | about -1.2 % | the archive is byte-identical |
+| new packer | the two stages of the stub coder are rebuilt (section 4.9) | -18,665 B of `S` against the packer of `cmix-neif-1.0` on the same program | unpacking about 52 s for `comp9` and 45 s for `archive9` on Zen 2 (section 1.8) | section 4.9 for the origins |
+| size of the program | the packed program, the compressor part of `comp9` plus the decompressor at the head of `archive9`, is 395,323 B (`cmix-neif-1.0`: 348,267 B); SEMCACHE, the census transform, the text start, the text rules, the new parts of the transformer engine and three larger weight sets of BITLSTM in place of one are added, and numerous small changes make the code smaller (among them messages that print a code `E<n>` listed in `ERRORS.md`, an order of the functions in the link with similar code together and the hot functions of the profile first, and the removal of unused code, of 26 slots of the text model that carried a constant and of the fallback path of the PPMd model on a full model area, where the program now stops with an error code) | +47,056 B in all | the small changes together slightly fewer instructions | |
+| dictionary in the stream | the dictionary travels as the first article of the coder stream; the compressed dictionary block of `archive9` and the helper start that coded it are gone | contained in section 3.4 | one helper start less | |
+| hint package and order residual | the dictionary hints and the article-order residual are coded by a small context-mixing coder of their own; dictionary, order and payload stay the same | -12.8 KB of `S` | none | the coder after **Matt Mahoney's** `lpaq1` |
+| no arguments | `comp9` started without arguments compresses `enwik9` into `archive9`, so `comp9.args` is empty | -178 B of `S` (19 B of arguments) | none | |
 
 ---
 
-## 4. How the main components work
+## 4. How the new components work
 
-### 4.1 The pre-trained transformer
+### 4.1 SEMCACHE
 
-`cmix-lex` predicts the next byte, among many models, with an LSTM that starts
-empty and learns while it codes. Ivanov's `fx2-cmix-transformer` replaces it by
-a model trained offline on `enwik9` itself. Such a model sees the whole file
-many times during training, and its weights are paid for in bytes of `S`
-instead of being learned during the run. This entry adopts that approach
-together with his inference engine and changes the following.
+The transformer turns the text in front of each byte into an internal state
+and predicts the next byte from it. Where it is sure, little is left to gain.
+Where it is unsure, an earlier position at which its state was similar has
+often continued in the same way, for example inside a name, a phrase or a
+recurring sentence that lies outside the attention window or that training did
+not teach the model. SEMCACHE keeps the states of earlier unsure positions
+together with the byte that followed each one, and at a new unsure position it
+reads which bytes followed the most similar states.
 
-* **Geometry.** The model has 16 layers at d_model 192 with 3 heads of 64 and
-  an MLP width of 768. Three of every four layers are linear-attention layers
-  of the KDA type (Kimi Delta Attention, section 2), whose state covers the
-  whole document; every fourth layer
-  is softmax attention over the last 2048 positions. This layer pattern is
-  Ivanov's, and so is the depth; 16 layers of his block are the 8M variant of
-  his own size study. The layer count and the window are build constants here.
-* **Vocabulary 208 instead of 205.** The preprocessing here produces a different
-  byte set, so every alphabet-sized structure in the engine was rewritten.
-* **The window is part of the training form**, and the model is coded at the
-  window it was trained at. It was chosen with the coder. Five models of this
-  size, trained alike except for the window (1024, 1536, 2048, 2560, 3072) and
-  for fewer epochs than the shipped one, were coded in full runs with builds
-  that differed only in the window, and compared at the same stream positions.
-  Against the window 1024, the results at 7 % of the stream were 1536
-  -2.8 KB, 2048 -6.8 KB, 2560 -8.0 KB and 3072 -6.8 KB, and at 39 % 2048
-  -48.6 KB and 2560 -61.4 KB.
-  3072 was 10.1 KB behind 2560 at 34 %. The smallest archive came from 2560.
-  Each further 512 positions cost run time (about +5.5 % instructions for 2560
-  instead of 2048, counted with an earlier model of 12 layers), so the build
-  uses 2048.
-* **Trained from scratch on this entry's own coder stream.** A model is tied to
-  the preprocessing it was trained on. His weights do not load against this
-  vocabulary, and the stream here also differs in article order, metadata
-  block, comment index and dictionary.
-* **Training.** 1,000 epochs in bfloat16, run in sections that each started
-  warm from the previous one, over successive forms of this entry's stream and
-  at several windows; then, after lifting subnormal weight rows, 32 epochs
-  quantization-aware and 6 at full precision on the stream of this build
-  (section 5).
-* **Quantization and container.** Weights at 4 bits and activations at 8 bits,
-  as in his design. The tensors his design leaves unquantized are rounded to
-  bfloat16. The container keeps his range coder and his recomputation of the
-  rotary tables, a bit-exact port of the single-precision sine and cosine of
-  NVIDIA's CUDA libdevice; two further formats were added here. In the first, the three
-  stationary bit trees count instead of decaying. In the second, which the
-  shipped container uses, the two low byte planes of the rounded tensors (zero
-  after the rounding) are coded with counting trees, a row that is all zero
-  costs one flag bit, and tensor names and shapes are coded against a template.
-* **Dead neurons and collapsed channels.** An MLP neuron whose quantized output
-  is zero for every possible input is removed; the test is a closed upper bound
-  computed from the container and never calls a live neuron dead. 70 of the
-  12,288 neurons are removed. 86 rows of attention channels that collapsed
-  during training (row scale below 2^-20) are set to zero; with them zeroed,
-  the archive was byte-identical on two test beds.
-* **Binding.** The container is an appended block of the executable; the program writes it out of its own image at
-  start-up and checks a fingerprint over its bytes that was stamped into the
-  source. The export records the training form (vocabulary, layers, window,
-  prompt and channel options) in a manifest; the submitted build checks only
-  the stamped fingerprint.
+![SEMCACHE. The state of the last layer of the transformer becomes a key of 128 values, which is stored in a ring of 16.8 M entries and indexed in 16 hash tables. A lookup reads four buckets per table, filters the candidates by a short sketch, ranks the best 128 by the cosine and keeps 32 neighbours, which together with followed neighbours of earlier lookups give a distribution of the next byte. Three consumers read it, the mixers, BITLSTM and an end stage in front of the coder. Below, the place of SEMCACHE in the coding chain of each bit and its effect in a pair of full runs.](doc/semantic_cache.svg)
 
-### 4.2 Prompt injection
+**When.** SEMCACHE runs at every byte of the stream where the transformer
+predicts a byte of the text, outside the two metadata blocks. It looks up where
+the transformer gives its most probable byte a probability below 0.99, and it
+stores the position where that probability is below 0.95.
 
-A transformer trained on a byte stream sees only what precedes each byte. The
-decoder knows more than the raw prefix. It has decoded the metadata block and
-every earlier article and can recompute anything derived from them. Whatever
-both sides can derive can be **inserted into the model's input sequence without
-being coded**. The compressor therefore feeds the transformer a sequence that is
-longer than the byte stream; the inserted rows are fed and never scored, so they
-cost no archive bytes. The model also takes the PPMd distribution of the next
-byte as an input. An inserted row gets in its place a fixed order-0 distribution
-of the training stream (`src/tf1/tf1_prior0_set_v9.h`); only the last row of an
-inserted block gets the PPMd distribution of the byte that follows the block.
+**Key.** The state is the vector of 192 values that the MLP of the last layer
+of the transformer reads. A running mean of these vectors is subtracted (taken
+over the first 2^20 lookups below 0.9 and then kept fixed); the result is
+scaled to 8-bit integers, projected by a fixed random matrix of +1 and -1 to
+128 values and scaled to 8-bit integers again. A key is stored in 4 bits per
+value, 64 B per entry.
 
-| inserted | content |
-|---|---|
-| page rows | in front of the title of every page: the running page number, the page id, the contributor and the date of the revision (year, month, day), each on its own row; at most 64 tokens |
-| redirect row | a short row (`#rd`) in front of the page rows of each page of the redirect block at the head of the article order |
-| synonyms | titles of pages that redirect to this article, at most four titles and 64 tokens |
-| link context | text of earlier pages around the latest links that begin with the title as the page spells it, at most 256 tokens |
-| aliases | earlier link texts and redirect sources for the same target, at most 64 tokens |
-| contributor row | the contributor of the page, in front of its comment line (section 4.9) |
-| heading reminder | at every section heading, the running heading number and the article title, to make up for the sliding attention window |
-| digit-run class | after a digit run, one row from a small extra alphabet for the length class of the run, inserted after every run in the page rows and, in the page text, after every run outside the title, outside links in double brackets and outside lines whose first non-blank character is `*`, `#`, `\|`, `!`, `;` or `:` |
+**Memory.** A ring of 2^24 entries holds the keys (1 GiB), the byte that
+followed each (16 MiB) and its position in the stream (64 MiB); a ring of the
+last 32 MiB of the stream holds the bytes behind them. Sixteen hash tables
+index the ring. Each takes the signs of 18 fixed random projections of a key
+as the number of one of 2^18 buckets, mixed with the previous byte of the
+stream, and each bucket keeps its 15 newest entries with a sketch of 96 bits
+(960 MiB). Together these are about 2.2 GB, written once at the first byte of
+the stream (section 3.7).
 
-The rows of the table go to the transformer only, except the contributor row,
-which is fed to all models (section 4.9). Each row also carries the two
-preceding fed tokens and the match model's predicted byte with a coarse class
-of its match length; these two inputs are not rows of their own.
+**Lookup.** In each table SEMCACHE reads the bucket of the key and the three
+buckets whose numbers differ from it in the least certain bits. The candidates
+are filtered by the distance of their sketches, the best 128 are ranked by the
+cosine of the full keys, and the 32 best that lie at least 1,024 bytes back in
+the stream become the neighbours. A neighbour is weighted by its cosine at a
+temperature of 0.02. The neighbours of the last four lookups below 0.9 are
+followed byte by byte for up to 24 bytes, as long as the bytes behind them
+agree with the stream, and join the neighbours of the current byte.
 
-The page rows are fed at the separator in front of the page, so that the last of
-them predicts the first byte of the title; the title itself is fed and
-predicted. Because the metadata block sits at the head of the stream, page id,
-contributor and date of every page are known before the page begins.
+**Prediction.** For each bit, the neighbours whose next byte agrees with the
+bits of the current byte coded so far give the probability of the bit. It
+reaches the coder in three ways, as an input of the layer-0 mixers and of the
+final mixer, as four inputs of BITLSTM, and through an end stage in front of
+the coder. The end stage consists of three logistic models over 20 features
+(among them the class of the highest similarity, the agreement with the
+transformer, word start, the age of the neighbours and the previous byte),
+selected by context cells and trained online with AdaGrad, and of a fourth one
+that mixes their outputs into a correction of the final probability. A bit whose probability is at least 0.99 for one value skips
+the end stage. Behind it a second small stage of 16 features, which reads
+nothing of SEMCACHE, corrects the probability along the most probable byte of
+the transformer.
 
-![Rows fed to the transformer in front of a title. Two pages of the coder stream, one of the redirect block and one article, each with the rows above the title (redirect row, page number, page id, contributor, date) and the title that is then predicted and coded.](doc/prompt_rows.svg)
+**Examples.** The two figures below show SEMCACHE at single bytes of the
+article text, with the values read in a compression run of this version by a
+probe that leaves the coded output unchanged. On the page Brown Bear the
+transformer and SEMCACHE both rank the plural `goats` first, which shares
+the first two of the three bytes of its word code with the true `goat`, and
+SEMCACHE gives `goat` 20 %, while the transformer does not have it in its
+top 3. On the page Swingout the strongest neighbour stands 3,273 rows of the
+transformer back in the same article, outside the attention window of 2,048
+rows. The cost of the whole compressor comes from all its models together,
+so its distance to the transformer alone cannot be read as the gain of
+SEMCACHE at that byte.
 
-At the start of a document the context of the transformer is empty, and these
-rows are its only context for the title; inside a run of redirect pages the
-context continues (section 3.1).
+![SEMCACHE at one byte of the page Brown Bear, stream byte 54,868,329. Top, the excerpt of the stream around the byte, the last of the three bytes of the word code of goat in sheep and goat herders. In the middle, the top 3 of the transformer alone and of SEMCACHE alone, with the plural goats first in both, which shares the first two bytes of its word code with goat, and goat at 20 % in SEMCACHE, and the cost of the byte for the transformer alone, SEMCACHE alone and the whole compressor. Bottom, the five strongest neighbours with their article, their distance back in the stream and their earlier text, two of them followed by goats, one by sheep, one by goat and one by chickens.](doc/semcache_brown_bear.svg)
 
-Behind the title follow the synonyms, the link context and the aliases, in this
-order; their text comes from pages earlier in the stream. Redirect titles and
-link texts are kept in a table in memory, and the link context is cut out of a
-temporary file that holds the stream coded so far.
+![SEMCACHE at one byte of the page Swingout, stream byte 46,795,575. Top, the excerpt of the stream around the byte, the second of the two bytes of the word code of trade in the lead and follow may trade places. In the middle, the top 3 of the transformer alone, which expects drive, and of SEMCACHE alone, which gives trade 80 %, and the cost of the byte for the transformer alone, SEMCACHE alone and the whole compressor. Bottom, the five strongest neighbours with their article, their distance back in the stream and their earlier text, four of them followed by trade and one by drive; the first stands in the same article outside the attention window, the second and the third in articles on dance moves.](doc/semcache_swingout.svg)
 
-![Rows fed to the transformer behind a title. The article Alkane of the coder stream with three synonym rows, six pieces of link context and four alias rows, each with the earlier page of the stream it comes from, three redirect pages and nine articles.](doc/context_rows.svg)
+**Effect.** In two full runs of this model with and without SEMCACHE, `S`
+differed by about 730 KB, 0.77 % of `S` without it. Both runs used BITLSTM with
+32 cells learning online in place of the three trained weight sets. These read
+four inputs of SEMCACHE and do not run without it, so the submitted form has
+no run without SEMCACHE. The gain per megabyte grows over the first 40 MB or so
+of text, while the memory fills, and reached -1.9 KB per MB of stream between
+42.5 and 57.5 MB. Its run time was not measured in the final form; computed
+from the cycles per lookup on AMD Zen 2 and the number of lookups on an
+earlier form of the stream it is about 4.5 to 5.5 hours.
 
-Inserted rows take places in the attention window and cost inference time.
-Which items are worth that was measured, and the table above is the result.
+![SEMCACHE gain along the coder stream, as the coded output of the full run with SEMCACHE minus that of the same run without it, summed from the start of the stream and per MB of stream, over the parts of the stream, with the first 20.5 MB enlarged. Both runs use BITLSTM learning online in place of the three weight sets. SEMCACHE is off in both metadata blocks, and the coded output shrinks by 743,637 B over the whole stream.](doc/semcache_gain.svg)
 
-Every inserted item is a function of bytes the decoder has already produced;
-encoder and decoder run the same automaton over the same state. The training
-rows are not rebuilt by a separate script but **dumped by the compressor
-itself** and read back by the trainer, and the exported weights carry a
-manifest of the prompt and channel options they were trained with (section 4.1).
+Everything SEMCACHE stores comes from bytes already coded and from the state
+of the transformer at those bytes, which the decompressor computes in the same
+order. Both programs run the same machine code for it, with integer kernels in
+AVX2 and an exact division by a reciprocal, so both sides compute the same
+bits.
 
-In one of my test runs, with an earlier model of 12 layers, a bug reset the
-context of the transformer only at the first byte of the title, after the rows
-in front of it (first figure of this section) had been fed, so that the rest of
-the title and the page were predicted without them. At 20 % of the stream,
-where I stopped it, that run was 167 KB behind the same run without the bug;
-extrapolated to the whole stream that is about 0.8 to 0.9 MB. The model had
-been trained with these rows and relies on them; a model trained without them
-would, I expect, have lost less, so the loss shows how much the trained model
-uses the rows and is no measure of what they gain.
+### 4.2 The census transform
 
-I did not examine whether a different article order would yield more rows
-behind the title and what that would gain. These rows can only come from pages
-earlier in the stream; the redirect pages already stand in front of every
-article, so an order that also places linking pages in front of their targets
-could give more link context and aliases. Each candidate order would have
-needed a transformer trained on it, and a change of the order also changes what
-the other models gain from the order (section 4.5), which has to be set against
-the gain.
+Most census pages of `enwik9` are articles on places in the United States
+that a program wrote from the census of 2000, under titles of the form `Place,
+State`. Each kind of place (county, city, town, village, census-designated
+place and others) follows one automatic form, a fixed sequence of sentences and
+headings with values in fixed places. The article order puts 36,519 of the
+243,425 pages of `enwik9` (172,277 without the redirect pages) into the class
+of census pages. `cmix-neif-1.0` recomputed the numbers of census pages that
+follow from other numbers of the same page. This version takes apart the
+36,148 pages that follow the template form, 36,016 of them in that class and
+132 that stand earlier in the stream; the other 503 pages of the class stay
+text.
 
-### 4.3 Gate
+![The census transform on one page. Left, a census page of enwik9 with the values, the placeholders and the deviating text marked. Right, the stub in the stream with the deviating text and the names, the record in the census metadata block with state, type word of the title, flags, gap bits and values, three template texts of the census pseudo-article, and how the number coder estimates the values. At the bottom, the size of the census pages in the coder stream of cmix-neif-1.0 and of this version.](doc/census_transform.svg)
 
-The metadata block at the head of the stream is coded well by the context
-models and gives a language model little to learn from. It is withheld from
-the transformer, in training and in coding, from the second byte of the stream
-to the end of the block, counted by its line feeds, through the title line of
-the first page behind it and the byte after that line. The gate decides for
-each byte from the bytes before it, so the zone can begin only with the second
-byte; for the first byte the transformer has no context and gives the uniform
-distribution. The context of the transformer begins behind the zone. This
-is about 5.16 MB, or 0.93 % of the coder stream, in one zone. The rest of the
-stream, the redirect pages included, is fed to the transformer and predicted
-by it.
+**Template.** The compressor cuts each page into units (lines, and sentences
+outside links) and abstracts each unit. Numbers and list directions become
+value slots, page name, state, title and postal code become placeholders, and
+the name part of a state link becomes a text slot. Units of one sentence family form a
+position of the template of their kind of place, and their abstracted forms are
+the variants of that position. Only families that carry value slots or
+placeholders, and the section headings of the program, count, and only if they
+occur on at least 2 % of the pages of the kind;
+everything else stays text, also recurring sentences written by people. The
+compressor checks every automatic unit byte for byte (expansion equals
+original).
 
-The gate is driven by bytes the decoder has already seen, so both sides agree
-on it. A bit of the mixer context tells the mixer whether the transformer is
-active. BITLSTM is off in the same zone (section 4.4), and the PPMd model
-restarts behind the block (section 4.8).
+**Census metadata block.** Behind the metadata block stands a block of
+9,280,775 bytes. Its head holds the template forms, per kind of place its
+positions, per position its variants and per variant the fields of its value
+slots. A run follows with one byte for each page from the first to the last
+page with a record; the byte names the kind of place of the record of that
+page or marks a page without one.
+Then come the records of the 36,148 pages that follow the template form,
+grouped by kind of place and in page order within each kind. A record holds
+the state, the type word of the title, per position a flag (absent, variant
+n, or a list of instances), the gap bits that say where text stands between
+two automatic units (stored as the XOR with a predicted bit), and the values.
+The texts of all variants are written once into the third article of the text
+start (section 4.4). The page itself keeps, as a stub, only the deviating text
+and the names. The block is treated like the metadata block.
+The PPMd model restarts before and behind it and runs at order 14 inside it,
+the transformer is off, BITLSTM uses its weights for the metadata blocks, and
+the adaptive-depth stage and the mixers have a zone of their own.
 
-### 4.4 BITLSTM
+![Layout of the census metadata block, to scale, between the metadata block and the text start. The head holds the template forms of the eight kinds of place, a run names the kind of place of each page, and the records follow, grouped by kind. Below, the record of Pleasant Lake, Minnesota, as bytes, with the bytes fed to the models in front of its flags and values, the estimates and tokens of nine of its values, the list flag of a second record, and the four parts from which the decoder restores a page.](doc/census_block.svg)
 
-After the mixer has produced the final probability of the next bit, and before
-the arithmetic coder uses it, a small LSTM, BITLSTM, adds a correction in logit
-space:
+**Number coder.** Each value is coded as its distance to an estimate, on the
+grid of the value; a value that is a share of a known total is coded as a
+count. Where a rule fixes the value, such as the population of the census
+sentence that repeats the population of the first sentence, the token is
+empty. The estimate comes from an online ridge regression per kind of place
+and field over features of the same record (with the mean of a feature where it
+is missing and an offset per state that decays), whose features include the
+mean of the field over the eight nearest places of that kind coded before. In
+front of each value the field and a coarse scale class of the estimate are fed
+to all models as known bytes, and in front of a value without a field the
+earlier value of the record that it most likely repeats. In front of the flags
+of a record the models are fed the revision id and the day of its page from
+the metadata block (coarse), and in front of each flag its position. The county
+of a place is coded as its rank in a list of the county records of its state,
+which starts with the counties of the nearest records of earlier kinds. The
+members of the lists of places of a county and the neighbouring counties are
+value slots with short tokens (the number of skipped members, the rank in the
+order of the neighbours), and the category link to the own county repeats the
+county without a token. A coordinate that repeats in a map link is a short
+token.
+
+**For the transformer.** The transformer never sees the census metadata block.
+In front of the title of a census page it is fed a context row with the words
+of the kind of place and of the state of the record and the page row with
+population and area; behind the alias rows, the population, households,
+families, housing units, areas, density, location and incomes of the record in
+sentences of the template wording; and behind `located at` the coordinates of
+the record with an end mark. All models are fed these coordinates, in degrees,
+minutes and seconds and as a decimal pair in brackets, so that the match models
+predict the coordinates that follow in the text from this copy. All of this is
+derived from the block and costs no archive bytes. The third article of the
+text start holds the texts of the variants and the words of the states and
+kinds of place in code form (section 4.4).
+
+**Effect.** The census pages took 79.1 MB of the coder stream of
+`cmix-neif-1.0` and take 21.7 MB (stubs and the pages that stay text) plus
+9.3 MB of block in this version;
+these figures also contain the other changes of the stream form. Measured on
+the stream of `cmix-neif-1.0`, the census form of this version alone makes the
+coder stream about 47 MB shorter than the census form of `cmix-neif-1.0`, which
+saves about 4.4 hours (computed from the stream length).
+Without the transformer, the first complete form saved about 129 KB of
+`archive9` on four windows that cover 97.4 % of the census pages; the
+refinements of the census form in section 3.3 followed. The code and tables of
+the census form of this version (template form, census metadata block, number
+coder and pseudo-article) take at least about 42 KB of `S`, measured by zeroing
+them in the final program and packing it again, which leaves out their calls
+from other code.
+In a form of `cmix-neif-1.0` with a byte LSTM of 256 cells in place of the transformer and BITLSTM with 32 cells learning online, full runs over all of `enwik9` give about -273 KB of `S` for this form against no census transform and about -111 KB against the census form of `cmix-neif-1.0`, with its code in that program included.
+In that frame the pages that both census forms leave the same cost about 120 to
+160 KB more with the form of this version (estimate from the coded size, which
+the runs record every 0.01 % of the stream). About 50 to 90 KB of it lie on the
+503 pages of the census class that stay text, 430 of which contain sentences
+in the template wording, and about 60 KB on the pages in front of the first
+page with a census record. The transformer gets no census rows on these 503
+pages. On the pages of the template form it gets the values of the record as a
+prompt, and where a stub keeps sentences in the template wording, it copies
+their values from the prompt, while the wording itself costs it little with or
+without the prompt.
+
+![Cost map of the transformer alone on census page 194,559 of the coder stream (Yardley, Pennsylvania). Top, the prompt rows of the page, the context row, the page rows and the block with the census values, with the spans that also stand on the page underlined. Below, five excerpts of the page as coded bytes, each once with the prompt rows and once without them, every unit shaded by its cost in bits per byte. Values that stand in the census prompt cost little only with the prompt, the wording of the template sentences costs little in both. At the bottom, the cost of the page and of 958 census pages whose stubs keep 3 or more phrases of the template, in both arms.](doc/census_copy.svg)
+
+### 4.3 The transformer
+
+The transformer of this version has the architecture and the training recipe
+of Vladimir Malinovskii's `cmix-neif-beehive`. It keeps the layer pattern of
+`cmix-neif-1.0` (16 layers at d_model 192, three linear-attention layers of the
+KDA type followed by one attention layer over a window) and the inputs of that
+version (the PPMd distribution of the next byte, the two preceding fed tokens
+and the match channel). New are:
+
+* **Attention residuals.** Each sublayer reads a learned, softmax-weighted
+  mixture of earlier sublayer outputs in place of the running residual sum
+  (after the Kimi Team, arXiv 2603.15031). The engine evaluates it as an online
+  softmax in a fixed order of operations.
+* **One key and value head.** All query heads of an attention layer share one
+  key and value head.
+* **Value embeddings.** The four attention layers mix an embedding of the token
+  into their values with two learned weights (after Braden Koszarsky in
+  Modded-NanoGPT, 2024).
+* **MLP width 1024** instead of 768, and **a head that mixes the logits of the
+  PPMd prior** into the output of the model.
+* **Quantization.** A Fisher-guided allocation gives each weight row 2, 3 or
+  4 bits within a budget (in this model 0.25 % of the rows got 2 bits and the
+  rest 4 bits); quantization-aware training with a term for the coded size of
+  the weights runs as the cool-down of the learning rate.
+* **Container.** The container of `cmix-neif-1.0` with entropy coding of the
+  weights and with the order of interchangeable groups of neurons coded into
+  the choice of their permutation (bits-back). The step that removes dead MLP
+  neurons found none in this model.
+
+**Training.** The training started from the weights of `cmix-neif-beehive`,
+which were trained on the stream of `cmix-neif-1.0`; their quantization was
+undone and 102 dead neurons were revived. It then ran on a dump of the coder
+stream of this version with PPMd priors of this model, for 100 epochs in
+bfloat16, 100 more and 400 more. Then the bit widths of the weight rows were
+allocated, and 96 epochs quantization-aware, 16 at full precision and the
+export at the window 2048 followed.
+
+Three further points concern the transformer.
+
+* **The effect of the new transformer on its own was never measured.** No run
+  compares it with the transformer of `cmix-neif-1.0` trained on the same
+  stream form, so the result table contains it only together with all other
+  changes.
+* **The size and the quantization of the model were taken over from
+  `cmix-neif-beehive`.** They do not seem optimal for this entry. For lack of
+  time they were not examined further. No width, depth or bit budget was
+  compared on the stream of this version.
+* **After 100 epochs in bfloat16 the model had already fully adapted to the
+  new stream form of `cmix-neif-2.0`.** The further bfloat16 epochs brought
+  almost no gain. They ran only because the training was already running while
+  other measurements were made.
+
+### 4.4 The text start and the text rules
+
+`cmix-neif-1.0` began the text directly behind the metadata block, where every
+model already runs at full strength (sections 4.3 and 4.8 of its README). This
+version places there three articles that turn side information into text, and
+it shortens the page text by three reversible rules. In front of each article a
+head line (`neif`, a tab and `pre dictionary`, `pre authors` or `pre census`)
+is fed to all models and not coded, and the transformer reads each article as a
+document of its own.
+
+![The text start and the reversible text rules. Top, where the three articles of the text start stand behind the metadata block and the census metadata block, and an excerpt of each article in stream order (dictionary words in code form, contributor names, template texts of the census form). Dashed boxes mark the bytes that are fed to the models and not coded. They are the head line in front of each article, the codes of all dictionary words in front of the dictionary article and the word stems behind it, both for the PPMd model only, and in front of each contributor name the day of its revision, its mark (new or repeated name) and a tab; beside each line the day is also given in readable form. Bottom, pieces of the stream before and after each rule (a/an, title, link).](doc/text_start.svg)
+
+**Dictionary article.** The words of the dictionary stand as the first article
+of the text, in the code form of the dictionary transform, so that a later word
+uses the codes of the earlier ones as in the stream. After the first 3,921
+words, an empty line marks each word that does not follow its predecessor in
+alphabetical order. The compressor still derives the dictionary from `enwik9` and the hint
+package; the decompressor takes it from this article, so the archive no longer
+carries a compressed dictionary. The PPMd model is warmed up with the codes in
+front of this article and with the word stems at its end.
+
+**Contributor article.** For most records of part B of the metadata block that
+name a contributor, part B keeps only a mark (new or repeated name), and the
+name stands in the second article, one line per mark. Anonymous addresses and
+a few names stay in part B. In front of
+each line the day of its revision, the kind of its mark and a tab are fed to
+all models, including the transformer, as known bytes. Behind this article the
+word-label model starts afresh, so that it learns the census pseudo-article and
+the pages behind the reset.
+
+**Census pseudo-article.** The third article holds, in code form, the texts of
+all variants of the census template, each once, and the words of the states
+and kinds of place. The records of the census
+metadata block refer to these texts.
+
+**Text rules.** On the page text behind the redirect block, apart from its
+first 213 articles, three stages run, in this order, and the decompressor
+undoes them online in the reverse order.
+
+* **a/an.** An indefinite article is written as the code of `a` where a rule
+  on the first letters of the following word, with a list of 44 exceptions,
+  gives the right form, and as the code of `an` where it does not; the
+  decompressor applies the same rule. Quotation marks and simple tags in front
+  of the word are skipped, and for a link the first word of its shown text
+  counts. Of about 2.37 M articles, about 10,200 keep the other code. The
+  stage keeps the length of the stream.
+* **Title.** Where the title of an interlanguage link, the first bold
+  `'''...'''` near the start of the page or the sort key of a category link
+  equals one of the forms derived from the page title, it becomes a short mark.
+* **Link.** A link whose shown text follows from its target keeps the target
+  and a short mark in place of the text. The shown text is one of seven forms
+  derived from the target, the target itself, the target without a namespace
+  prefix and the target without a part in brackets or behind a comma, each also
+  with the case of its first letter changed, and the name of a section.
+
+Each rule decides from bytes that both directions have. The alias rows and the
+link context of the transformer read the text as it was before the rules. The
+stream gets 4,880,702 B shorter.
+
+**Computed values.** Some values of the page text follow from text in front
+of them, for example an area in square miles behind the same area in square
+kilometres. A small automaton reads the page text as the coder stream holds it
+after the text rules and computes such values. One source is a number with a
+unit followed by an opening bracket, by the word `or`, or by a blank and `/`,
+`=` or `||`. A table gives each of 37 units, written in 66 spellings, a fixed
+target unit, and the value is computed in 64-bit integers and rounded to the
+decimals of the source, with a rounding rule of its own for 38 pairs of units.
+A second source is a pair of adjacent infobox fields with the same stem, such
+as `2551.13` behind `length_mi=1585.20|length_km=` in the article Interstate 94.
+A third source is the years of birth and death in the first bracket behind the
+first bold text of a page. They give the age behind `aged `, `at age ` and
+`the age of `, the years behind `DATE OF BIRTH=` and `DATE OF DEATH=`, and a
+line behind the first `[[Category:` of the page. The value goes to the
+transformer only, as a block of a copy mark, its bytes and an end mark (two
+tokens outside the 208 byte values). The block is fed and not coded, the text
+stays unchanged, and the decompressor computes the same block behind the same
+byte. Pages with a census record, page titles, pages behind a redirect page and
+the text start get no block.
 
 ```
-t  = ln(p / (1 - p))
-p' = sigmoid(t + delta)
+enwik9, article Jutland:  It has an area of 29,775 km² (11,496 square miles), and ...
+fed behind the bracket:   <copy mark> 11,496 square miles) <end mark>
 ```
 
-The construction, the AVX2 kernels, several of the input features and
-the approach of training the model offline on a trace of a compression run and
-shipping the trained weights are David Freelan's, from the correction model of
-`cmix-obias` that he published as `bitlstm32`. In this entry:
+### 4.5 BITLSTM in three parts
 
-* **Form.** The model has 16 cells, an input projection with SiLU, and one
-  output, clamped to |delta| <= 8. It has 3,585 parameters. Its weights are
-  stored in bfloat16, 7,386 B, and compiled into the program.
-* **Inputs.** 13 of the 28 columns of the stage-one mixer row (the outputs of
-  the layer-0 mixers and the slots beside them), the raw output of the final
-  mixer, three shape features of the final probability (the scaled logit, its
-  square and its sign), a one-hot of eight over the count of bits the model has
-  seen modulo 8 (which follows the bit position only approximately, because
-  the bits below are not counted), the previous bit, and two fixed pseudo-random
-  projections to 32 values each, one of the transformer state (192 values) and
-  one of the byte-LSTM state (81 values: the 80 cells and a constant 1), each
-  recomputed every eight bits the model sees from the state current at that
-  bit.
-* **Where it runs.** It is not run on bits fixed by the alphabet or the grammar
-  automaton, on bits the adaptive-depth stage skips, inside the metadata block,
-  and while the hint package and the article-order residual are decoded.
-* **Training.** A build variant of the compressor records, during a compression
-  run of this configuration, the inputs of the model for every bit it sees. A
-  trainer replays that trace in stream order through the same C++ code the
-  coder runs, with the coder's own learning step, for 32 passes over the first
-  418,837,176 bits of the trace, which end at about 20 % of the coder stream;
-  the learning rate falls from 0.003 to 0.00003 along a cosine. The weights of
-  the last pass are shipped (section 5).
-* **Why 20 %.** A trace of the whole stream would have needed a complete
-  compression run of this configuration before the training, and the training
-  itself would have taken about five times as long for the same number of
-  passes, together about three more days (estimate). The model was therefore
-  trained on the first 20 % only, and it continues to learn on the rest of the
-  stream while it codes.
-* **At run time** the model is frozen up to the end of its training range. It
-  starts to learn at the first boundary of a 1,024-bit window after that, bit
-  418,837,504 of the bits it sees, so that its first backward pass covers a
-  complete window. From there on it learns online, starting from the shipped
-  weights with fresh optimizer moments. It uses Adam with a learning rate of
-  0.0003, a tenth of the rate the offline training starts with, and truncated
-  backpropagation over windows of 1,024 bits, 16 windows per step; a step
-  whose gradient norm is not finite is skipped. Encoder and decoder switch at
-  the same bit, and the console marks it with the line
-  `unfreeze BITLSTM at <p> %`.
+BITLSTM corrects the probability of each bit that the mixers and the SSE stage
+give, in logit space, as in `cmix-neif-1.0` (section 4.4 of its README). In
+this version the floor stage (section 3.6) and the two end stages of section
+4.1 follow behind it. It has three weight sets compiled into the program,
+24,579 weights in bfloat16 together:
 
-The rest of the predictor never sees the corrected probability, so BITLSTM
-changes nothing upstream of it. This allows the replay training, because the
-trace of one compression run holds the inputs of the model for any of its
-weights.
+* one for the metadata block and the census metadata block, where BITLSTM was
+  off in `cmix-neif-1.0`; it uses 16 cells and 26 of the inputs,
+* one with 32 cells for the text up to the calendar block, from the end of the
+  census metadata block on (bit 30,991,360 of the bits the model sees),
+* one with 32 cells for the text from the calendar block on (page 143,227 of
+  the order).
 
-### 4.5 Article order
+The model switches at the first boundary of a window of 1,024 bits behind each
+of these points, with its state set to zero and its previous bit to 0.5, as in
+training.
+None of the sets learns while coding, and the program has no backward pass. Its
+inputs are 21 columns of the stage-one mixer row, 12 inputs from the
+transformer (the fast-weight logit, the path state of its most probable byte in
+six classes, its confidence in four classes, and one more value of that
+state), the four inputs of SEMCACHE (section 4.1), the raw mixer output, the
+shape features and the previous bit as in `cmix-neif-1.0`, a one-hot of the
+position of the bit in its byte, and a fixed projection of the state of the
+transformer to 32 values.
 
-![Layout of the coder stream, to scale. The metadata block is followed by the redirect block, the articles with the calendar block, the census pages, the image pages, the pages of the Wikipedia namespace and the disambiguation pages. The first 1.9 % and the last 3.0 % of the stream are enlarged, and arrows mark the fields that return later as model input.](doc/stream_layout.svg)
+Each set was trained offline on a graphics card on the trace of a compression
+run of this configuration, within its own part of the stream. In a replay of
+the trace, the three sets saved about 12 KB, 302 KB and 193 KB of `S` in their
+parts against no BITLSTM, the weights counted twice. A replay shows the order
+of such figures; the coder can differ. In two full runs of this model, the
+three sets gave an `S` about 109 KB smaller than BITLSTM with 32 cells
+learning online.
 
-![Compression rate along the coder stream in bits per byte of the stream, over the same axis and with the same colours as the figure above. The first 1.9 % of the stream are enlarged.](doc/stream_rate.svg)
+### 4.6 The coder stream
 
-The metadata block comes first and the redirect block second because later
-pages reuse both as model input (arrows in the upper figure); sections 4.2 and
-4.9 describe the reuse, sections 4.3 and 4.8 what restarts behind the metadata
-block.
+![Compression rate along the coder stream in bits per byte of the stream, over the same axis and with the same colours as the figure of the stream layout. The start of the stream is enlarged.](doc/stream_rate.svg)
 
-The lower figure gives the rate in bits per byte of the coder stream, which has
-552,750,198 B where `enwik9` has 1,000,000,000; its mean over the stream is
-1.27. The page ids and revision ids in part A of the metadata block are the
-most expensive bytes, the census pages the cheapest (0.43), and the calendar
-block (0.74) stands out against the articles in front of it (1.52) and behind
-it (1.31). The curve comes from a compression run of the same model, built
-with a different profile of the profile-guided build. The plotted values are
-in `doc/stream_rate.tsv`.
+The coder stream has 501,062,281 B over the same 208 byte values as in
+`cmix-neif-1.0`. Its mean rate is 1.364 bits per byte. The metadata block is
+the most expensive part (2.39), followed by the dictionary article (1.96); the
+census metadata block costs 1.20 and the census pages 1.01, and the calendar
+block (0.74) stands out against the articles in front of it (1.48) and behind
+it (1.28). The rates of the two versions cannot be compared part by part,
+because the metadata block, the census pages and the articles changed their
+form. The curve comes from a full compression run of this configuration. The
+plotted values are in `doc/stream_rate.tsv`.
 
-Articles are reordered before coding so that similar articles sit next to each
-other; the idea and the inherited code that reorders the articles and sorts
-them back by page id are STARLIT's (Artemiy Margaritov). The base order is the article order of fx2-cmix
-(Kaido Orav and Byron Knoll). Byron Knoll built it with an embedding pipeline,
-in which the title and the first 4,000 characters of each article are embedded,
-arranged on one axis and clustered (fx2-cmix commits "article order v5" to
-"v7" and its README section "Article order", July 2024). The file inherited
-through cmix-lex is the revision of that order in Kaido Orav's `fxcm_v26`
-archive. The order coded here is a modification of it. Inside each of the five
-page classes that the base order places at the end (below), the pages are
-sorted by descending page id, and the block of `Wikipedia:` pages moves from
-the end of the base order to a place behind the census and image pages and in
-front of the disambiguation pages. Three further things are new here.
+The article order is the order of `cmix-neif-1.0` (section 4.5 of its README),
+shipped as the same rule plus residual; only the coder of the residual is new
+(section 3.9).
 
-* **The order is shipped as a rule plus a residual.** An extractor in the
-  compressor predicts the order from the raw input. Pages of five classes
-  (census, image, disambiguation, geographic and personal-name disambiguation
-  pages) are recognised with the strings of Byron Knoll's manual sort step and
-  placed at the end, as in the base order. For the other pages, features
-  (title tokens, links and content words of its first 600 characters,
-  categories and templates) vote for clusters in integer arithmetic, and a
-  compact residual records, per article, how far the true next article is from
-  the rule's prediction; it is shipped as a block inside the compressor. The
-  decompressor does not need the order, because the reverse direction is a sort
-  by page id recovered from the text.
-* **Redirect pages move to the front.** Redirects are single-line pages;
-  cmix-lex had them at the end. The move is decided by a prefix test on the raw
-  input and changes neither the residual nor its size. It costs rate on its own
-  (section 3.2) and is kept because it gives the transformer all redirect pages
-  as one block and fills the link context of every later article before the
-  article arrives; the redirect and synonym prompts and the alias rows depend on
-  it.
-* **The calendar pages form one block.** Pages whose title is a year, a decade,
-  a century or millennium, a day, a month, a month of a year or a list of deaths
-  of a year (3,417 pages) leave the rank-coded part of the order and are written
-  as one block, sorted by a key computed from the title, where the base order
-  has its calendar pages. Membership and inner order follow from the titles and
-  cost no side information, and the residual needs no symbols for these pages.
+### 4.7 The metadata block
 
-### 4.6 The frozen 208-value alphabet
+![Layout of the metadata block of this version. Part A, part B1 and part B2 to scale against the block of cmix-neif-1.0, and one record of each part with records of the stream as examples (part A with a revision id below 17,000,000 as the remainder against the interpolation over the page id, part B with a mark in place of a contributor name and with an address that stays in place). The census metadata block follows the block and is not drawn to scale.](doc/metadata_block.svg)
 
-After preprocessing and dictionary substitution the coder stream contains
-exactly 208 distinct byte values, a property of this corpus and this
-preprocessing. The set is stamped into the binary as a 32-byte bitmap; the
-models allocate for 208 instead of 256 symbols, and bit positions that the
-alphabet already determines are not coded. The marker, hint and digit bytes of
-the metadata block and the comment line, and the bytes of the segment headers
-of the preprocessing, are taken from this set.
-
-There is no runtime escape for an unexpected byte value, because code for an
-impossible case would cost bytes in both programs. The bitmap and the other
-stamped tables (prompts, gate, sentinels, alias grammar) were derived from the
-coder stream and checked against it when they were stamped. An input other
-than `enwik9` is not supported. The two blocks embedded at build time, the
-dictionary hints and the article-order residual, are not part of this stream
-and use other byte values. A build helper compiled from the same source with
-one define (not shipped) codes them over all 256 byte values and sets a bit in
-the block header, and the shipped program decodes these two blocks with the
-full alphabet.
-
-A new symbol in this stream costs several KB up to a few tens of KB on `enwik9`,
-largely independent of how often it occurs (measured with the context models,
-without the transformer). A transformation that adds a marker byte has to earn
-that first.
-
-### 4.7 Dictionary derivation
-
-The word-replacement dictionary is reconstructed at run time from raw `enwik9`
-plus a compact hint package embedded in the compressor. The derivation is pure
-integer arithmetic and therefore bit-identical across machines; it takes about a
-minute. The decompressor has no `enwik9`, so the compressor appends the
-compressed dictionary to the archive.
+The metadata block has the form of `cmix-neif-1.0` (section 4.9 of its README)
+with three changes. Below revision id 17,000,000, part A codes the revision id
+as the remainder against an interpolation over the page id. Above the fixed
+rank of part B, the timestamp forecast follows the slope of the last records.
+The names of the contributors left part B for the contributor article of the
+text start (section 4.4); part B keeps a mark in their place, and anonymous
+addresses and a few names stay in part B. The block takes 3.74 MB of the coder stream instead of
+5.16 MB. The census metadata block follows it (section 4.2).
 
 ### 4.8 The PPMd model and the memory limit
 
-**Order.** The PPMd model of this program family runs at order 25. In this
-entry the order limit depends on the context. After each update the model
-looks at the classes of the last two bytes (line feed, space, digit, lower
-case, upper case, the capital marker of the word transform, brackets,
-punctuation, dictionary codes, other) and takes the limit for that pair from a fixed table of values
-between 8 and 25. A constant table would give exactly the plain model of that
-order. Inside the metadata block the model runs at order 14. At the end of the
-block the model is restarted empty in its own memory and fed the stems of the
-dictionary words, so that the text starts with a model that knows the word
-forms and holds nothing of the block.
+The PPMd model and its paging are those of `cmix-neif-1.0` (section 4.8 of its
+README), with a working area of 14,000 MiB in the file `ppm.page`. The model
+restarts empty at the end of the metadata block and at the end of the census
+metadata block, and its paging layer restarts with it. The page pool starts at
+1 GiB and grows in steps of 64 MiB for a margin of 256 MiB below the 10 GiB
+limit, up to 4 GiB. SEMCACHE takes about 2.2 GB of the room the pool had in
+`cmix-neif-1.0`. Its tables are written once at the first byte of the stream,
+after the pool has made room, so they make no jump in the resident set later
+in the run, and the end of the census metadata block steps the size control
+of the pool.
+In the compression of section 1.2 the resident set first came within 64 MiB (one step of the pool) of the margin at about 1 % of the stream. Its highest value in samples every 100 ms lies inside the margin, just before the restart of the PPMd model at the end of the census metadata block at about 2.5 % of the stream, and the peak resident set of the compression lies about 25 MiB inside the margin. After that restart it stayed within one step of the margin for more than 99 % of the time.
 
-**Memory.** The model needs a working area of 14,000 MiB, more than the memory
-the rules allow, so its data live in a file in the working directory,
-`ppm.page`, which is created sparse. The program pages it itself. The model
-keeps its address range, reserved and never touched, so every pointer and index
-of PPMd stays what it was. The data live in a pool of 4 KiB frames. A page is
-mapped to a frame directly, by its number modulo the number of frames (computed
-with a fixed-point reciprocal), so that neighbouring pages land in neighbouring
-frames. The text area at the bottom of the model has one sixteenth of the pool
-of its own, and the two areas of model units, which grow towards each other,
-are placed in the rest so that their most used ends sit next to each other.
-The first frames of the units area are mapped a second time behind the pool, so
-that an object crossing the end stays contiguous. Every access translates the
-address to its frame. On a miss the program writes the evicted frame back with
-`pwrite` only if it was written to, and reads the new page with `pread`. All of
-this runs in the one thread of the program.
+### 4.9 The packer
 
-The pool starts at 2 GiB and has an upper bound of 4 GiB. Every 256 model bytes
-the program reads its resident set from `/proc/self/statm` and sizes the pool in
-steps of 64 MiB for a margin of 256 MiB below the 10 GiB limit. It shrinks at
-once when that margin requires it and grows only when the
-room for the next step plus a reserve of 32 MiB has held for 8 Mi model bytes. A
-helper process of the self-extraction starts with the same pool and, from its
-first check on, keeps no more frames than it has had misses, at least 64 MiB. If
-`statm` cannot be read, the pool keeps its current size. The pool
-holds only copies of pages of the working file, so its size has no influence on
-the archive. With the savings of section 3.5 the pool reaches its upper bound
-at about 1 % of the stream (1.3 % in run 1 of section 1.2). In run 1 the
-process reached the margin once, at 70 % of the stream, and the pool stayed
-one step of 64 MiB below its upper bound for the rest of the run.
+The stub of `cmix-neif-1.0` had two stages. A first stage with an order-1 bit
+coder unpacked the second, a context-mixing decoder for x86-64 code that takes
+its contexts from an instruction-length decoder over the bytes already decoded,
+which then unpacked the program. Both stages are rebuilt in this version.
 
-### 4.9 The page form and the metadata block
+* **First stage.** In place of the order-1 coder, a small context mixer over
+  byte masks of the last 8 bytes, whose set of models was searched for the
+  image of the second stage, in the form of Crinkler (Aske Simon Christensen,
+  Rune L. H. Stubbe), like in oneKpaq (Teemu Suutari), written anew.
+* **Second stage.** Per context a slot with the run of the last byte and the
+  last three bytes that followed, read as two further inputs, after the run map
+  and byte history of `ContextMap2` in paq8px v217, written anew; indirect
+  contexts over the instruction (the two bytes that last followed the same
+  role, field index, opcode and ModRM byte), like the indirect context model
+  of paq8f (Matt Mahoney, 2006); one more mixer whose weight set is selected by
+  the role of the byte, its index in the field and the previous and the current
+  opcode; the second mixer layer selected by role, field index and opcode; one
+  more APM stage over role and opcodes; a final probability of 16 bits for the
+  coder.
+* **Jump targets.** For the target field of a short jump (8 bits) and of a near
+  jump (32 bits, after the address transform), a further input gives the
+  probability of the next bit over all targets that are still possible. Each
+  target belongs to a class (known jump target or start of an instruction,
+  behind or ahead of the field, or other), and a target weighs the number of
+  earlier hits of its class plus one, divided by the size of the class.
+* **Build.** gcc compiles the second stage, with its optimisation options chosen
+  by the coded size, and clang the first.
 
-`enwik9` is an XML dump, and most of the XML is the same on every page. The fork
-base coded it and relied on the models to learn that it is predictable. This
-entry does not code it.
+The two tables compare four packers on the same program, the stripped image of
+this version.
 
-**The page.** After preprocessing a page is the title on the first line, the
-body, the edit comment on its own line, a last line with `minor` as a plain
-word where the revision was marked minor, and a single separator. Tags, the
-nesting and the fixed attribute text are not in the stream; the decompressor
-writes them back from the page structure. The change removes about 17.5 MB
-from the coder stream. Its effect on the coded size is within the measurement
-noise; what it saves is run time, because every model walks every byte, and
-places in the attention window. The comment line starts with a marker byte,
-behind which the contributor of the page is fed (below).
+| Packer | comp9 | decompressor | sum | vs 2.0 |
+|---|---:|---:|---:|---:|
+| none (1) | 4,451,044 | 619,918 | 5,070,962 | +844,513 |
+| UPX 5.1.1 `--ultra-brute`, packer of cmix-lex (2) | 4,144,978 | 313,852 | 4,458,830 | +232,381 |
+| packer of cmix-neif-1.0 (3) | 4,052,691 | 192,423 | 4,245,114 | +18,665 |
+| packer of cmix-neif-2.0 (4) | 4,042,564 | 183,885 | 4,226,449 | 0 |
 
-**The metadata block.** Page id, revision id, timestamp and contributor are
-collected into one block, an idea inherited from phda9, where the block sits at
-the tail of the stream. In this entry it sits at the **head**, with a header of
-39 bytes, then part A, then part B, then the pages. Contributor and date of a
-page are therefore known before the page is coded, and both sides can feed them
-to the models (section 4.2 and below). The end of the block is found by counting line
-feeds (three header lines and two lines per page), not by a stored length.
+The same split into program and embedded BITLSTM weights (5):
 
-![Layout of the metadata block. Part A, part B1 and part B2 to scale, the byte layout of one record of each part with records of the stream as examples, and the timestamps of part B in record order.](doc/metadata_block.svg)
+| Packer | comp9 program | comp9 weights | decompressor program | decompressor weights | program vs 2.0 |
+|---|---:|---:|---:|---:|---:|
+| none (1) | 570,760 | 49,158 | 570,760 | 49,158 | +791,590 |
+| UPX 5.1.1 `--ultra-brute` (2) | 286,628 | 27,224 | 286,628 | 27,224 | +223,326 |
+| packer of cmix-neif-1.0 (3) | 198,806 | 22,759 | 169,672 | 22,751 | +18,548 |
+| packer of cmix-neif-2.0 (4) | 188,741 | 22,697 | 161,189 | 22,696 | 0 |
 
-Part A holds the fields that belong to the stream order, one line per page with
-the page id as a delta to its predecessor, the revision id and, where present,
-the restrictions. Part B holds timestamp and contributor, sorted by revision id.
-The two parts are paired by rank, so the permutation costs nothing. Sorted by
-revision id, the edits of automated accounts sit next to each other, and a
-contributor equals its predecessor more often (19.7 % of the rows instead of
-15.6 %).
+Sizes in bytes. All rows pack the same program, the stripped 2.0 image of
+619,918 B, whose last 81,038 B hold code that only the compressor uses. comp9
+is the packed program plus 3,831,126 B of fixed blocks (dictionary hints,
+article-order residual, transformer, header). The decompressor is the packed
+program at the start of archive9; the rest of archive9 does not depend on the
+packer. sum is comp9 plus decompressor; vs 2.0 is the difference in S.
 
-The fields have forms chosen for the models:
+(1) The unpacked image in both files; without a stub the decompressor cannot
+leave out the compressor-only code.
+(2) Packer of the fork base cmix-lex (github.com/blahem/cmix-lex, commit
+370e698f), `upx --ultra-brute` with the UPX 5.1.1 release binary; as in
+cmix-lex, archive9 carries the same packed file. UPX 5.1.1 does not accept the
+2.0 image as linked (a load segment without file bytes behind the last code
+segment), so it was packed after folding that segment into the one before it
+(three program header fields; same length, same addresses).
+(3) `tools_src/packer` of cmix-neif-1.0 (github.com/marwoelk/cmix-neif-1.0,
+commit 1c9ea5ed), which rebuilds the packed program of the 1.0 comp9 byte for
+byte; the decompressor is cut behind the decoder part as in 2.0.
+(4) `tools_src/packer` of this package.
+(5) The three BITLSTM weight sets are compiled into the program (49,158 B in
+`.rodata`, used by compressor and decompressor), the only data table above
+4 KB in the image. program is the packed size with these 49,158 B set to zero,
+weights is the packed size minus program. They are zeroed and not removed, so
+code, addresses and the cut stay the same; for (1) the weights count with
+their raw size.
 
-* **Digits in base 100.** A revision id is four bytes, each byte one pair of
-  decimal digits, written with the 100 byte values 0x80 to 0xE3 behind the
-  dictionary stage.
-* **Timestamps in two forms.** The first 87,813 of the 243,425 records of part
-  B (B1 in the figure) carry the timestamp in six such bytes, one for the year
-  since 2001, two for month and day and three for the second of the day. The
-  other 155,612 records (B2) carry only the difference to their predecessor in
-  seconds, as a decimal number. The boundary is a fixed rank. Below it the
-  revision ids are not in time order; above it the timestamps rise with the
-  revision id, and the difference is short.
-* **Anonymous addresses** are packed to two bytes per octet behind a hint byte.
-* **The user id** of a contributor stands only at the first mention of the
-  name; for every later record the decompressor knows it.
-* **The contributor is fed again at the page.** In front of the comment line of
-  each page, the contributor of that page and a tab are fed to all models as
-  known bytes, and the transformer receives them as a prompt row (section 4.2).
+Unpack time and peak memory per start (AMD EPYC 7502P, one pinned core, median
+of 3 starts; time from start until the program is loaded, peak resident set
+including the stub):
 
-**The timestamp forecast.** In front of every record of part B a forecast of its
-timestamp is fed to all models as known bytes, in the form of the timestamp
-that follows; it is computed from the revision ids already decoded (the median
-of the last 32 slopes, in integer arithmetic) and costs no archive bytes. The
-models see it last before they code the record. A right forecast is repeated
-by the record byte for byte. In B2 a wrong one is mostly close; the forecast
-is exact for 13 % of the records, within 3 s for 56 % and within 30 s for 90 %.
-In B1, where the revision ids are not in time order, it is exact for 2 % of
-the records and within 30 s for 12 %; the median error is about 50 days.
+| Packer | comp9 | archive9 | peak RSS |
+|---|---:|---:|---:|
+| none | 0.00 s | 0.00 s | 3 MiB |
+| UPX 5.1.1 | 0.02 s | 0.02 s | 3.5 MiB |
+| cmix-neif-1.0 | 16.7 s | 13.9 s | 176 MiB |
+| cmix-neif-2.0 | 51.7 s | 45.0 s | 1,502 MiB |
 
-![Timestamp forecast in part B of the metadata block. Three records of part B with the forecast that is fed in front of each, the bytes of the record that repeat the forecast, a count of how close the forecast is, and the rule that computes it.](doc/timestamp_forecast.svg)
-
-Per record, part B2 costs 22.3 bits and part B1 25.3 (in the run of the rate
-figure in section 4.5). Per byte of the stream the two cost alike (1.76 and
-1.72 bits), because the record of B2 is also shorter, 12.7 bytes against 14.7;
-its timestamp field takes 2 bytes on average instead of 6. The later revisions
-of B2 carry more addresses (20 % of the records against 5 %) and more
-contributors that appear for the first time (26 % against 7 %).
-
-The block is parsed once, into a table of 12 bytes per page and one text area
-with the distinct contributor names, about 3.3 MB together. The contributor
-feed, the timestamp forecast, the gate of the transformer and its page rows read
-from this table.
-
-Finally, an **exclusion model** runs over the identifiers. Page ids and revision
-ids are unique and often come in ascending runs; at every digit, the set of
-values that are still possible is smaller than the set the coder would
-otherwise allow. The model computes that set and passes the result to the mixer
-in an input slot the mix loop multiplies anyway; where the remaining values fix
-the bit, it also sets the final probability to its bound.
-
-### 4.10 The small byte LSTM beside the transformer
-
-The transformer takes the place of the large online byte LSTM of the fork base
-(170 cells in cmix-lex; this entry ran 208 cells there before the transformer)
-and of most of its run time. Part of the run time left within the limit is
-used by **one** small online byte LSTM of 80 cells over the same 208-value
-alphabet. Besides the PPMd distribution of the next byte, which the byte LSTM of
-the fork base already reads, it receives three sparse one-hot inputs (a hash of
-the last two bytes into 4,096 buckets, a hash of the last three bytes into
-16,384 buckets, and the byte predicted by the longest current match, or a
-no-match value) and eight dense inputs, the coding cost of each bit of the
-previous byte minus its running average. Its recurrence is block-diagonal, so
-each cell reads only the previous state of its own block of 16 cells, which
-removes four fifths of the recurrent work at no measurable size cost on a test
-window. Its bit prediction is an input
-of the layer-0 mixer and of the final mixer, so the mixer can weigh it against
-the transformer and the context-model bank, and a fixed sketch of its state is
-an input of BITLSTM. Its output logits receive the PPMd prior of section 3.1.
-Larger forms with 96 and 112 cells gained only a few KB in full runs for about
-an hour more run time each, so the build stays at 80 cells.
+The new packer saves 18,665 B of `S` for about 35 s more per start of `comp9`
+and about 31 s more per start of `archive9` on this processor.
 
 ---
 
 ## 5. Training of the pre-trained parts
 
-**Both pre-trained parts, the transformer and BITLSTM, are trained on `enwik9`
-alone, in this entry's own preprocessed form.** No external corpus, no external
-pre-trained weights, no tokenizer from a model hub and no other data entered the
-training (two pre-trained embedding models were used offline only to order bands
-3 and 4 of the dictionary, section 3.2).
+**Both pre-trained parts, the transformer and BITLSTM, were trained on
+`enwik9` alone, in the preprocessed form of these entries.** The transformer
+started from the weights of `cmix-neif-beehive`, which Vladimir Malinovskii
+trained from a random initialisation on the training package of
+`cmix-neif-1.0`, built from `enwik9` alone; no other external corpus,
+pre-trained weights or tokenizer entered the training.
+
+`training/` holds the tools, the configurations as they were run and the
+records of both pipelines; `training/README.md` describes every step and
+`training/ATTRIBUTION.md` the borrowed parts. Nothing in `training/` is
+compiled into the programs.
 
 **The transformer.** The training rows (the token stream, the PPMd prior
 distributions, the match channel, the article boundaries, the gate mask and the
 rows the compressor feeds the model) are dumped by build variants of the
-compressor itself; the tools to write the dump and the priors are in
-`training/tf/1_dump/`. A builder turns the dump into a training package. The
-trainer is Ivanov's training code with this entry's extensions, with the Muon optimizer for
-the weight matrices and AdamW for the other parameters (`torch.optim`); it
-trains in bfloat16, then
-quantization-aware at 4-bit weights and 8-bit activations, then briefly at full
-precision. The shipped weights were trained for 1,000 epochs in bfloat16
-(`training/tf/3_train/kette_arm.sh`), as a sequence of warm-started runs over
-successive forms of this entry's stream and at several windows, the last 370
-epochs at the window 2048 and the last 200 on the stream of this build;
-`training/tf/3_train/chain/` lists every run with its package, window, epochs
-and checksums. Weight rows below 1e-30 were then lifted to 1e-30
-(`fix_subnormal_rows.py`), and 32 epochs quantization-aware and 6 at full
-precision followed (`qat_arm.sh`), on the stream of this build. The export
-(`training/tf/4_export/export.sh`) rounds the unquantized tensors to bfloat16,
-removes the dead neurons, zeroes the collapsed channels and writes the container
-(section 4.1).
+compressor itself, as in `cmix-neif-1.0`. The patch
+`training/tf/1_dump/trainmodes.patch` adds their run modes to this source
+(`training/tf/1_dump/`, `training/tf/2_package/`). The trainer is the
+training code of
+`cmix-neif-beehive` (commit `92c07c0b`, GPL-3) with four changes of this entry,
+on top of the training tree of `fx2-cmix-transformer`
+(`training/tf/3_train/`). Section 4.3 describes the chain, with 600 epochs in
+bfloat16 in three runs, the Fisher-guided allocation of the bit widths, 96
+epochs quantization-aware and 16 at full precision, and the export with the
+coding of the container (`training/tf/3_train/export/`). The steps from the
+exported weight file to the shipped container were rerun with the tools of
+`training/` and gave the same container bit for bit; the writer of the last
+format is there in Python (`training/tf/3_train/export/np2/np2_container.py`,
+NumPy only) and in C++ (`training/tf/3_train/export/np2/tf1_np_codec.cpp`,
+which needs the container reader of the development tree to build).
 
-**Retraining.** A reproduction trains the transformer on the stream of this
-build. The recipe in section 5 of `training/README.md` uses the settings of
-the last bf16 section of the chain of the shipped weights and consists of the
-training package of this stream, a cold start at the window 2048 with one
-plan over 1,000 epochs in bfloat16, the lifting of subnormal rows, 32 epochs
-quantization-aware and 6 at full precision, and the export. The earlier
-sections of the chain ran on packages of earlier stream forms, which this
-package does not rebuild. The recipe as a whole was not run.
+**BITLSTM.** A build variant of the compressor (a run mode of the same patch)
+records, during a compression
+run of this configuration, the inputs of the model for every bit it sees. A
+trainer in PyTorch replays that trace on a graphics card, separately for each
+of the three parts of the stream (section 4.5), with 256 windows of 1,024 bits
+per Adam step and a learning rate that falls along a cosine (0.01 to 0.0001
+for the metadata set, 0.003 to 0.00003 for the text sets), and then fine-tunes
+each set on its weights rounded to bfloat16 with fewer mantissa bits
+(`training/bitl/`). `src/bit_head_weights.h` is written byte for byte from the
+three resulting weight files. A retrained transformer needs a new trace and
+new weights, because the inputs of BITLSTM change with it.
 
-**BITLSTM.** A build variant of the development tree, which is not part of
-this package, writes the trace of section 4.4 during a compression run of this
-configuration, up to about 20 % of the stream (run recipe
-`training/bitl/trace/run_trace.sh`). The trainer replays it on a CPU for 32
-passes (`training/bitl/tools/train_blob.sh`); its result is the weight block
-compiled into the program. The model learns online on the rest of the stream.
-A retrained transformer needs a new trace and new weights, because the inputs
-of BITLSTM (the mixer outputs and the sketch of the transformer state) change
-with it.
-
-**What this package contains for the training.** `training/` holds Ivanov's
-training tree with this entry's overlay, the tools and run lines of
-the coder-side runs, the package builder and its checks, the training scripts
-with the settings of every run and the lifting of subnormal rows, the export
-tools that turn the trained weights into the shipped container (rerun bit for
-bit from the reference weight file), and for BITLSTM the trace recipe, the
-replay trainer and the record of its training. `training/README.md` gives the
-commands and checksums, and `training/MANIFEST.tsv` lists every file and every
-large artefact.
-
-**What is not in this package.** The development tree with the writer of the
-BITLSTM trace and the tools that stamp new weights into the source
-(`training/bitl/FORMAT.md` describes the trace; sections 6 and 7 of
-`training/README.md` give the manual steps of binding new weights), and the
-large intermediate files (the dump, 228 GB of priors, 40 GB of BITLSTM trace
-and channel file, the checkpoints), which `training/MANIFEST.tsv` lists by
-checksum.
-
-**Reproducibility.** The coder stream, the dumps and the training package are
-deterministic functions of `enwik9` and the tools, and so are the container
-from given weights and the archive from a given container. The weight container
-and the weights of BITLSTM are inputs to the build, like the dictionary. Only a
-compression run with a retrained transformer, and with BITLSTM weights trained
-for it, shows whether it is as good as the shipped one.
+**What is not in this package.** This package does not hold the development
+tree of the compressor. The dump, prior and trace builds come from this source
+with `training/tf/1_dump/trainmodes.patch`, which was generated from that tree;
+on the inputs they were checked with they write the same files as the builds
+of that tree (`training/tf/1_dump/README.md`, section 6). Not included are the
+writers of the hint package, of the order residual and of the profile, which
+belong to the development tree. Nor does
+it hold the training package with its priors (about 210 GB), the checkpoints
+of the chain, which `training/` records by their sha256, or the trace of
+BITLSTM (about 300 GB). The coder stream, the dumps and the training package
+are deterministic functions of `enwik9` and of these builds, and so are the
+container from given weights and the archive from a given container. The bits
+of the GPU stages depend on the order of reductions, the number of cards and
+the library versions. The weight container and the weights of BITLSTM are
+therefore inputs to the build, like the dictionary. Section 9 of
+`training/README.md` lists what is reproducible bit for bit.
 
 ---
 
 ## 6. Further optimisation opportunities
 
 The items below are not part of this entry. They were found during development
-or in the review of this source and may give a smaller archive.
+and may give a smaller archive.
 
 | item | what it is | measured effect | in this source |
 |---|---|---|---|
-| attention window 2560 | in full runs of this model size the window 2560 gave a smaller archive than 2048 (section 4.1) | about -13 KB at 39 % of the stream, computed from the figures of section 4.1 | 2048, chosen for run time |
-| transformer output after alias rows | alias rows go to the transformer only, and the transformer input of the mixer is not refreshed after the last of them, so the first byte of the text is predicted with the transformer output of the row in front of the alias block, while the training scores the last alias row for that byte | not measured | as described |
-| link context for lower-case links | a link counts for the link context only if it begins with the title as the page spells it (section 4.2), so a link written in lower case, such as `[[alkane]]` to the page Alkane, is not used | not measured; 375,169 lower-case links to 24,950 pages stand in front of their target in the stream, 5,025 of these pages have no link context today, and with both spellings the link context would have 9.3 % more tokens | as described |
-| link context from links to longer titles | the comparison ends with the title, so a link whose target only begins with it, such as `[[University of ...]]` for the page University, counts as well | not measured; 53,290 of the 365,746 pieces fed today (14.6 %), on 19,668 pages, come from links that do not point to exactly this title | as described |
+| size and quantization of the transformer | a width, depth and bit budget chosen for this stream form and for the run time left within the limit (section 4.3) | not measured | the form of `cmix-neif-beehive` |
+| SEMCACHE as an input of the transformer | the distribution of SEMCACHE fed to the transformer, which then learns to use it in training | not measured | SEMCACHE feeds the mixers, BITLSTM and an end stage only |
+| 48 cells for BITLSTM | 48 instead of 32 cells for the first part of the text | about -28 KB in training, about -11 KB of `S` after the larger weights (computed) | 32 cells |
+| larger attention windows | the windows of the attention layers beyond 2048 | with the model of `cmix-neif-1.0`, 2560 instead of 2048 about -13 KB at 39 % of a full run, for about +5.5 % instructions (section 4.1 of its README) | 2048 everywhere |
 
 ---
 
@@ -1301,7 +1200,8 @@ or in the review of this source and may give a smaller archive.
 
 ```
 README.md                   this file
-CHANGES.md                  the changes against cmix-lex
+CHANGES.md                  the changes against cmix-neif-1.0
+ERRORS.md                   the error codes E<n> and their texts
 LICENSE                     GNU General Public License, version 3
 NOTICE.md                   provenance notice
 third_party/                license texts of the embedded components
@@ -1312,14 +1212,19 @@ third_party/                license texts of the embedded components
   mathfun-LICENSE.txt       zlib (avx_mathfun, sse_mathfun)
   xxHash-LICENSE.txt        BSD-2-Clause (xxHash)
   README.md                 what each text covers
-doc/                        the figures of sections 4.2, 4.5 and 4.9
+doc/                        the figures of this file
   stream_layout.svg         layout of the coder stream
   stream_rate.svg           compression rate along the coder stream
   stream_rate.tsv           the values plotted in stream_rate.svg
+  semantic_cache.svg        SEMCACHE
+  semcache_gain.svg         the gain of SEMCACHE along the coder stream
+  semcache_brown_bear.svg   SEMCACHE at one byte of the page Brown Bear
+  semcache_swingout.svg     SEMCACHE at one byte of the page Swingout
+  census_transform.svg      the census transform on one page
+  census_block.svg          layout of the census metadata block
+  census_copy.svg           cost map of the transformer on one census page
+  text_start.svg            the text start and the text rules
   metadata_block.svg        layout of the metadata block
-  timestamp_forecast.svg    timestamp forecast in part B of the metadata block
-  prompt_rows.svg           rows fed to the transformer in front of a title
-  context_rows.svg          rows fed to the transformer behind a title
 environment.txt             frozen toolchain and package versions
 
 install.sh                  system dependencies; the only root and network step
@@ -1329,31 +1234,34 @@ build_and_construct_comp.sh the build and packing steps build.sh drives
 makefile                    the build itself
 encoder_split.lds           linker script of the encoder/decoder section split
 runtime_exports.map         symbol version script of the link
-comp9.args                  the arguments of the compression run, one per line
+comp9.args                  the arguments of the compression run (empty)
 
-weights-poc8m_w2048_p15f_v3bf16_gestrichen_v4.c4
-                            the transformer weight container (format v4); a
-                            build input, appended into both executables
+weights-poc8m_w2048_tf2t3_pruned_v5k_np2.c5
+                            the transformer weight container; a build input,
+                            appended into both executables
 dictionary/                 dictionary and hint package (build inputs)
 pgo_data/                   the finished profile of the profile-guided build
 prof_input/                 Wikipedia excerpts, used to train a profile only
                             when pgo_data/ holds none (inherited)
 
-src/                        the compressor; BITLSTM is in src/bit_head.cpp
-                            and src/bit_head.h, its weights in
-                            src/bit_head_weights.h
-  src/tf1/                  transformer inference engine (25 ported files),
-                            its coder-side driver and this entry's prompt,
-                            gate and link-context code; the register is
-                            training/ATTRIBUTION.md
+src/                        the compressor; SEMCACHE in src/semantic_cache.h
+                            and src/predictor.cpp, BITLSTM in src/bit_head.*,
+                            its weights in src/bit_head_weights.h, the census
+                            transform in src/readalike_prepr/censblock_*.h
+                            and src/census_block.h, the text rules in
+                            src/rule_stages.h
+  src/tf1/                  transformer inference engine, its coder-side
+                            driver and this entry's prompt, gate and
+                            link-context code
   src/coder/                the arithmetic coder
   src/models/               context models, PPMd with its paging, match models,
                             the fxcm text model
   src/contexts/             context construction
-  src/mixer/                mixing stages, SSE, the byte LSTM
+  src/mixer/                mixing stages, SSE
   src/ds/                   embedded third-party containers, see third_party/
   src/preprocess/           dictionary transform and dictionary derivation
-  src/readalike_prepr/      page form, metadata block, article reordering
+  src/readalike_prepr/      page form, metadata block, census template form,
+                            article reordering
   src/states/               state tables
 
 tools_src/packer/           the self-extracting stub used to pack the binaries,
@@ -1361,77 +1269,82 @@ tools_src/packer/           the self-extracting stub used to pack the binaries,
                             split
 tools_src/sstrip.c          packaging helper
 
-training/                   how the pre-trained parts were produced (never
-                            built)
-  training/ATTRIBUTION.md   full attribution register, file by file
-  training/MANIFEST.tsv     every file and every large artefact, by checksum
-  training/tf/              transformer: dump, package, training chain, export,
-                            with the upstream tree and this entry's overlay
-  training/bitl/            BITLSTM: trace recipe, replay trainer, training
-                            record
-  training/data/            dictionary, hints, article order, profile
+training/                   how the transformer and BITLSTM were trained; not
+                            used by the build (section 5)
+  README.md                 the pipelines step by step, and what is
+                            reproducible bit for bit
+  ATTRIBUTION.md            authors and licences of the training code
+  MANIFEST.tsv              every file with origin, size and sha256
+  tf/tree_upstream/         the training tree of fx2-cmix-transformer, verbatim
+  tf/tree_overlay/          the files of this project laid on top of it
+  tf/1_dump/, tf/2_package/ the patch with the run modes of the dump, prior
+                            and trace builds, the dump of the training rows
+                            and the training package
+  tf/3_train/               the trainer of cmix-neif-beehive with the changes
+                            of this entry, the configurations of the chain,
+                            and the export to the container (the writer of
+                            the last format in Python, and in C++ for the
+                            development tree)
+  bitl/                     the trace, the GPU trainer and the three weight
+                            files of BITLSTM
 ```
 
-The files submitted for judging (`comp9`, `archive9`, `entry.env`, the source
-package `cmix-neif-1.0.tar.gz` and `SHA256SUMS`) can be downloaded from
-<https://marwoelk.de/cmix-neif-1.0/>.
+The files submitted for judging (`comp9`, `archive9`, `entry.env` and
+`SHA256SUMS`) can be downloaded from <https://marwoelk.de/cmix-neif-2.0/>.
 
 ## 8. Closing remarks
 
-The compute for training and testing, worth about 4,000 euros, was provided by
+The compute for training and testing, worth about 1,500 euros, was provided by
 my company, NEIF GmbH (Germany); hence the name cmix-neif.
 
-I used AI agents through Claude Code (Anthropic) throughout the project. They
-let me test, evaluate and implement many of the ideas for the Hutter Prize that
-I had collected over the last 18 years. Without them this project would not
-have been possible.
+As for `cmix-neif-1.0`, I used AI agents through Claude Code (Anthropic)
+throughout the project.
 
-Approximate figures for the seven weeks from 16 August to 2 October 2026:
+Approximate figures for the 24 days from 5 October 2026, the submission of
+`cmix-neif-1.0`, to 28 October 2026:
 
 | quantity | approximate value |
 |---|---|
-| ideas measured | about 200, more than 100 of them mine |
-| compressor test runs | more than 10,000 on test sets from 1 MB to all of `enwik9`, about 300 of them over all of `enwik9` |
-| CPU time | about 35,000 hours on one core, about four years |
-| GPU time for training | about 2,800 GPU hours, mostly on RTX 5090 cards |
+| CPU time | about 13,000 hours on one core, about one and a half years |
+| GPU time for training | about 2,000 GPU hours, almost all on RTX 5090 cards |
 
 ## 9. License
 
 This entry is distributed under the **GNU General Public License, version 3**,
-except for `prof_input/` and its copy in
-`training/tf/tree_upstream/prof_input/`, which are excerpts of `enwik9` itself
-and remain under the GFDL and CC-BY-SA of their Wikipedia authors, and the
-third-party components listed in `third_party/README.md` (with their copies in
-`training/tf/tree_upstream/`), which carry their own licenses (MIT, Apache-2.0
-with LLVM exception, NCSA, BSD-3-Clause for the PyTorch changes, zlib for the
-`exp` and `log` routines of avx_mathfun and sse_mathfun, BSD-2-Clause for the
-xxHash parts). All of them are GPL-3 compatible. The full text of the GPL is in
-`LICENSE`.
+except for `prof_input/` and its copy in `training/tf/tree_upstream/`, which
+hold excerpts of `enwik9` itself and remain under the GFDL and CC-BY-SA of
+their Wikipedia authors, and the third-party
+components listed in `third_party/README.md`, which carry their own licenses
+(MIT, Apache-2.0 with LLVM exception, NCSA, BSD-3-Clause for the PyTorch
+changes, zlib for the `exp` and `log` routines of avx_mathfun and sse_mathfun,
+BSD-2-Clause for the xxHash parts). All of them are GPL-3 compatible. The full
+text of the GPL is in `LICENSE`.
 
 The work as a whole is distributed under **GPL-3 only, not "or later"**; the
-2026 modifications of this entry are licensed under version 3 only. The only
-inherited source header with a licence notice (`fxcm`) grants version 2 "or
-(at your option) any later version", and `zmix 1.0`, from which several
-mechanisms were taken, is GPL-3.0-or-later; both allow version 3. The
-other GPL components ship the text of version 3 and name no version in their
-source files. Section 14 of the GPL offers a later version only where the
-program says "or any later version", and the FSF notes that a licence file
-alone does not state clearly which terms apply to a file. Version 3 is
-permitted under every reading; a later version is not established for these
-parts and is not offered here.
+2026 modifications of this entry are licensed under version 3 only. The
+inherited source header of `fxcm` grants version 2 "or (at your option) any
+later version"; `zmix 1.0`, `lpaq1` and paq8px are GPL-3.0-or-later or
+GPL-2.0-or-later, `ex-girlfriend 1.0` is GPL-3.0-only and
+`cmix-neif-beehive` is distributed under version 3; all of them allow version
+3. The `log1p` adapted from glibc is LGPL-2.1-or-later, whose section 3
+allows the GPL to be applied instead, and keeps the notice of Sun
+Microsystems. The other GPL components ship the text of version 3 and name no
+version in their source files. Version 3 is permitted under every reading; a
+later version is not established for these parts and is not offered here.
 
 All inherited copyright and license notices are unchanged. The redaction step
 that prepares this source package removes the conditional branches and the
-internal notes of this entry; it keeps inherited copyright, license and origin
-notes and the comments of the ported transformer files, and only replaces
-typographic dashes in comments.
-The modification notice required by GPL-3 section 5a is `CHANGES.md` together
-with sections 3 and 4 of this file. No copyright claim is made over inherited
-code; the claim of Marcus Wölk (Marcus Woelk) covers the 2026 modifications
-only.
+internal notes of this entry, gives files, internal identifiers and the file
+names in comments the names of this package, and writes generated tables into
+the files that include them. It keeps inherited copyright, license and origin
+notes and the comments of the ported transformer files, and in comments it
+replaces typographic dashes. This entry is a modified version of
+`cmix-neif-1.0` (<https://github.com/marwoelk/cmix-neif-1.0>, commit
+`1c9ea5ed`). The modification notice required by GPL-3 section 5a is
+`CHANGES.md` together with sections 3 and 4 of this file; the changes of
+`cmix-neif-1.0` against its fork base are listed in its own `CHANGES.md`. No
+copyright claim is made over inherited code; the claim of Marcus Wölk (Marcus
+Woelk) covers the 2026 modifications only.
 
 **The source in this package is the complete corresponding source of the
-submitted executables.** In fresh `ubuntu:24.04` containers, `install.sh` and
-`build.sh` reproduced the `comp9` of the result table byte for byte in four
-builds from directories of different path lengths; a build on a second machine
-without a container gave the same file.
+submitted executables.** In fresh `ubuntu:24.04` containers, `install.sh` and `build.sh` reproduced the `comp9` of the result table byte for byte in four builds from directories of different path lengths, with `build.sh` running offline and without root; a build on the same machine outside a container gave the same file.
