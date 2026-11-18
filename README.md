@@ -200,7 +200,7 @@ used confidence-gated lookup, store gating and continuation following. We
 did not release that work, so its dates rest on our own commit history, not
 on a public record. Marcus Wölk independently developed SEMCACHE, which does
 the same job, and released it first in cmix-neif 2.0. This release builds on
-SEMCACHE as published: it changes SEMCACHE's search constants and adds two
+SEMCACHE as Marcus Wölk released it: it changes SEMCACHE's search constants and adds two
 more SEMCACHE instances with other keys, and it does not ship our earlier kNN
 code. Both designs build on earlier work: the
 [continuous](https://arxiv.org/abs/1612.04426) and
@@ -434,8 +434,8 @@ rebuild record.
 
 ## Headroom and scope
 
-The margin is **363,268 bytes (0.407%)** over cmix-neif 2.0's published LTCB
-size, from one full encode and one independent fresh decode. The component
+The margin is **363,268 bytes (0.407%)** over cmix-neif 2.0's size in the LTCB
+table, from one full encode and one independent fresh decode. The component
 screens explain why these settings were chosen; they are not a measurement of
 how much each contributes at full size. This release adds **no training** and
 reuses neif's shipped weights; that training effort is upstream's. We have no
