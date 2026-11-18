@@ -202,9 +202,12 @@ on a public record. Marcus Wölk independently developed SEMCACHE, which does
 the same job, and released it first in cmix-neif 2.0. This release builds on
 SEMCACHE as published: it changes SEMCACHE's search constants and adds two
 more SEMCACHE instances with other keys, and it does not ship our earlier kNN
-code. Both designs build on earlier work: the continuous and unbounded caches
-of Grave et al. (2017), kNN-LM (Khandelwal et al., 2020) and RetoMaton's
-pointer following (Alon et al., 2022).
+code. Both designs build on earlier work: the
+[continuous](https://arxiv.org/abs/1612.04426) and
+[unbounded](https://arxiv.org/abs/1711.02604) caches of Grave et al. (2017),
+[kNN-LM](https://arxiv.org/abs/1911.00172) (Khandelwal et al., 2020) and
+[RetoMaton](https://arxiv.org/abs/2201.12431)'s pointer following (Alon et
+al., 2022).
 
 The 2.0 changes were developed by **Ryan Landay with Claude (Anthropic) and
 Codex (OpenAI)** between October 31 and November 10, 2026. We did not invent
