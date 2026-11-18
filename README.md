@@ -23,8 +23,8 @@ Marcus Wölk then released cmix-neif 2.0, which adopted three of 1.0's changes
 including a semantic retrieval cache (SEMCACHE) and a retrained transformer.
 Version 2.0 starts again from cmix-neif 2.0. It makes that cache search harder,
 adds two more caches with their own keys, spreads the online fast-weight
-updates over three times as many transformer blocks, and stops resetting the
-BITLSTM correction model's recurrent state every 1,024 bits. The
+updates over three times as many transformer blocks, and stops erasing the
+BITLSTM correction model's memory every 1,024 bits. The
 [1.0 changes are documented separately](docs/EX-GIRLFRIEND-1.0.md).
 
 ## Build and run
@@ -227,7 +227,7 @@ does.
 | A second cache keyed on transformer layer 12 | −5,323 bytes alone; −10,675 bytes together with the wider search | about +6 GiB with the wider geometry |
 | A third cache on the release key with its own random projection and hash seed | −508 bytes on top of the two above, −1,123 over the warm part of the screen: it costs while empty and gains as it fills | about +6 GiB |
 | Online fast-weight updates on blocks 4–15 instead of 12–15 | −2,355 bytes | about 3 h per direction at cmix-neif 2.0's speed (estimated) |
-| BITLSTM recurrent state carried across its 1,024-bit windows | −1,218 bytes | none measurable |
+| BITLSTM's memory no longer erased every 1,024 bits | −1,218 bytes | none measurable |
 | **All of the above, full enwik9** | **−377,960 bytes of payload; −363,268 bytes net of the larger stub** | 24.3 GiB peak; about 95 h per direction |
 
 How to read the table. The component rows are encoder-only screens on the
@@ -303,11 +303,19 @@ Both run in the encoder and the decoder from coded bytes only.
 
 ### 3. Fast weights on twelve blocks
 
-cmix-neif 2.0 contains 1.0's fast-weight head: a second transformer
-distribution from small weight matrices learned online, while coding, on the
-outputs of MLP blocks 12–15. 2.0 extends the online updates to blocks 4–15.
-The bracket read −1,985 bytes for 8 blocks, −2,355 for 12 and −2,385 for 16;
-12 is kept because 16 is within noise and slower.
+The transformer's weights are fixed: they were trained before coding starts.
+The fast-weight head, which Ex-Girlfriend 1.0 introduced and cmix-neif 2.0
+adopted, adds a small predictor whose weights *do* change during coding. It
+reads what the transformer's MLP blocks produce, makes its own prediction of
+the next byte, and keeps learning as coding goes on, using only bytes that are
+already coded, so the decoder can repeat every update exactly. The mixer
+combines its prediction with the transformer's.
+
+In cmix-neif 2.0 the head reads the last 4 of the 16 MLP blocks (blocks
+12–15). 2.0 has it read 12 blocks (blocks 4–15). On the 50 MB screen, against
+the 4-block version: 8 blocks saved 1,985 bytes, 12 blocks 2,355 and all 16
+blocks 2,385. We kept 12, because the extra 30 bytes from 16 blocks are within
+measurement noise and the extra blocks cost time.
 
 Source: [`src/tf1/opt/model_opt.cpp:515–517`](src/tf1/opt/model_opt.cpp#L515-L517).
 
@@ -317,12 +325,20 @@ Source: [`src/tf1/opt/model_opt.cpp:515–517`](src/tf1/opt/model_opt.cpp#L515-L
 #endif
 ```
 
-### 4. BITLSTM state across windows
+### 4. BITLSTM keeps its memory longer
 
-The BITLSTM correction model zeroes its recurrent state at the start of every
-window of 1,024 bits, as in its training. 2.0 keeps the state across those
-windows and resets it only when the head switches between its weight sets.
-The weights are not retrained.
+BITLSTM is a small LSTM network behind the mixer that corrects the mixer's
+probability for each bit. Like any LSTM it carries a memory (its recurrent
+state) from one bit to the next. It has three fixed weight sets, trained in
+advance: one for the metadata at the start of the stream and two for
+consecutive parts of the text.
+
+cmix-neif 2.0 erases that memory every 1,024 bits (128 bytes), as the
+original implementation of the model does. 2.0 no longer erases it at
+those points; it erases it only when BITLSTM moves on to its next weight set.
+The weights themselves are unchanged. Letting the model keep its memory
+longer than in training still helped: it saved 1,218 bytes on the 50 MB
+screen.
 
 Source: [`src/bit_head.cpp:976–984`](src/bit_head.cpp#L976-L984).
 
